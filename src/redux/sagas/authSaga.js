@@ -128,6 +128,7 @@ function* resetPasswordSaga(action) {
 // Logout saga
 function* handleLogout() {
     try {
+        // Clear auth-related storage
         localStorage.removeItem("token");
         localStorage.removeItem("role");
         localStorage.removeItem("user");

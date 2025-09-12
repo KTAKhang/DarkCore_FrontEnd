@@ -61,8 +61,13 @@ const Navbar = () => {
     }
   };
 
-  const storedUser = JSON.parse(localStorage.getItem("user"));
-  console.log("userData", storedUser.avatar);
+  let storedUser = null;
+  try {
+    const raw = localStorage.getItem("user");
+    storedUser = raw ? JSON.parse(raw) : null;
+  } catch (e) {
+    storedUser = null;
+  }
   const displayName = storedUser?.user_name || "Người dùng";
   const displayEmail = storedUser?.email || "user@email.com";
   const displayAvatar = storedUser?.avatar || "https://images.unsplash.com/photo-1574158622682-e40e69881006?w=100&h=100&fit=crop&crop=face";

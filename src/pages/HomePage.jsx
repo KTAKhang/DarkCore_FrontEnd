@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { User, Lock, Eye, EyeOff } from 'lucide-react';
 import { loginRequest } from '../redux/actions/authActions';
@@ -12,6 +12,13 @@ const LoginPage = () => {
   const { loading, error, isAuthenticated } = useSelector(state => state.auth);
   const navigate = useNavigate();
 
+  // Clear localStorage on component mount để có thể test giao diện
+  useEffect(() => {
+    // Uncomment dòng này nếu muốn clear auth state để test giao diện
+    // localStorage.removeItem("token");
+    // localStorage.removeItem("role");
+  }, []);
+
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -19,12 +26,14 @@ const LoginPage = () => {
   });
   const [showPassword, setShowPassword] = useState(false);
 
-  // Redirect if already authenticated
+  // Redirect if already authenticated (tạm thời disable để test giao diện)
   useEffect(() => {
-    if (isAuthenticated) {
-      navigate("/admin", { replace: true });
+    // Chỉ redirect khi không phải development mode hoặc khi user thực sự login thành công
+    if (isAuthenticated && !loading) {
+      // Tạm thời comment để có thể test giao diện login
+      // navigate("/admin", { replace: true });
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, navigate, loading]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -41,6 +50,14 @@ const LoginPage = () => {
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  // Function để clear auth state (để test giao diện)(sau khi test xong thì comment lại)
+  const clearAuthState = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("role");
+    dispatch({ type: 'LOGOUT' });
+    window.location.reload(); // Reload để cập nhật state
   };
 
   return (
@@ -175,6 +192,16 @@ const LoginPage = () => {
               <div className="absolute inset-0 opacity-0 transition-opacity duration-300 hover:opacity-100" style={{ background: `linear-gradient(135deg, #0D364C 0%, #13C2C2 100%)` }}></div>
             </button>
             {/* Google Login */}
+            {/* Development: Button để clear auth state */}
+            {process.env.NODE_ENV === 'development' && (
+              <button
+                onClick={clearAuthState}
+                className="w-full mb-4 py-2 px-4 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm transition-colors"
+              >
+                🔧 Clear Auth State (Dev Only)
+              </button>
+            )}
+
             <div className="mt-6 flex flex-col items-center">
               <p className="text-gray-300 mb-3">Hoặc đăng nhập bằng</p>
               <GoogleLogin
@@ -218,16 +245,14 @@ const LoginPage = () => {
         .animation-delay-4000 {
           animation-delay: 4s;
         }
-        
         .group:focus-within .group-focus-within\\:text-purple-400 {
           color: #13C2C2;
         }
-        
         input:focus + * svg,
         input:focus ~ * svg {
           color: #13C2C2;
         }
-        
+
         button:hover svg {
           color: #13C2C2;
         }
