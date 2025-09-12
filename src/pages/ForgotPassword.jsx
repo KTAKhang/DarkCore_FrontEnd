@@ -152,12 +152,12 @@ const ForgotPassword = () => {
             </div>
 
             {/* Main Card */}
-            <div className="relative z-10 w-full max-w-md p-8">
+            <div className="relative z-10 w-full max-w-2xl p-8">
                 <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-3xl p-8 shadow-2xl transform hover:scale-105 transition-all duration-500">
 
                     {/* Back to Login Link */}
                     <Link
-                        to="/"
+                        to="/login"
                         className="inline-flex items-center text-white/80 hover:text-white transition-colors duration-200 mb-6"
                     >
                         <ArrowLeft className="w-4 h-4 mr-2" />
