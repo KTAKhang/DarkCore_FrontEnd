@@ -1,10 +1,18 @@
-// reducers/authReducer.js
 import {
+    LOGIN_GOOGLE_REQUEST,
+    LOGIN_GOOGLE_SUCCESS,
+    LOGIN_GOOGLE_FAILURE,
     LOGIN_REQUEST,
     LOGIN_SUCCESS,
     LOGIN_FAILURE,
     LOGOUT,
     SET_USER,
+    REGISTER_SEND_OTP_REQUEST,
+    REGISTER_SEND_OTP_SUCCESS,
+    REGISTER_SEND_OTP_FAILURE,
+    REGISTER_CONFIRM_OTP_REQUEST,
+    REGISTER_CONFIRM_OTP_SUCCESS,
+    REGISTER_CONFIRM_OTP_FAILURE,
     FORGOT_PASSWORD_REQUEST,
     FORGOT_PASSWORD_SUCCESS,
     FORGOT_PASSWORD_FAILURE,
@@ -21,10 +29,21 @@ const initialState = {
     error: null,
     loading: false,
     isAuthenticated: !!localStorage.getItem("token"),
+
+    // Register states
+    registerLoading: false,
+    registerMessage: null,
+    registerError: null,
+    confirmRegisterLoading: false,
+    confirmRegisterMessage: null,
+    confirmRegisterSuccess: null,
+    confirmRegisterError: null,
+
     // Forgot password states
     forgotPasswordLoading: false,
     forgotPasswordMessage: null,
     forgotPasswordError: null,
+
     // Reset password states
     resetPasswordLoading: false,
     resetPasswordMessage: null,
@@ -33,12 +52,33 @@ const initialState = {
 
 const authReducer = (state = initialState, action) => {
     switch (action.type) {
-        case LOGIN_REQUEST:
+        // ===== LOGIN GOOGLE =====
+        case LOGIN_GOOGLE_REQUEST:
+            return { ...state, error: null, loading: true };
+        case LOGIN_GOOGLE_SUCCESS:
             return {
                 ...state,
+                user: action.payload.data,
+                token: action.payload.token.access_token,
+                role: action.payload.data.role_name,
                 error: null,
-                loading: true,
+                loading: false,
+                isAuthenticated: true,
             };
+        case LOGIN_GOOGLE_FAILURE:
+            return {
+                ...state,
+                user: null,
+                token: null,
+                role: null,
+                error: action.payload,
+                loading: false,
+                isAuthenticated: false,
+            };
+
+        // ===== LOGIN NORMAL =====
+        case LOGIN_REQUEST:
+            return { ...state, error: null, loading: true };
         case LOGIN_SUCCESS:
             return {
                 ...state,
@@ -59,6 +99,8 @@ const authReducer = (state = initialState, action) => {
                 loading: false,
                 isAuthenticated: false,
             };
+
+        // ===== LOGOUT =====
         case LOGOUT:
             return {
                 ...state,
@@ -69,13 +111,58 @@ const authReducer = (state = initialState, action) => {
                 loading: false,
                 isAuthenticated: false,
             };
+
         case SET_USER:
+            return { ...state, user: action.payload };
+
+        // ===== REGISTER SEND OTP =====
+        case REGISTER_SEND_OTP_REQUEST:
             return {
                 ...state,
-                user: action.payload,
+                registerLoading: true,
+                registerError: null,
+                registerMessage: null,
+            };
+        case REGISTER_SEND_OTP_SUCCESS:
+            return {
+                ...state,
+                registerLoading: false,
+                registerMessage: action.payload,
+                registerError: null,
+            };
+        case REGISTER_SEND_OTP_FAILURE:
+            return {
+                ...state,
+                registerLoading: false,
+                registerError: action.payload,
+                registerMessage: null,
             };
 
-        // Forgot Password Cases
+        // ===== REGISTER CONFIRM OTP =====
+        case REGISTER_CONFIRM_OTP_REQUEST:
+            return {
+                ...state,
+                confirmRegisterLoading: true,
+                confirmRegisterError: null,
+                confirmRegisterMessage: null,
+            };
+        case REGISTER_CONFIRM_OTP_SUCCESS:
+            return {
+                ...state,
+                confirmRegisterLoading: false,
+                confirmRegisterMessage: action.payload,
+                confirmRegisterSuccess: true,
+                confirmRegisterError: null,
+            };
+        case REGISTER_CONFIRM_OTP_FAILURE:
+            return {
+                ...state,
+                confirmRegisterLoading: false,
+                confirmRegisterError: action.payload,
+                confirmRegisterMessage: null,
+            };
+
+        // ===== FORGOT PASSWORD =====
         case FORGOT_PASSWORD_REQUEST:
             return {
                 ...state,
@@ -98,7 +185,7 @@ const authReducer = (state = initialState, action) => {
                 forgotPasswordMessage: null,
             };
 
-        // Reset Password Cases
+        // ===== RESET PASSWORD =====
         case RESET_PASSWORD_REQUEST:
             return {
                 ...state,
@@ -121,11 +208,15 @@ const authReducer = (state = initialState, action) => {
                 resetPasswordMessage: null,
             };
 
-        // Clear messages
+        // ===== CLEAR MESSAGES =====
         case CLEAR_AUTH_MESSAGES:
             return {
                 ...state,
                 error: null,
+                registerMessage: null,
+                registerError: null,
+                confirmRegisterMessage: null,
+                confirmRegisterError: null,
                 forgotPasswordMessage: null,
                 forgotPasswordError: null,
                 resetPasswordMessage: null,

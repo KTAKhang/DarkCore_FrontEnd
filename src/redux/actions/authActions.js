@@ -2,8 +2,20 @@
 export const LOGIN_REQUEST = "LOGIN_REQUEST";
 export const LOGIN_SUCCESS = "LOGIN_SUCCESS";
 export const LOGIN_FAILURE = "LOGIN_FAILURE";
+
+export const LOGIN_GOOGLE_REQUEST = "LOGIN_GOOGLE_REQUEST";
+export const LOGIN_GOOGLE_SUCCESS = "LOGIN_GOOGLE_SUCCESS";
+export const LOGIN_GOOGLE_FAILURE = "LOGIN_GOOGLE_FAILURE";
 export const LOGOUT = "LOGOUT";
 export const SET_USER = "SET_USER";
+
+export const REGISTER_SEND_OTP_REQUEST = "REGISTER_SEND_OTP_REQUEST";
+export const REGISTER_SEND_OTP_SUCCESS = "REGISTER_SEND_OTP_SUCCESS";
+export const REGISTER_SEND_OTP_FAILURE = "REGISTER_SEND_OTP_FAILURE";
+
+export const REGISTER_CONFIRM_OTP_REQUEST = "REGISTER_CONFIRM_OTP_REQUEST";
+export const REGISTER_CONFIRM_OTP_SUCCESS = "REGISTER_CONFIRM_OTP_SUCCESS";
+export const REGISTER_CONFIRM_OTP_FAILURE = "REGISTER_CONFIRM_OTP_FAILURE";
 
 // Forgot Password Actions
 export const FORGOT_PASSWORD_REQUEST = 'FORGOT_PASSWORD_REQUEST';
@@ -33,9 +45,55 @@ export const loginFailure = (error) => ({
     payload: error,
 });
 
+export const loginGoogleRequest = (credentials) => ({
+    type: LOGIN_GOOGLE_REQUEST,
+    payload: credentials,
+});
+
+export const loginGoogleSuccess = (data) => ({
+    type: LOGIN_GOOGLE_SUCCESS,
+    payload: data,
+});
+
+export const loginGoogleFailure = (error) => ({
+    type: LOGIN_GOOGLE_FAILURE,
+    payload: error,
+});
+
 export const logout = () => ({
     type: LOGOUT,
 });
+
+export const registerSendOTPRequest = (credentials) => ({
+    type: REGISTER_SEND_OTP_REQUEST,
+    payload: credentials,
+});
+
+export const registerSendOTPSuccess = (data) => ({
+    type: REGISTER_SEND_OTP_SUCCESS,
+    payload: data,
+});
+
+export const registerSendOTPFailure = (error) => ({
+    type: REGISTER_SEND_OTP_FAILURE,
+    payload: error,
+});
+
+export const registerConfirmOTPRequest = ({ otp }) => ({
+    type: REGISTER_CONFIRM_OTP_REQUEST,
+    payload: { otp },
+});
+
+export const registerConfirmOTPSuccess = (data) => ({
+    type: REGISTER_CONFIRM_OTP_SUCCESS,
+    payload: data,
+});
+
+export const registerConfirmOTPFailure = (error) => ({
+    type: REGISTER_CONFIRM_OTP_FAILURE,
+    payload: error,
+});
+
 
 // Forgot Password Action Creators
 export const forgotPasswordRequest = (email) => ({
