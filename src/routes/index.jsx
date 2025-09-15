@@ -4,7 +4,10 @@ import NotFoundPage from "../pages/NotFoundPage";
 import Register from "../pages/Register";
 import HomePage from "../pages/HomePage";
 import CartPage from "../pages/CartPage";
-
+import AdminLayout from "../layout/AdminLayout";
+import AdminPage from "../pages/AdminPage";
+import CategoryManagement from "../pages/Categorymanagement/CategoryManagement";
+import ProductManagement from "../pages/Productmanagement/ProductManagement";
 
 export const routes = [
   // Trang login (HomePage)
@@ -19,6 +22,22 @@ export const routes = [
   {
     path: "/cart",
     element: <CartPage />, // login page
+  },
+
+  // Khu vực quản trị
+  {
+    path: "/admin",
+    element: <AdminLayout />,
+    children: [
+      { index: true, element: <AdminPage /> },
+      { path: "category", element: <CategoryManagement /> },
+      { path: "product", element: <ProductManagement /> },
+    ],
+    // element: (
+    //   <PrivateRoute requiredRole="ADMIN">
+    //     <AdminLayout />
+    //   </PrivateRoute>
+    // ),
   },
 
 

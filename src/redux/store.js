@@ -2,20 +2,23 @@
 import { createStore, applyMiddleware, combineReducers } from "redux";
 import createSagaMiddleware from "redux-saga";
 import authReducer from "./reducers/authReducer";
+import categoryReducer from "./reducers/categoryReducer";
+import productReducer from "./reducers/productReducer";
 
 import rootSaga from "./sagas/rootSaga";
 const rootReducer = combineReducers({
   auth: authReducer,
-
+  category: categoryReducer,
+  product: productReducer,
 });
 
 const sagaMiddleware = createSagaMiddleware();
 
 // Enable Redux DevTools in development if available
 const composeEnhancers =
-  (process.env.NODE_ENV === 'development' &&
-    typeof window !== 'undefined' &&
-    window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__) ||
+  (import.meta.env.DEV && 
+   typeof window !== 'undefined' && 
+   window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__) ||
   ((f) => f);
 
 const store = createStore(
