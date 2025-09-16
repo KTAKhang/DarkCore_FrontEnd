@@ -47,11 +47,14 @@ const CATEGORY_COLORS = ["#13C2C2", "#52c41a", "#fa8c16", "#722ED1", "#0D364C"];
 
 const CategoryManagement = () => {
   const dispatch = useDispatch();
-  const { items: categoryItems, stats, loadingList, loadingStats, creating, updating } = useSelector((state) => state.category);
+  const { items: categoryItems, stats, pagination: apiPagination, loadingList, loadingStats, creating, updating } = useSelector((state) => state.category);
   const [loading, setLoading] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [statusFilter, setStatusFilter] = useState("all"); // "all", "active", "inactive"
   const [pagination, setPagination] = useState({ current: 1, pageSize: 5 });
+  const [sortBy, setSortBy] = useState("createdAt"); // "createdAt"
+  const [sortOrder, setSortOrder] = useState("desc"); // "asc", "desc"
+  const [createdAtClickCount, setCreatedAtClickCount] = useState(0); // Track clicks on createdAt column
 
   // Modals state
   const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
@@ -59,47 +62,41 @@ const CategoryManagement = () => {
   const [isViewDetailModalVisible, setIsViewDetailModalVisible] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
 
-  // Load categories with current filters
-  const loadCategories = useCallback((query = {}) => {
-    dispatch(categoryListRequest(query));
-  }, [dispatch]);
 
   useEffect(() => {
     // Initial load - get all categories and stats
-    dispatch(categoryListRequest({}));
+    dispatch(categoryListRequest({ page: 1, limit: 5, sortBy: "createdAt", sortOrder: "desc" }));
     dispatch(categoryStatsRequest());
   }, [dispatch]);
 
   // Auto-load when filters change with debounce for search
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      const query = {};
-      let hasFilters = false;
+      const query = {
+        page: pagination.current,
+        limit: pagination.pageSize,
+        sortBy,
+        sortOrder,
+      };
       
       if (statusFilter !== "all") {
         query.status = statusFilter;
-        hasFilters = true;
       }
       
       if (searchText.trim()) {
         query.keyword = searchText.trim();
-        hasFilters = true;
       }
       
-      // Load categories with filters or reset to all if no filters
-      loadCategories(query);
+      dispatch(categoryListRequest(query));
       
-      // Reset to first page when filtering or resetting
-      setPagination(prev => ({ ...prev, current: 1 }));
-      
-      // If no filters, refresh stats
-      if (!hasFilters) {
-        dispatch(categoryStatsRequest());
+      // Reset to first page when filtering
+      if (pagination.current !== 1) {
+        setPagination(prev => ({ ...prev, current: 1 }));
       }
-    }, searchText.trim() ? 500 : 0); // 500ms debounce for search, immediate for status filter
+    }, searchText.trim() ? 500 : 0); // 500ms debounce for search
 
     return () => clearTimeout(timeoutId);
-  }, [searchText, statusFilter, loadCategories, dispatch]);
+  }, [searchText, statusFilter, pagination, sortBy, sortOrder, dispatch]);
 
   const categories = useMemo(() => {
     // Backend now sets default status = true, so we can use it directly
@@ -133,20 +130,26 @@ const CategoryManagement = () => {
 
   const handleRefresh = useCallback(() => {
     setLoading(true);
-    const query = {};
+    const query = {
+      page: pagination.current,
+      limit: pagination.pageSize,
+      sortBy,
+      sortOrder,
+    };
+    
     if (statusFilter !== "all") {
       query.status = statusFilter;
     }
+    
     if (searchText.trim()) {
       query.keyword = searchText.trim();
     }
-    dispatch(categoryListRequest(query));
     
-    // Also refresh stats
+    dispatch(categoryListRequest(query));
     dispatch(categoryStatsRequest());
     
     setTimeout(() => setLoading(false), 450);
-  }, [dispatch, statusFilter, searchText]);
+  }, [dispatch, statusFilter, searchText, pagination, sortBy, sortOrder]);
 
   const handleOpenUpdateModal = useCallback((category) => {
     setSelectedCategory(category);
@@ -274,18 +277,19 @@ const CategoryManagement = () => {
         title: "Ngày tạo",
         dataIndex: "createdAt",
         key: "createdAt",
+        sorter: {
+          multiple: false,
+        },
+        sortOrder: sortBy === 'createdAt' ? (sortOrder === 'asc' ? 'ascend' : 'descend') : null,
         render: (date) => (
-          <span style={{ color: "#999" }}>
-            {date
-              ? new Date(date).toLocaleDateString("vi-VN", {
-                  year: "numeric",
-                  month: "2-digit",
-                  day: "2-digit",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })
-              : "N/A"}
-          </span>
+          <div>
+            <span style={{ color: "#0D364C", fontSize: 14, display: "block" }}>
+              {date ? new Date(date).toLocaleDateString("vi-VN") : "N/A"}
+            </span>
+            <span style={{ color: "#999", fontSize: 12 }}>
+              {date ? new Date(date).toLocaleTimeString("vi-VN", { hour: '2-digit', minute: '2-digit' }) : ""}
+            </span>
+          </div>
         ),
       },
       {
@@ -299,14 +303,69 @@ const CategoryManagement = () => {
         ),
       },
     ],
-    [handleOpenDetailModal, handleOpenUpdateModal]
+    [handleOpenDetailModal, handleOpenUpdateModal, sortBy, sortOrder]
   );
+
+  const handleTableChange = (pagination, filters, sorter) => {
+    console.log("=== Category handleTableChange Debug ===");
+    console.log("sorter:", sorter);
+    console.log("sorter.field:", sorter?.field);
+    console.log("sorter.order:", sorter?.order);
+    console.log("Current sortBy:", sortBy);
+    console.log("Current sortOrder:", sortOrder);
+    console.log("createdAtClickCount:", createdAtClickCount);
+    
+    // Xử lý khi click vào createdAt column (cả khi có field và khi field undefined nhưng đang sort createdAt)
+    if ((sorter && sorter.field === 'createdAt') || (sorter && !sorter.field && sortBy === 'createdAt')) {
+      const newClickCount = createdAtClickCount + 1;
+      setCreatedAtClickCount(newClickCount);
+      
+      console.log("🔢 CreatedAt click count:", newClickCount);
+      
+      // Cycle through 3 states: desc → asc → reset (mặc định desc cho ngày tạo)
+      if (newClickCount % 3 === 1) {
+        // Click 1, 4, 7... → desc (mới nhất)
+        console.log("📊 Sort by createdAt desc");
+        setSortBy("createdAt");
+        setSortOrder("desc");
+      } else if (newClickCount % 3 === 2) {
+        // Click 2, 5, 8... → asc (cũ nhất)
+        console.log("📊 Sort by createdAt asc");
+        setSortBy("createdAt");
+        setSortOrder("asc");
+      } else {
+        // Click 3, 6, 9... → reset to default
+        console.log("🔄 Sort reset to default: createdAt desc");
+        setSortBy("createdAt");
+        setSortOrder("desc");
+        
+        // Force reload data với sort mặc định
+        const query = {
+          page: pagination.current || 1,
+          limit: pagination.pageSize || 5,
+          sortBy: "createdAt",
+          sortOrder: "desc",
+        };
+        
+        if (statusFilter !== "all") {
+          query.status = statusFilter;
+        }
+        
+        if (searchText.trim()) {
+          query.keyword = searchText.trim();
+        }
+        
+        console.log("🚀 Force dispatching query:", query);
+        dispatch(categoryListRequest(query));
+      }
+    }
+  };
 
   const tablePagination = useMemo(
     () => ({
-      current: pagination.current,
-      pageSize: pagination.pageSize,
-      total: filteredCategories.length,
+      current: apiPagination?.page || pagination.current,
+      pageSize: apiPagination?.limit || pagination.pageSize,
+      total: apiPagination?.total || 0,
       showSizeChanger: true,
       showQuickJumper: true,
       pageSizeOptions: ["5", "10", "20", "50"],
@@ -316,17 +375,29 @@ const CategoryManagement = () => {
           {hasActiveFilters && <span style={{ color: "#13C2C2" }}> (đã lọc)</span>}
         </span>
       ),
-      onChange: (page, pageSize) => setPagination({ current: page, pageSize }),
-      onShowSizeChange: (current, size) => setPagination({ current, pageSize: size }),
+      onChange: (page, pageSize) => {
+        setPagination({ current: page, pageSize });
+        const query = {
+          page,
+          limit: pageSize,
+          sortBy,
+          sortOrder,
+        };
+        
+        if (statusFilter !== "all") query.status = statusFilter;
+        if (searchText.trim()) query.keyword = searchText.trim();
+        
+        dispatch(categoryListRequest(query));
+      },
+      onShowSizeChange: (current, size) => {
+        setPagination({ current, pageSize: size });
+      },
     }),
-    [filteredCategories.length, pagination, hasActiveFilters]
+    [apiPagination, pagination, hasActiveFilters, statusFilter, searchText, sortBy, sortOrder, dispatch]
   );
 
-  const dataForPage = useMemo(() => {
-    const start = (pagination.current - 1) * pagination.pageSize;
-    const end = start + pagination.pageSize;
-    return filteredCategories.slice(start, end);
-  }, [filteredCategories, pagination]);
+  // Backend handles pagination, so we use categories directly
+  const dataForPage = filteredCategories;
 
   return (
     <div
@@ -403,6 +474,21 @@ const CategoryManagement = () => {
               <Select.Option value="active">Đang hiển thị</Select.Option>
               <Select.Option value="inactive">Đang ẩn</Select.Option>
             </Select>
+            <Select
+              value={`${sortBy}-${sortOrder}`}
+              onChange={(value) => {
+                const [newSortBy, newSortOrder] = value.split('-');
+                setSortBy(newSortBy);
+                setSortOrder(newSortOrder);
+              }}
+              style={{ width: 180 }}
+              size="large"
+              placeholder="Sắp xếp"
+              suffixIcon={<FilterOutlined style={{ color: "#13C2C2" }} />}
+            >
+              <Select.Option value="createdAt-desc">Mới nhất</Select.Option>
+              <Select.Option value="createdAt-asc">Cũ nhất</Select.Option>
+            </Select>
           </Space>
           <Space>
             <Button onClick={handleRefresh} icon={<ReloadOutlined />} loading={loading} style={{ borderColor: "#13C2C2", color: "#13C2C2" }}>Làm mới</Button>
@@ -445,6 +531,7 @@ const CategoryManagement = () => {
             columns={columns}
             dataSource={dataForPage}
             pagination={tablePagination}
+            onChange={handleTableChange}
             style={{ borderRadius: 12, overflow: "hidden" }}
             scroll={{ x: true }}
             size="middle"

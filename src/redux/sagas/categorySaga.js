@@ -37,6 +37,10 @@ function getAuthHeaders(isFormData = false) {
 const apiList = async (query = {}) => {
   const params = new URLSearchParams();
   
+  // Add pagination
+  if (query.page) params.append("page", query.page);
+  if (query.limit) params.append("limit", query.limit);
+  
   // Add status filter if provided
   if (query.status && query.status !== "all") {
     const statusValue = query.status === "active" ? "true" : "false";
@@ -46,6 +50,14 @@ const apiList = async (query = {}) => {
   // Add keyword search if provided
   if (query.keyword && query.keyword.trim()) {
     params.append("keyword", query.keyword.trim());
+  }
+  
+  // Add sort parameters if provided
+  if (query.sortBy && query.sortBy.trim()) {
+    params.append("sortBy", query.sortBy.trim());
+  }
+  if (query.sortOrder && query.sortOrder.trim()) {
+    params.append("sortOrder", query.sortOrder.trim());
   }
   
   const queryString = params.toString();
@@ -112,9 +124,9 @@ function* listWorker(action) {
     const query = action.payload?.query || {};
     const data = yield call(apiList, query);
     if (data.status === "OK") {
-      yield put(categoryListSuccess(data.data || []));
+      yield put(categoryListSuccess(data.data || [], data.pagination));
     } else {
-      throw new Error(data.message || "Failed to fetch categories");
+      throw new Error(data.message || "Không thể tải danh sách danh mục");
     }
   } catch (error) {
     yield put(categoryListFailure(error.message));
@@ -128,7 +140,7 @@ function* detailWorker(action) {
     if (data.status === "OK") {
       yield put(categoryDetailSuccess(data.data));
     } else {
-      throw new Error(data.message || "Failed to fetch category detail");
+      throw new Error(data.message || "Không thể tải chi tiết danh mục");
     }
   } catch (error) {
     yield put(categoryDetailFailure(error.message));
@@ -141,9 +153,9 @@ function* createWorker(action) {
     const data = yield call(apiCreate, action.payload);
     if (data.status === "OK") {
       yield put(categoryCreateSuccess(data.data, data.message));
-      toast.success(data.message || "Category created");
+      toast.success(data.message || "Danh mục đã được tạo thành công");
     } else {
-      throw new Error(data.message || "Create category failed");
+      throw new Error(data.message || "Tạo danh mục thất bại");
     }
   } catch (error) {
     yield put(categoryCreateFailure(error.message));
@@ -157,9 +169,9 @@ function* updateWorker(action) {
     const data = yield call(apiUpdate, id, payload);
     if (data.status === "OK") {
       yield put(categoryUpdateSuccess(data.data, data.message));
-      toast.success(data.message || "Category updated");
+      toast.success(data.message || "Danh mục đã được cập nhật thành công");
     } else {
-      throw new Error(data.message || "Update category failed");
+      throw new Error(data.message || "Cập nhật danh mục thất bại");
     }
   } catch (error) {
     yield put(categoryUpdateFailure(error.message));
@@ -173,9 +185,9 @@ function* deleteWorker(action) {
     const data = yield call(apiDelete, id);
     if (data.status === "OK") {
       yield put(categoryDeleteSuccess(id, data.message));
-      toast.success(data.message || "Category deleted");
+      toast.success(data.message || "Danh mục đã được xóa thành công");
     } else {
-      throw new Error(data.message || "Delete category failed");
+      throw new Error(data.message || "Xóa danh mục thất bại");
     }
   } catch (error) {
     yield put(categoryDeleteFailure(error.message));
@@ -189,7 +201,7 @@ function* statsWorker() {
     if (data.status === "OK") {
       yield put(categoryStatsSuccess(data.data));
     } else {
-      throw new Error(data.message || "Failed to fetch category stats");
+      throw new Error(data.message || "Không thể tải thống kê danh mục");
     }
   } catch (error) {
     yield put(categoryStatsFailure(error.message));
