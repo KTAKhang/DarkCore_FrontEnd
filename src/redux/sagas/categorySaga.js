@@ -23,7 +23,7 @@ import {
 } from "../actions/categoryActions";
 
 // NOTE: Backend runs at 3001 and exposes routes under /api
-const API_BASE_URL = "http://localhost:3001/api";
+const API_BASE_URL = "http://localhost:3002/api";
 
 function getAuthHeaders(isFormData = false) {
   const token = localStorage.getItem("token");

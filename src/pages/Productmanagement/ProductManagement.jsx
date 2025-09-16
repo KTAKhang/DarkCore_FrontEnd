@@ -197,11 +197,6 @@ const ProductManagement = () => {
   };
 
   const handleCreateSuccess = useCallback((created) => {
-    console.log("=== ProductManagement handleCreateSuccess ===");
-    console.log("created.short_desc:", created.short_desc);
-    console.log("created.detail_desc:", created.detail_desc);
-    console.log("Full created object:", created);
-    
     // Map frontend format to backend format
     const payload = {
       name: created.name,
@@ -213,23 +208,14 @@ const ProductManagement = () => {
     
     // Only add description fields if they have actual content
     if (created.short_desc && created.short_desc.trim() !== "") {
-      console.log("Adding short_desc to payload:", created.short_desc.trim());
       payload.short_desc = created.short_desc.trim();
-    } else {
-      console.log("short_desc is empty or undefined, not adding to payload");
     }
     if (created.detail_desc && created.detail_desc.trim() !== "") {
-      console.log("Adding detail_desc to payload:", created.detail_desc.trim());
       payload.detail_desc = created.detail_desc.trim();
-    } else {
-      console.log("detail_desc is empty or undefined, not adding to payload");
     }
     if (created.brand && created.brand.trim() !== "") {
       payload.brand = created.brand.trim();
     }
-    
-    console.log("=== Final payload to saga ===");
-    console.log("payload:", payload);
     
     // Handle images
     if (created.images && Array.isArray(created.images)) {
@@ -289,35 +275,22 @@ const ProductManagement = () => {
   }, [dispatch, handleRefresh]);
 
   const handleTableChange = (pagination, filters, sorter) => {
-    console.log("=== handleTableChange Debug ===");
-    console.log("sorter:", sorter);
-    console.log("sorter.field:", sorter?.field);
-    console.log("sorter.order:", sorter?.order);
-    console.log("Current sortBy:", sortBy);
-    console.log("Current sortOrder:", sortOrder);
-    console.log("priceClickCount:", priceClickCount);
-    
     // Xử lý khi click vào price column (cả khi có field và khi field undefined nhưng đang sort price)
     if ((sorter && sorter.field === 'price') || (sorter && !sorter.field && sortBy === 'price')) {
       const newClickCount = priceClickCount + 1;
       setPriceClickCount(newClickCount);
       
-      console.log("🔢 Price click count:", newClickCount);
-      
       // Cycle through 3 states: asc → desc → reset
       if (newClickCount % 3 === 1) {
         // Click 1, 4, 7... → asc
-        console.log("📊 Sort by price asc");
         setSortBy("price");
         setSortOrder("asc");
       } else if (newClickCount % 3 === 2) {
         // Click 2, 5, 8... → desc  
-        console.log("📊 Sort by price desc");
         setSortBy("price");
         setSortOrder("desc");
       } else {
         // Click 3, 6, 9... → reset to default
-        console.log("🔄 Sort reset to default: createdAt desc");
         setSortBy("createdAt");
         setSortOrder("desc");
         
@@ -344,7 +317,6 @@ const ProductManagement = () => {
           }
         }
         
-        console.log("🚀 Force dispatching query:", query);
         dispatch(productListRequest(query));
       }
     }
@@ -354,22 +326,17 @@ const ProductManagement = () => {
       const newClickCount = createdAtClickCount + 1;
       setCreatedAtClickCount(newClickCount);
       
-      console.log("🔢 CreatedAt click count:", newClickCount);
-      
       // Cycle through 3 states: desc → asc → reset (mặc định desc cho ngày tạo)
       if (newClickCount % 3 === 1) {
         // Click 1, 4, 7... → desc (mới nhất)
-        console.log("📊 Sort by createdAt desc");
         setSortBy("createdAt");
         setSortOrder("desc");
       } else if (newClickCount % 3 === 2) {
         // Click 2, 5, 8... → asc (cũ nhất)
-        console.log("📊 Sort by createdAt asc");
         setSortBy("createdAt");
         setSortOrder("asc");
       } else {
         // Click 3, 6, 9... → reset to default
-        console.log("🔄 Sort reset to default: createdAt desc");
         setSortBy("createdAt");
         setSortOrder("desc");
         
@@ -396,7 +363,6 @@ const ProductManagement = () => {
           }
         }
         
-        console.log("🚀 Force dispatching query:", query);
         dispatch(productListRequest(query));
       }
     }
