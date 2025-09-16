@@ -57,6 +57,14 @@ const apiList = async (query = {}) => {
     params.append("categoryName", query.categoryName.trim());
   }
   
+  // Add sort parameters if provided
+  if (query.sortBy && query.sortBy.trim()) {
+    params.append("sortBy", query.sortBy.trim());
+  }
+  if (query.sortOrder && query.sortOrder.trim()) {
+    params.append("sortOrder", query.sortOrder.trim());
+  }
+  
   const queryString = params.toString();
   const url = queryString ? `${API_BASE_URL}/products?${queryString}` : `${API_BASE_URL}/products`;
   
@@ -165,7 +173,7 @@ function* listWorker(action) {
     if (data.status === "OK") {
       yield put(productListSuccess(data.data || [], data.pagination));
     } else {
-      throw new Error(data.message || "Failed to fetch products");
+      throw new Error(data.message || "Không thể tải danh sách sản phẩm");
     }
   } catch (error) {
     yield put(productListFailure(error.message));
@@ -179,7 +187,7 @@ function* detailWorker(action) {
     if (data.status === "OK") {
       yield put(productDetailSuccess(data.data));
     } else {
-      throw new Error(data.message || "Failed to fetch product detail");
+      throw new Error(data.message || "Không thể tải chi tiết sản phẩm");
     }
   } catch (error) {
     yield put(productDetailFailure(error.message));
@@ -192,11 +200,11 @@ function* createWorker(action) {
     const data = yield call(apiCreate, action.payload);
     if (data.status === "OK") {
       yield put(productCreateSuccess(data.data, data.message));
-      toast.success(data.message || "Product created");
+      toast.success(data.message || "Sản phẩm đã được tạo thành công");
     } else {
       // Bubble up server message with full details for debugging
       const message = typeof data.message === 'string' ? data.message : JSON.stringify(data.message);
-      throw new Error(message || "Create product failed");
+      throw new Error(message || "Tạo sản phẩm thất bại");
     }
   } catch (error) {
     const friendly = error?.response?.data?.message || error.message;
@@ -211,10 +219,10 @@ function* updateWorker(action) {
     const data = yield call(apiUpdate, id, payload);
     if (data.status === "OK") {
       yield put(productUpdateSuccess(data.data, data.message));
-      toast.success(data.message || "Product updated");
+      toast.success(data.message || "Sản phẩm đã được cập nhật thành công");
     } else {
       const message = typeof data.message === 'string' ? data.message : JSON.stringify(data.message);
-      throw new Error(message || "Update product failed");
+      throw new Error(message || "Cập nhật sản phẩm thất bại");
     }
   } catch (error) {
     const friendly = error?.response?.data?.message || error.message;
@@ -229,9 +237,9 @@ function* deleteWorker(action) {
     const data = yield call(apiDelete, id);
     if (data.status === "OK") {
       yield put(productDeleteSuccess(id, data.message));
-      toast.success(data.message || "Product deleted");
+      toast.success(data.message || "Sản phẩm đã được xóa thành công");
     } else {
-      throw new Error(data.message || "Delete product failed");
+      throw new Error(data.message || "Xóa sản phẩm thất bại");
     }
   } catch (error) {
     yield put(productDeleteFailure(error.message));
@@ -245,7 +253,7 @@ function* statsWorker() {
     if (data.status === "OK") {
       yield put(productStatsSuccess(data.data));
     } else {
-      throw new Error(data.message || "Failed to fetch product stats");
+      throw new Error(data.message || "Không thể tải thống kê sản phẩm");
     }
   } catch (error) {
     yield put(productStatsFailure(error.message));

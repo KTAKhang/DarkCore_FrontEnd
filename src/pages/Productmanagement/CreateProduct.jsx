@@ -61,6 +61,7 @@ const CreateProduct = ({ visible, onClose, onSuccess, categories = [] }) => {
         price: values.price,
         short_desc: (values.short_desc || "").trim(),
         detail_desc: (values.detail_desc || "").trim(),
+        brand: (values.brand || "").trim(),
         quantity: values.quantity,
         status: values.status !== undefined ? values.status : true,
         images,
@@ -119,7 +120,7 @@ const CreateProduct = ({ visible, onClose, onSuccess, categories = [] }) => {
 
               <Divider style={customStyles.divider} />
 
-              <Form form={form} layout="vertical" onFinish={handleFinish} initialValues={{ quantity: 1, price: 1000, status: true, short_desc: "", detail_desc: "" }} size="large">
+              <Form form={form} layout="vertical" onFinish={handleFinish} initialValues={{ quantity: 1, price: 1000, status: true, short_desc: "", detail_desc: "", brand: "" }} size="large">
                 <Form.Item label={<Space><AppstoreOutlined style={{ color: "#13C2C2" }} /><span style={customStyles.label}>Danh mục sản phẩm</span></Space>} name="category_id" rules={[{ required: true, message: "Vui lòng chọn danh mục sản phẩm!" }]}>
                   <Select placeholder="Chọn danh mục sản phẩm" style={customStyles.input}>
                     {activeCategories.map((cat) => (
@@ -138,6 +139,10 @@ const CreateProduct = ({ visible, onClose, onSuccess, categories = [] }) => {
 
                 <Form.Item label={<Space><ShoppingOutlined style={{ color: "#13C2C2" }} /><span style={customStyles.label}>Số lượng</span></Space>} name="quantity" rules={[{ required: true, message: "Vui lòng nhập số lượng!" }]}>
                   <InputNumber min={1} max={100000} style={{ width: "100%", ...customStyles.input }} placeholder="Nhập số lượng" precision={0} />
+                </Form.Item>
+
+                <Form.Item label={<Space><ShoppingOutlined style={{ color: "#13C2C2" }} /><span style={customStyles.label}>Thương hiệu</span></Space>} name="brand">
+                  <Input placeholder="Nhập thương hiệu (tuỳ chọn)" style={customStyles.input} maxLength={50} showCount />
                 </Form.Item>
 
                 <Form.Item label={<Space><InfoCircleOutlined style={{ color: "#13C2C2" }} /><span style={customStyles.label}>Mô tả ngắn</span></Space>} name="short_desc">
@@ -162,8 +167,8 @@ const CreateProduct = ({ visible, onClose, onSuccess, categories = [] }) => {
 
                 <Form.Item label={<span style={customStyles.label}>Trạng thái hiển thị</span>} name="status" valuePropName="checked">
                   <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                    <Switch checkedChildren="Hiển thị" unCheckedChildren="Ẩn" checked={switchValue} onChange={(checked) => { setSwitchValue(checked); form.setFieldsValue({ status: checked }); }} />
-                    <Text type="secondary">{switchValue ? "Sản phẩm sẽ hiển thị công khai" : "Sản phẩm sẽ được ẩn"}</Text>
+                    <Switch checkedChildren="Hiển thị" unCheckedChildren="Ẩn" onChange={(checked) => { setSwitchValue(checked); form.setFieldsValue({ status: checked }); }} defaultChecked />
+                    <Text style={{ color: "#666", fontSize: 14 }}>{switchValue ? "Sản phẩm sẽ được hiển thị công khai" : "Sản phẩm sẽ được ẩn"}</Text>
                   </div>
                 </Form.Item>
 
@@ -186,6 +191,17 @@ const CreateProduct = ({ visible, onClose, onSuccess, categories = [] }) => {
       <Modal open={modalVisible} footer={null} onCancel={() => setModalVisible(false)} width={400}>
         <img alt="preview" style={{ width: "100%", borderRadius: 8, maxHeight: 400, objectFit: "contain" }} src={previewImage} />
       </Modal>
+
+      <style>{`
+        .ant-upload-select-picture-card { border: 2px dashed #13C2C2 !important; border-radius: 8px !important; background-color: #f8fdfd !important; }
+        .ant-upload-select-picture-card:hover { border-color: #0D364C !important; }
+        .ant-switch-checked { background-color: #52c41a !important; }
+        .ant-switch:not(.ant-switch-checked) { background-color: #ff4d4f !important; }
+        .ant-input:focus { border-color: #13C2C2 !important; box-shadow: 0 0 0 2px rgba(19, 194, 194, 0.1) !important; }
+        .ant-btn-primary:hover { background-color: #0D364C !important; border-color: #0D364C !important; }
+        .ant-modal-content { border-radius: 12px !important; }
+        .ant-card { border-radius: 8px !important; }
+      `}</style>
     </>
   );
 };

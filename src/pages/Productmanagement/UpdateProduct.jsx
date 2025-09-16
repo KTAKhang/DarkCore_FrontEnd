@@ -30,6 +30,7 @@ const UpdateProduct = ({ visible, onClose, onSuccess, productData, categories = 
         price: productData.price,
         short_desc: productData.short_desc,
         detail_desc: productData.detail_desc,
+        brand: productData.brand || "",
         quantity: productData.quantity,
         status: productData.status !== false,
       });
@@ -57,6 +58,7 @@ const UpdateProduct = ({ visible, onClose, onSuccess, productData, categories = 
         price: values.price,
         short_desc: (values.short_desc || "").trim(),
         detail_desc: (values.detail_desc || "").trim(),
+        brand: (values.brand || "").trim(),
         quantity: values.quantity,
         status: values.status !== undefined ? values.status : true,
       };
@@ -130,6 +132,10 @@ const UpdateProduct = ({ visible, onClose, onSuccess, productData, categories = 
                   <InputNumber min={1} max={100000} style={{ width: "100%", ...customStyles.input }} placeholder="Nhập số lượng" precision={0} />
                 </Form.Item>
 
+                <Form.Item label={<Space><ShoppingOutlined style={{ color: "#13C2C2" }} /><span style={customStyles.label}>Thương hiệu</span></Space>} name="brand">
+                  <Input placeholder="Nhập thương hiệu (tuỳ chọn)" style={customStyles.input} maxLength={50} showCount />
+                </Form.Item>
+
                 <Form.Item label={<Space><InfoCircleOutlined style={{ color: "#13C2C2" }} /><span style={customStyles.label}>Mô tả ngắn</span></Space>} name="short_desc">
                   <Input.TextArea rows={2} placeholder="Nhập mô tả ngắn (tuỳ chọn)" style={{ borderRadius: 8 }} showCount maxLength={200} />
                 </Form.Item>
@@ -152,8 +158,8 @@ const UpdateProduct = ({ visible, onClose, onSuccess, productData, categories = 
 
                 <Form.Item label={<span style={customStyles.label}>Trạng thái hiển thị</span>} name="status" valuePropName="checked">
                   <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                    <Switch checkedChildren="Hiển thị" unCheckedChildren="Ẩn" checked={switchValue} onChange={(checked) => { setSwitchValue(checked); form.setFieldsValue({ status: checked }); }} />
-                    <Text type="secondary">{switchValue ? "Sản phẩm đang hiển thị" : "Sản phẩm đang ẩn"}</Text>
+                    <Switch checkedChildren="Hiển thị" unCheckedChildren="Ẩn" onChange={(checked) => { setSwitchValue(checked); form.setFieldsValue({ status: checked }); }} checked={switchValue} />
+                    <Text style={{ color: "#666", fontSize: 14 }}>{switchValue ? "Sản phẩm đang hiển thị" : "Sản phẩm đang ẩn"}</Text>
                   </div>
                 </Form.Item>
 
@@ -174,6 +180,13 @@ const UpdateProduct = ({ visible, onClose, onSuccess, productData, categories = 
       <Modal open={modalVisible} footer={null} onCancel={() => setModalVisible(false)} width={400}>
         <img alt="preview" style={{ width: "100%", borderRadius: 8, maxHeight: 400, objectFit: "contain" }} src={previewImage} />
       </Modal>
+
+      <style>{`
+        .ant-upload-select-picture-card { border: 2px dashed #13C2C2 !important; border-radius: 8px !important; background-color: #f8fdfd !important; }
+        .ant-upload-select-picture-card:hover { border-color: #0D364C !important; }
+        .ant-switch-checked { background-color: #52c41a !important; }
+        .ant-switch:not(.ant-switch-checked) { background-color: #ff4d4f !important; }
+      `}</style>
     </>
   );
 };
