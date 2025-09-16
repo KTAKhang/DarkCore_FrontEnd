@@ -4,12 +4,14 @@ import createSagaMiddleware from "redux-saga";
 import authReducer from "./reducers/authReducer";
 import categoryReducer from "./reducers/categoryReducer";
 import productReducer from "./reducers/productReducer";
+import staffReducer from "./reducers/staffReducer"; // Đã thêm staffReducer
 
 import rootSaga from "./sagas/rootSaga";
 const rootReducer = combineReducers({
   auth: authReducer,
   category: categoryReducer,
   product: productReducer,
+  staff: staffReducer, // Đã thêm staffReducer
 });
 
 const sagaMiddleware = createSagaMiddleware();
