@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import PropTypes from 'prop-types';
 import Header from '../components/Header/Header';
+import Footer from '../components/Footer/Footer';
 // Product data
 const products = [
   {
@@ -138,6 +140,7 @@ const categories = [
 ];
 
 const HomePage = () => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [cartItems, setCartItems] = useState(3);
   const [wishlist, setWishlist] = useState([]);
@@ -154,7 +157,7 @@ const HomePage = () => {
     );
   };
 
-  const addToCart = (productId) => {
+  const addToCart = () => {
     setCartItems(prev => prev + 1);
     // Add cart logic here
   };
@@ -169,6 +172,10 @@ const HomePage = () => {
         ))}
       </div>
     );
+  };
+
+  StarRating.propTypes = {
+    rating: PropTypes.number.isRequired,
   };
 
   const ProductCard = ({ product }) => (
@@ -229,18 +236,36 @@ const HomePage = () => {
         </div>
         <div className="flex gap-2">
           <button
-            onClick={() => addToCart(product.id)}
+            onClick={() => addToCart()}
             className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
           >
             Thêm giỏ hàng
           </button>
-          <button className="flex-1 border border-blue-600 text-blue-600 py-2 px-4 rounded-lg hover:bg-blue-50 transition-colors text-sm font-medium">
+          <button 
+            onClick={() => navigate(`/product/${product.id}`)}
+            className="flex-1 border border-blue-600 text-blue-600 py-2 px-4 rounded-lg hover:bg-blue-50 transition-colors text-sm font-medium"
+          >
             Xem chi tiết
           </button>
         </div>
       </div>
     </div>
   );
+
+  ProductCard.propTypes = {
+    product: PropTypes.shape({
+      id: PropTypes.number.isRequired,
+      name: PropTypes.string.isRequired,
+      price: PropTypes.number.isRequired,
+      originalPrice: PropTypes.number.isRequired,
+      discount: PropTypes.number.isRequired,
+      rating: PropTypes.number.isRequired,
+      reviews: PropTypes.number.isRequired,
+      image: PropTypes.string.isRequired,
+      tags: PropTypes.arrayOf(PropTypes.string).isRequired,
+      badges: PropTypes.arrayOf(PropTypes.string).isRequired,
+    }).isRequired,
+  };
 
   const ServiceCard = ({ service }) => (
     <div className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 group">
@@ -285,6 +310,19 @@ const HomePage = () => {
     </div>
   );
 
+  ServiceCard.propTypes = {
+    service: PropTypes.shape({
+      id: PropTypes.number.isRequired,
+      title: PropTypes.string.isRequired,
+      description: PropTypes.string.isRequired,
+      image: PropTypes.string.isRequired,
+      icon: PropTypes.string.isRequired,
+      services: PropTypes.arrayOf(PropTypes.string).isRequired,
+      priceFrom: PropTypes.string.isRequired,
+      duration: PropTypes.string.isRequired,
+    }).isRequired,
+  };
+
   const CategoryCard = ({ category }) => (
     <div className="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer">
       <div className="relative h-48 overflow-hidden">
@@ -312,6 +350,17 @@ const HomePage = () => {
     </div>
   );
 
+  CategoryCard.propTypes = {
+    category: PropTypes.shape({
+      id: PropTypes.string.isRequired,
+      name: PropTypes.string.isRequired,
+      description: PropTypes.string.isRequired,
+      icon: PropTypes.string.isRequired,
+      productCount: PropTypes.string.isRequired,
+      image: PropTypes.string.isRequired,
+    }).isRequired,
+  };
+
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
@@ -334,7 +383,10 @@ const HomePage = () => {
                 Chúng tôi cũng cung cấp dịch vụ sửa chữa chuyên nghiệp.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
-                <button className="bg-white text-blue-600 px-8 py-4 rounded-full font-bold hover:bg-blue-50 transition-colors text-center">
+                <button 
+                  onClick={() => navigate('/products')}
+                  className="bg-white text-blue-600 px-8 py-4 rounded-full font-bold hover:bg-blue-50 transition-colors text-center"
+                >
                   Xem sản phẩm
                 </button>
                 <button className="border-2 border-white text-white px-8 py-4 rounded-full font-bold hover:bg-white hover:text-blue-600 transition-colors text-center">
@@ -378,7 +430,10 @@ const HomePage = () => {
               ))}
             </div>
             <div className="text-center">
-              <button className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium">
+              <button 
+                onClick={() => navigate('/products')}
+                className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+              >
                 Xem tất cả sản phẩm
               </button>
             </div>
@@ -425,69 +480,7 @@ const HomePage = () => {
       </main>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white">
-        <div className="container mx-auto px-4 py-12">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <div>
-              <div className="flex items-center space-x-2 mb-6">
-                <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white text-xl">💻</span>
-                </div>
-                <span className="text-xl font-bold">TechStore</span>
-              </div>
-              <p className="text-gray-400 mb-4 leading-relaxed">
-                Chuyên cung cấp laptop, máy tính bảng và dịch vụ sửa chữa chất lượng cao với giá cả hợp lý.
-              </p>
-              <div className="flex space-x-4">
-                <a href="#" className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-blue-600 transition-colors">
-                  📘
-                </a>
-                <a href="#" className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-blue-600 transition-colors">
-                  📺
-                </a>
-                <a href="#" className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-blue-600 transition-colors">
-                  📷
-                </a>
-              </div>
-            </div>
-            <div>
-              <h3 className="font-bold text-lg mb-4">Sản phẩm</h3>
-              <ul className="space-y-2">
-                <li><a className="text-gray-400 hover:text-white transition-colors cursor-pointer">Laptop</a></li>
-                <li><a className="text-gray-400 hover:text-white transition-colors cursor-pointer">Máy tính bảng</a></li>
-                <li><a className="text-gray-400 hover:text-white transition-colors cursor-pointer">Phụ kiện</a></li>
-                <li><a className="text-gray-400 hover:text-white transition-colors cursor-pointer">Sản phẩm giảm giá</a></li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-bold text-lg mb-4">Dịch vụ</h3>
-              <ul className="space-y-2">
-                <li><a className="text-gray-400 hover:text-white transition-colors cursor-pointer">Sửa chữa laptop</a></li>
-                <li><a className="text-gray-400 hover:text-white transition-colors cursor-pointer">Thay màn hình</a></li>
-                <li><a className="text-gray-400 hover:text-white transition-colors cursor-pointer">Nâng cấp phần cứng</a></li>
-                <li><a className="text-gray-400 hover:text-white transition-colors cursor-pointer">Bảo hành</a></li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-bold text-lg mb-4">Liên hệ</h3>
-              <ul className="space-y-3">
-                <li className="flex items-center text-gray-400">
-                  <span className="mr-3 text-blue-400">📍</span>123 Đường ABC, Quận Ninh Kiều, TP.Cần Thơ
-                </li>
-                <li className="flex items-center text-gray-400">
-                  <span className="mr-3 text-blue-400">📞</span>0123.456.789
-                </li>
-                <li className="flex items-center text-gray-400">
-                  <span className="mr-3 text-blue-400">✉️</span>info@techstore.vn
-                </li>
-                <li className="flex items-center text-gray-400">
-                  <span className="mr-3 text-blue-400">⏰</span>8:00 - 22:00 hàng ngày
-                </li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>)
 }
 

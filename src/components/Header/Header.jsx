@@ -6,19 +6,19 @@ const Header = ({ searchTerm, setSearchTerm, cartItems }) => {
         <header className="bg-white shadow-sm border-b border-gray-100">
             <div className="container mx-auto px-4">
                 <div className="flex items-center justify-between h-16">
-                    <a className="flex items-center space-x-2" href="/">
+                    <Link className="flex items-center space-x-2" to="/">
                         <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
                             <span className="text-white text-xl">💻</span>
                         </div>
                         <span className="text-xl font-bold text-gray-900">TechStore</span>
-                    </a>
+                    </Link>
 
                     <nav className="hidden md:flex items-center space-x-8">
-                        <a className="text-gray-700 hover:text-blue-600 transition-colors" href="/">Trang chủ</a>
-                        <a className="text-gray-700 hover:text-blue-600 transition-colors" href="/products">Sản phẩm</a>
-                        <a className="text-gray-700 hover:text-blue-600 transition-colors" href="/repair">Sửa chữa</a>
-                        <a className="text-gray-700 hover:text-blue-600 transition-colors" href="/about">Về chúng tôi</a>
-                        <a className="text-gray-700 hover:text-blue-600 transition-colors" href="/contact">Liên hệ</a>
+                        <Link className="text-gray-700 hover:text-blue-600 transition-colors" to="/">Trang chủ</Link>
+                        <Link className="text-gray-700 hover:text-blue-600 transition-colors" to="/products">Sản phẩm</Link>
+                        <Link className="text-gray-700 hover:text-blue-600 transition-colors" to="/repair">Sửa chữa</Link>
+                        <Link className="text-gray-700 hover:text-blue-600 transition-colors" to="/about">Về chúng tôi</Link>
+                        <Link className="text-gray-700 hover:text-blue-600 transition-colors" to="/contact">Liên hệ</Link>
                     </nav>
 
                     <div className="flex items-center space-x-4">
