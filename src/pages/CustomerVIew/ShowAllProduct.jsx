@@ -24,28 +24,44 @@ const ShowAllProduct = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
 
-    // Redux state
-    const {
-        list: {
-            items: categories,
-            loading: categoriesLoading,
-            error: categoriesError
-        }
-    } = useSelector(state => state.categoryHome);
+    // Redux state with safe destructuring
+    const categoryHomeState = useSelector(state => state?.categoryHome) || {};
+    const productHomeState = useSelector(state => state?.productHome) || {};
 
-    const {
-        list: {
-            items: products,
-            loading: productsLoading,
-            error: productsError,
-            pagination: productsPagination
-        },
-        brands: {
-            items: brandsFromDB,
-            loading: brandsLoading,
-            error: brandsError
-        }
-    } = useSelector(state => state.productHome);
+    let categories, categoriesLoading, categoriesError;
+    let products, productsLoading, productsError, productsPagination;
+    let brandsFromDB, brandsLoading, brandsError;
+
+    try {
+        const categoryData = categoryHomeState?.list || {};
+        categories = categoryData.items || [];
+        categoriesLoading = categoryData.loading || false;
+        categoriesError = categoryData.error || null;
+        
+        const productData = productHomeState?.list || {};
+        products = productData.items || [];
+        productsLoading = productData.loading || false;
+        productsError = productData.error || null;
+        productsPagination = productData.pagination || null;
+        
+        const brandsData = productHomeState?.brands || {};
+        brandsFromDB = brandsData.items || [];
+        brandsLoading = brandsData.loading || false;
+        brandsError = brandsData.error || null;
+        
+    } catch (error) {
+        console.error('❌ Error destructuring Redux state:', error);
+        categories = [];
+        categoriesLoading = false;
+        categoriesError = 'Destructuring error';
+        products = [];
+        productsLoading = false;
+        productsError = 'Destructuring error';
+        productsPagination = null;
+        brandsFromDB = [];
+        brandsLoading = false;
+        brandsError = 'Destructuring error';
+    }
 
     // Local state
     const [searchTerm, setSearchTerm] = useState('');
@@ -98,7 +114,7 @@ const ShowAllProduct = () => {
 
     // Reset selectedBrand khi brands data thay đổi (nếu selectedBrand không còn hợp lệ)
     useEffect(() => {
-        if (brandsFromDB && brandsFromDB.length > 0 && selectedBrand !== 'all') {
+        if (brandsFromDB && Array.isArray(brandsFromDB) && brandsFromDB.length > 0 && selectedBrand !== 'all') {
             const isValidBrand = brandsFromDB.includes(selectedBrand);
             if (!isValidBrand) {
                 setSelectedBrand('all');
@@ -106,11 +122,15 @@ const ShowAllProduct = () => {
         }
     }, [brandsFromDB, selectedBrand]);
 
-    // Reset currentPage về 1 khi filter thay đổi
+    // Reset currentPage về 1 khi filter thay đổi (with debounce)
     useEffect(() => {
-        if (currentPage !== 1) {
-            setCurrentPage(1);
-        }
+        const timeoutId = setTimeout(() => {
+            if (currentPage !== 1) {
+                setCurrentPage(1);
+            }
+        }, 100); // Small debounce to prevent rapid state updates
+
+        return () => clearTimeout(timeoutId);
     }, [searchTerm, selectedCategory, selectedBrand, sortBy, currentPage]);
 
     // Track data changes
@@ -118,26 +138,58 @@ const ShowAllProduct = () => {
         // Data updated
     }, [categories, categoriesLoading, categoriesError, products, productsLoading, productsError, brandsFromDB, brandsLoading, brandsError]);
 
-    // Fallback categories data when API fails
-    const fallbackCategories = [
+    // Memoize fallback categories to prevent re-creation on every render
+    const fallbackCategories = useMemo(() => [
         { _id: 'laptops', name: 'Laptop' },
         { _id: 'tablets', name: 'Máy tính bảng' },
         { _id: 'accessories', name: 'Phụ kiện' }
-    ];
+    ], []);
 
-    // Use fallback data if API fails
-    const displayCategories = categoriesError ? fallbackCategories : categories;
+    // Memoize fallback data to prevent re-creation on every render
+    const displayCategories = useMemo(() => {
+        return (categoriesError || !categories || !Array.isArray(categories)) ? fallbackCategories : categories;
+    }, [categoriesError, categories, fallbackCategories]);
+
+    // Fallback products data when API fails
+    const fallbackProducts = useMemo(() => [
+        {
+            _id: 'sample-1',
+            name: 'Sản phẩm mẫu 1',
+            price: 1000000,
+            stockQuantity: 10,
+            images: ['/placeholder-product.jpg'],
+            brand: 'Dell',
+            description: 'Đây là sản phẩm mẫu khi không có kết nối backend'
+        },
+        {
+            _id: 'sample-2', 
+            name: 'Sản phẩm mẫu 2',
+            price: 2000000,
+            stockQuantity: 5,
+            images: ['/placeholder-product.jpg'],
+            brand: 'HP',
+            description: 'Đây là sản phẩm mẫu khi không có kết nối backend'
+        }
+    ], []);
+
+    // Use fallback products if API fails or products is null/undefined
+    const displayProducts = useMemo(() => {
+        return (productsError || !products || !Array.isArray(products)) ? fallbackProducts : products;
+    }, [productsError, products, fallbackProducts]);
 
     // Prepare brands data with fallback
     const displayBrands = useMemo(() => {
-        const result = brandsError ? brands : [
+        if (brandsError || !brandsFromDB || !Array.isArray(brandsFromDB)) {
+            return brands; // Use fallback brands data
+        }
+        
+        return [
             { id: "all", name: "Tất cả thương hiệu" },
-            ...(brandsFromDB || []).map(brand => ({
+            ...brandsFromDB.map(brand => ({
                 id: brand,
                 name: brand
             }))
         ];
-        return result;
     }, [brandsError, brandsFromDB]);
 
     // Clear errors when component unmounts
@@ -160,9 +212,15 @@ const ShowAllProduct = () => {
             query.keyword = searchTerm.trim();
         }
 
-        // Add category filter
+        // Add category filter - REMOVED displayCategories from dependency to prevent infinite loop
         if (selectedCategory !== 'all') {
-            const selectedCategoryData = displayCategories.find(cat => cat._id === selectedCategory);
+            const fallbackCategories = [
+                { _id: 'laptops', name: 'Laptop' },
+                { _id: 'tablets', name: 'Máy tính bảng' },
+                { _id: 'accessories', name: 'Phụ kiện' }
+            ];
+            const categoriesToUse = (categoriesError || !categories || !Array.isArray(categories)) ? fallbackCategories : categories;
+            const selectedCategoryData = categoriesToUse.find(cat => cat._id === selectedCategory);
             if (selectedCategoryData) {
                 query.categoryName = selectedCategoryData.name;
             }
@@ -196,7 +254,20 @@ const ShowAllProduct = () => {
         }
 
         dispatch(productHomeListRequest(query));
-    }, [dispatch, currentPage, pageSize, searchTerm, selectedCategory, selectedBrand, sortBy, displayCategories, displayBrands]);
+    }, [dispatch, currentPage, pageSize, searchTerm, selectedCategory, selectedBrand, sortBy, categories, categoriesError]);
+
+    // Early return if Redux state is not properly initialized
+    if (!categoryHomeState || !productHomeState || Object.keys(categoryHomeState).length === 0 || Object.keys(productHomeState).length === 0) {
+        return (
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <div className="text-center">
+                    <div className="text-6xl mb-4">⏳</div>
+                    <h3 className="text-xl font-medium text-gray-900 mb-2">Đang khởi tạo ứng dụng...</h3>
+                    <p className="text-gray-600">Vui lòng chờ trong giây lát</p>
+                </div>
+            </div>
+        );
+    }
 
     const ProductCard = ({ product }) => {
         const isInStock = product.stockQuantity > 0;
@@ -400,7 +471,7 @@ const ShowAllProduct = () => {
                                             ))}
                                         </div>
                                     ) : (
-                                        displayCategories.map(category => (
+                                        displayCategories && Array.isArray(displayCategories) ? displayCategories.map(category => (
                                             <button
                                                 key={category._id}
                                                 onClick={() => setSelectedCategory(category._id)}
@@ -412,7 +483,7 @@ const ShowAllProduct = () => {
                                                 <span>📂</span>
                                                 <span>{category.name}</span>
                                             </button>
-                                        ))
+                                        )) : null
                                     )}
                                 </div>
                             </div>
@@ -432,9 +503,11 @@ const ShowAllProduct = () => {
                                         }}
                                         className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     >
-                                        {displayBrands.map(brand => (
+                                        {displayBrands && Array.isArray(displayBrands) ? displayBrands.map(brand => (
                                             <option key={brand.id} value={brand.id}>{brand.name}</option>
-                                        ))}
+                                        )) : (
+                                            <option value="all">Tất cả thương hiệu</option>
+                                        )}
                                     </select>
                                 )}
                             </div>
@@ -449,14 +522,32 @@ const ShowAllProduct = () => {
                             <span>Đang tải sản phẩm...</span>
                         ) : (
                             <>
-                                Hiển thị <span className="font-medium text-gray-900">{products.length}</span> sản phẩm
+                                Hiển thị <span className="font-medium text-gray-900">{displayProducts.length}</span> sản phẩm
                                 {productsPagination && productsPagination.total && (
                                     <span> / {productsPagination.total} tổng cộng</span>
+                                )}
+                                {productsError && (
+                                    <span className="text-orange-500 ml-2">(Sử dụng dữ liệu mẫu)</span>
                                 )}
                             </>
                         )}
                     </p>
                 </div>
+
+                {/* Backend Connection Warning */}
+                {(productsError || categoriesError || brandsError) && (
+                    <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
+                        <div className="flex items-center space-x-2">
+                            <span className="text-orange-500 text-lg">⚠️</span>
+                            <div>
+                                <h4 className="text-orange-800 font-medium">Không thể kết nối đến server</h4>
+                                <p className="text-orange-700 text-sm">
+                                    Hiện tại đang sử dụng dữ liệu mẫu. Vui lòng kiểm tra kết nối mạng hoặc liên hệ quản trị viên.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* Products Grid */}
                 {productsLoading ? (
@@ -482,9 +573,9 @@ const ShowAllProduct = () => {
                             Thử lại
                         </button>
                     </div>
-                ) : products.length > 0 ? (
+                ) : displayProducts.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                        {products.map(product => (
+                        {displayProducts.map(product => (
                             <ProductCard key={product._id} product={product} />
                         ))}
                     </div>

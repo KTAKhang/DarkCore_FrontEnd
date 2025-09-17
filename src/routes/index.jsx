@@ -48,7 +48,7 @@ export const routes = [
       { path: "category", element: <CategoryManagement /> },
       { path: "product", element: <ProductManagement /> },
       { path: "staff", element: <StaffManagement /> },
-      { path: "staff/create", element: <CreateStaff /> }, 
+      { path: "staff/create", element: <CreateStaff /> },
       { path: "staff/:id", element: <StaffDetail /> },
     ],
   },

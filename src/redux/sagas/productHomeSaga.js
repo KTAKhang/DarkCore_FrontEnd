@@ -18,7 +18,7 @@ import {
 } from "../actions/productHomeActions";
 
 // API base URL
-const API_BASE_URL = "http://localhost:3004/api";
+const API_BASE_URL = "http://localhost:3000/cataloghome/api";
 
 // Helper function to make API calls
 function* apiCall(url, options = {}) {
