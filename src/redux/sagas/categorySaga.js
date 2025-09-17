@@ -22,8 +22,7 @@ import {
   categoryStatsFailure,
 } from "../actions/categoryActions";
 
-// NOTE: Backend runs at 3001 and exposes routes under /api
-const API_BASE_URL = "http://localhost:3001/api";
+const API_BASE_URL = 'http://localhost:3000';
 
 function getAuthHeaders(isFormData = false) {
   const token = localStorage.getItem("token");
@@ -61,14 +60,14 @@ const apiList = async (query = {}) => {
   }
   
   const queryString = params.toString();
-  const url = queryString ? `${API_BASE_URL}/categories?${queryString}` : `${API_BASE_URL}/categories`;
+  const url = queryString ? `${API_BASE_URL}/catalog/api/categories?${queryString}` : `${API_BASE_URL}/catalog/api/categories`;
   
   const res = await axios.get(url, { headers: getAuthHeaders() });
   return res.data;
 };
 
 const apiDetail = async (id) => {
-  const res = await axios.get(`${API_BASE_URL}/categories/${id}`, { headers: getAuthHeaders() });
+  const res = await axios.get(`${API_BASE_URL}/catalog/api/categories/${id}`, { headers: getAuthHeaders() });
   return res.data;
 };
 
@@ -86,7 +85,7 @@ const apiCreate = async (payload) => {
     data = formData;
   }
   
-  const res = await axios.post(`${API_BASE_URL}/categories`, data, { headers: getAuthHeaders(isFormData) });
+  const res = await axios.post(`${API_BASE_URL}/catalog/api/categories`, data, { headers: getAuthHeaders(isFormData) });
   return res.data;
 };
 
@@ -104,17 +103,17 @@ const apiUpdate = async (id, payload) => {
     data = formData;
   }
   
-  const res = await axios.put(`${API_BASE_URL}/categories/${id}`, data, { headers: getAuthHeaders(isFormData) });
+  const res = await axios.put(`${API_BASE_URL}/catalog/api/categories/${id}`, data, { headers: getAuthHeaders(isFormData) });
   return res.data;
 };
 
 const apiDelete = async (id) => {
-  const res = await axios.delete(`${API_BASE_URL}/categories/${id}`, { headers: getAuthHeaders() });
+  const res = await axios.delete(`${API_BASE_URL}/catalog/api/categories/${id}`, { headers: getAuthHeaders() });
   return res.data;
 };
 
 const apiStats = async () => {
-  const res = await axios.get(`${API_BASE_URL}/categories/stats`, { headers: getAuthHeaders() });
+  const res = await axios.get(`${API_BASE_URL}/catalog/api/categories/stats`, { headers: getAuthHeaders() });
   return res.data;
 };
 

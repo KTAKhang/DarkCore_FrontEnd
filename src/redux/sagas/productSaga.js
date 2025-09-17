@@ -22,8 +22,7 @@ import {
   productStatsFailure,
 } from "../actions/productActions";
 
-// NOTE: Backend runs at 3001 and exposes routes under /api
-const API_BASE_URL = "http://localhost:3001/api";
+const API_BASE_URL = 'http://localhost:3000';
 
 function getAuthHeaders(isFormData = false) {
   const token = localStorage.getItem("token");
@@ -66,14 +65,14 @@ const apiList = async (query = {}) => {
   }
   
   const queryString = params.toString();
-  const url = queryString ? `${API_BASE_URL}/products?${queryString}` : `${API_BASE_URL}/products`;
+  const url = queryString ? `${API_BASE_URL}/catalog/api/products?${queryString}` : `${API_BASE_URL}/catalog/api/products`;
   
   const res = await axios.get(url, { headers: getAuthHeaders() });
   return res.data;
 };
 
 const apiDetail = async (id) => {
-  const res = await axios.get(`${API_BASE_URL}/products/${id}`, { headers: getAuthHeaders() });
+  const res = await axios.get(`${API_BASE_URL}/catalog/api/products/${id}`, { headers: getAuthHeaders() });
   return res.data;
 };
 
@@ -116,10 +115,10 @@ const apiCreate = async (payload) => {
   }
   
   console.log("=== Sending to backend ===");
-  console.log("URL:", `${API_BASE_URL}/products`);
+  console.log("URL:", `${API_BASE_URL}/catalog/api/products`);
   console.log("Data type:", hasImageFiles ? "FormData" : "JSON");
   
-  const res = await axios.post(`${API_BASE_URL}/products`, data, { headers: getAuthHeaders(hasImageFiles) });
+  const res = await axios.post(`${API_BASE_URL}/catalog/api/products`, data, { headers: getAuthHeaders(hasImageFiles) });
   console.log("Backend response:", res.data);
   return res.data;
 };
@@ -151,17 +150,17 @@ const apiUpdate = async (id, payload) => {
     data = formData;
   }
   
-  const res = await axios.put(`${API_BASE_URL}/products/${id}`, data, { headers: getAuthHeaders(hasImageFiles) });
+  const res = await axios.put(`${API_BASE_URL}/catalog/api/products/${id}`, data, { headers: getAuthHeaders(hasImageFiles) });
   return res.data;
 };
 
 const apiDelete = async (id) => {
-  const res = await axios.delete(`${API_BASE_URL}/products/${id}`, { headers: getAuthHeaders() });
+  const res = await axios.delete(`${API_BASE_URL}/catalog/api/products/${id}`, { headers: getAuthHeaders() });
   return res.data;
 };
 
 const apiStats = async () => {
-  const res = await axios.get(`${API_BASE_URL}/products/stats`, { headers: getAuthHeaders() });
+  const res = await axios.get(`${API_BASE_URL}/catalog/api/products/stats`, { headers: getAuthHeaders() });
   return res.data;
 };
 
