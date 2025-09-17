@@ -49,10 +49,6 @@ const CreateProduct = ({ visible, onClose, onSuccess, categories = [] }) => {
       const images = fileList
         .map((f) => f?.originFileObj || f)
         .filter((f) => f instanceof File);
-
-      console.log("=== CreateProduct Form Values ===");
-      console.log("values.short_desc:", values.short_desc);
-      console.log("values.detail_desc:", values.detail_desc);
       
       const payload = {
         _id: undefined,
@@ -66,11 +62,6 @@ const CreateProduct = ({ visible, onClose, onSuccess, categories = [] }) => {
         status: values.status !== undefined ? values.status : true,
         images,
       };
-
-      console.log("=== CreateProduct Payload ===");
-      console.log("payload.short_desc:", payload.short_desc);
-      console.log("payload.detail_desc:", payload.detail_desc);
-      console.log("Full payload:", payload);
 
       onSuccess && onSuccess(payload);
       setIsSubmitting(false);
@@ -148,7 +139,7 @@ const CreateProduct = ({ visible, onClose, onSuccess, categories = [] }) => {
                 <Form.Item label={<Space><InfoCircleOutlined style={{ color: "#13C2C2" }} /><span style={customStyles.label}>Mô tả ngắn</span></Space>} name="short_desc">
                   <Input.TextArea rows={2} placeholder="Nhập mô tả ngắn (tuỳ chọn)" style={{ borderRadius: 8 }} showCount maxLength={200} />
                 </Form.Item>
-                
+
                 <Form.Item label={<Space><InfoCircleOutlined style={{ color: "#13C2C2" }} /><span style={customStyles.label}>Mô tả chi tiết</span></Space>} name="detail_desc">
                   <Input.TextArea rows={4} placeholder="Nhập mô tả chi tiết (tuỳ chọn)" style={{ borderRadius: 8 }} showCount maxLength={1000} />
                 </Form.Item>

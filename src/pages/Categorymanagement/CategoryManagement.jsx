@@ -307,35 +307,22 @@ const CategoryManagement = () => {
   );
 
   const handleTableChange = (pagination, filters, sorter) => {
-    console.log("=== Category handleTableChange Debug ===");
-    console.log("sorter:", sorter);
-    console.log("sorter.field:", sorter?.field);
-    console.log("sorter.order:", sorter?.order);
-    console.log("Current sortBy:", sortBy);
-    console.log("Current sortOrder:", sortOrder);
-    console.log("createdAtClickCount:", createdAtClickCount);
-    
     // Xử lý khi click vào createdAt column (cả khi có field và khi field undefined nhưng đang sort createdAt)
     if ((sorter && sorter.field === 'createdAt') || (sorter && !sorter.field && sortBy === 'createdAt')) {
       const newClickCount = createdAtClickCount + 1;
       setCreatedAtClickCount(newClickCount);
       
-      console.log("🔢 CreatedAt click count:", newClickCount);
-      
       // Cycle through 3 states: desc → asc → reset (mặc định desc cho ngày tạo)
       if (newClickCount % 3 === 1) {
         // Click 1, 4, 7... → desc (mới nhất)
-        console.log("📊 Sort by createdAt desc");
         setSortBy("createdAt");
         setSortOrder("desc");
       } else if (newClickCount % 3 === 2) {
         // Click 2, 5, 8... → asc (cũ nhất)
-        console.log("📊 Sort by createdAt asc");
         setSortBy("createdAt");
         setSortOrder("asc");
       } else {
         // Click 3, 6, 9... → reset to default
-        console.log("🔄 Sort reset to default: createdAt desc");
         setSortBy("createdAt");
         setSortOrder("desc");
         
@@ -355,7 +342,6 @@ const CategoryManagement = () => {
           query.keyword = searchText.trim();
         }
         
-        console.log("🚀 Force dispatching query:", query);
         dispatch(categoryListRequest(query));
       }
     }

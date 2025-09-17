@@ -8,23 +8,30 @@ import AdminLayout from "../layout/AdminLayout";
 import AdminPage from "../pages/AdminPage";
 import CategoryManagement from "../pages/Categorymanagement/CategoryManagement";
 import ProductManagement from "../pages/Productmanagement/ProductManagement";
-import StaffManagement from "../pages/Staffmanagement/StaffManagement";
-import CreateStaff from "../pages/Staffmanagement/CreateStaff"; // thêm dòng này
-import StaffDetail from "../pages/Staffmanagement/StaffDetail";
+import ShowAllProduct from "../pages/CustomerVIew/ShowAllProduct";
+import ProductDetail from "../pages/CustomerVIew/ProductDetail";
 
 export const routes = [
   // Trang login (HomePage)
   {
     path: "/",
-    element: <HomePage />,
+    element: <HomePage />, // login page
   },
   {
     path: "/login",
-    element: <LoginPage />,
+    element: <LoginPage />, // login page
   },
   {
     path: "/cart",
-    element: <CartPage />,
+    element: <CartPage />, // login page
+  },
+  {
+    path: "/products",
+    element: <ShowAllProduct />,
+  },
+  {
+    path: "/product/:id",
+    element: <ProductDetail />,
   },
 
   // Khu vực quản trị
@@ -35,11 +42,14 @@ export const routes = [
       { index: true, element: <AdminPage /> },
       { path: "category", element: <CategoryManagement /> },
       { path: "product", element: <ProductManagement /> },
-      { path: "staff", element: <StaffManagement /> },
-      { path: "staff/create", element: <CreateStaff /> }, 
-      { path: "staff/:id", element: <StaffDetail /> },
     ],
+    // element: (
+    //   <PrivateRoute requiredRole="ADMIN">
+    //     <AdminLayout />
+    //   </PrivateRoute>
+    // ),
   },
+
 
   // Trang quên mật khẩu
   {
@@ -51,6 +61,7 @@ export const routes = [
     path: "/register",
     element: <Register />,
   },
+
 
   // Trang 404
   {

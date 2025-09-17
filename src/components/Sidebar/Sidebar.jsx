@@ -53,25 +53,19 @@ const Sidebar = ({ isFinance, isAdmin, isApprover, isClaimer }) => {
       icon: <HomeOutlined />,
       color: "#FF6B6B"
     },
-
-    {
-      title: "Quản Lý Category",
-      path: "/admin/category",
-      icon: <AppstoreOutlined />,
-      color: "#FECA57"
-    },
-    {
-      title: "Quản Lý Sản Phẩm",
-      path: "/admin/product",
-      icon: <DatabaseOutlined />,
-      color: "#FF9FF3"
-    },
-    {
-      title: "Quản Lý Nhân Viên",
-      path: "/admin/staff",
-      icon: <UserOutlined />,
-      color: "#00B894"
-    },
+ 
+        {
+          title: "Quản Lý Category",
+          path: "/admin/category",
+          icon: <AppstoreOutlined />,
+          color: "#FECA57"
+        },
+        {
+          title: "Quản Lý Sản Phẩm",
+          path: "/admin/product",
+          icon: <DatabaseOutlined />,
+          color: "#FF9FF3"
+        },
 
     {
       title: "Quản Lý Khách Hàng",

@@ -186,14 +186,13 @@ const LoginPage = () => {
                                 onSuccess={(credentialResponse) => {
                                     if (credentialResponse.credential) {
                                         const idToken = credentialResponse.credential;
-                                        const userInfo = jwtDecode(idToken);;
-                                        console.log("Google User Info:", userInfo);
+                                        const userInfo = jwtDecode(idToken);
 
                                         dispatch(loginGoogleRequest({ idToken }));
                                     }
                                 }}
                                 onError={() => {
-                                    console.log("Google Login Failed");
+                                    // Google Login Failed
                                 }}
                                 useOneTap
                             />

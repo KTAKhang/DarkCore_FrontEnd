@@ -23,7 +23,7 @@ import {
 } from "../actions/productActions";
 
 // NOTE: Backend runs at 3001 and exposes routes under /api
-const API_BASE_URL = "http://localhost:3001/api";
+const API_BASE_URL = "http://localhost:3002/api";
 
 function getAuthHeaders(isFormData = false) {
   const token = localStorage.getItem("token");
@@ -78,11 +78,6 @@ const apiDetail = async (id) => {
 };
 
 const apiCreate = async (payload) => {
-  console.log("=== ProductSaga apiCreate ===");
-  console.log("Received payload:", payload);
-  console.log("payload.short_desc:", payload.short_desc);
-  console.log("payload.detail_desc:", payload.detail_desc);
-  
   // Check if payload contains image files (FormData needed)
   const hasImageFiles = payload.images && Array.isArray(payload.images) && 
     payload.images.some(img => typeof File !== 'undefined' && img instanceof File);
@@ -107,20 +102,9 @@ const apiCreate = async (payload) => {
     });
     
     data = formData;
-    console.log("=== Final FormData entries ===");
-    for (let [key, value] of formData.entries()) {
-      console.log(key + ": " + value);
-    }
-  } else {
-    console.log("Using JSON payload (no images)");
   }
   
-  console.log("=== Sending to backend ===");
-  console.log("URL:", `${API_BASE_URL}/products`);
-  console.log("Data type:", hasImageFiles ? "FormData" : "JSON");
-  
   const res = await axios.post(`${API_BASE_URL}/products`, data, { headers: getAuthHeaders(hasImageFiles) });
-  console.log("Backend response:", res.data);
   return res.data;
 };
 
