@@ -9,11 +9,13 @@ import AdminPage from "../pages/AdminPage";
 import CategoryManagement from "../pages/Categorymanagement/CategoryManagement";
 import ProductManagement from "../pages/Productmanagement/ProductManagement";
 import StaffManagement from "../pages/Staffmanagement/StaffManagement";
-import CreateStaff from "../pages/Staffmanagement/CreateStaff"; // thêm dòng này
+import CreateStaff from "../pages/Staffmanagement/CreateStaff";
 import StaffDetail from "../pages/Staffmanagement/StaffDetail";
+import ShowAllProduct from "../pages/CustomerVIew/ShowAllProduct";
+import ProductDetail from "../pages/CustomerVIew/ProductDetail";
 
 export const routes = [
-  // Trang login (HomePage)
+  // Trang chủ
   {
     path: "/",
     element: <HomePage />,
@@ -26,6 +28,16 @@ export const routes = [
     path: "/cart",
     element: <CartPage />,
   },
+  
+  // Trang sản phẩm khách hàng
+  {
+    path: "/products",
+    element: <ShowAllProduct />,
+  },
+  {
+    path: "/product/:id",
+    element: <ProductDetail />,
+  },
 
   // Khu vực quản trị
   {
@@ -36,7 +48,7 @@ export const routes = [
       { path: "category", element: <CategoryManagement /> },
       { path: "product", element: <ProductManagement /> },
       { path: "staff", element: <StaffManagement /> },
-      { path: "staff/create", element: <CreateStaff /> }, 
+      { path: "staff/create", element: <CreateStaff /> },
       { path: "staff/:id", element: <StaffDetail /> },
     ],
   },

@@ -17,6 +17,7 @@ import {
   Spin,
   Select,
   Alert,
+  message,
 } from "antd";
 import {
   EditOutlined,
@@ -51,7 +52,11 @@ const ProductManagement = () => {
   const [searchText, setSearchText] = useState("");
   const [statusFilter, setStatusFilter] = useState("all"); // "all", "active", "inactive"
   const [categoryFilter, setCategoryFilter] = useState("all");
-  const [pagination, setPagination] = useState({ current: 1, pageSize: 10 });
+  const [pagination, setPagination] = useState({ current: 1, pageSize: 5 });
+  const [sortBy, setSortBy] = useState("createdAt"); // "price", "createdAt"
+  const [sortOrder, setSortOrder] = useState("desc"); // "asc", "desc"
+  const [priceClickCount, setPriceClickCount] = useState(0); // Track clicks on price column
+  const [createdAtClickCount, setCreatedAtClickCount] = useState(0); // Track clicks on createdAt column
 
   const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
   const [isUpdateModalVisible, setIsUpdateModalVisible] = useState(false);
@@ -60,7 +65,7 @@ const ProductManagement = () => {
 
   // Load data on component mount
   useEffect(() => {
-    dispatch(productListRequest({ page: 1, limit: 10 }));
+    dispatch(productListRequest({ page: 1, limit: 5, sortBy: "createdAt", sortOrder: "desc" }));
     dispatch(productStatsRequest());
     dispatch(categoryListRequest({})); // Load categories for filters
   }, [dispatch]);
@@ -71,6 +76,8 @@ const ProductManagement = () => {
       const query = {
         page: pagination.current,
         limit: pagination.pageSize,
+        sortBy,
+        sortOrder,
       };
       
       if (statusFilter !== "all") {
@@ -97,7 +104,7 @@ const ProductManagement = () => {
     }, searchText.trim() ? 500 : 0); // 500ms debounce for search
 
     return () => clearTimeout(timeoutId);
-  }, [searchText, statusFilter, categoryFilter, pagination, dispatch, categoryItems]);
+  }, [searchText, statusFilter, categoryFilter, pagination, sortBy, sortOrder, dispatch, categoryItems]);
 
   // Map backend product data to frontend format
   const products = useMemo(() => {
@@ -109,7 +116,7 @@ const ProductManagement = () => {
       categoryDetail: product.category ? { 
         _id: product.category._id, 
         name: product.category.name, 
-        status: true 
+        status: product.category.status // ✅ FIX: Sử dụng status thực từ category thay vì hardcode true
       } : null,
       image: product.images && product.images.length > 0 ? product.images[0] : "",
       // Map description fields with backend aliases fallback
@@ -154,6 +161,8 @@ const ProductManagement = () => {
     const query = {
       page: pagination.current,
       limit: pagination.pageSize,
+      sortBy,
+      sortOrder,
     };
     
     if (statusFilter !== "all") {
@@ -175,7 +184,7 @@ const ProductManagement = () => {
     dispatch(productStatsRequest());
     
     setTimeout(() => setLoading(false), 450);
-  }, [dispatch, statusFilter, searchText, categoryFilter, pagination, categoryItems]);
+  }, [dispatch, statusFilter, searchText, categoryFilter, pagination, sortBy, sortOrder, categoryItems]);
 
   const handleOpenUpdateModal = (product) => {
     setSelectedProduct(product);
@@ -279,6 +288,120 @@ const ProductManagement = () => {
     }, 1000);
   }, [dispatch, handleRefresh]);
 
+  const handleTableChange = (pagination, filters, sorter) => {
+    console.log("=== handleTableChange Debug ===");
+    console.log("sorter:", sorter);
+    console.log("sorter.field:", sorter?.field);
+    console.log("sorter.order:", sorter?.order);
+    console.log("Current sortBy:", sortBy);
+    console.log("Current sortOrder:", sortOrder);
+    console.log("priceClickCount:", priceClickCount);
+    
+    // Xử lý khi click vào price column (cả khi có field và khi field undefined nhưng đang sort price)
+    if ((sorter && sorter.field === 'price') || (sorter && !sorter.field && sortBy === 'price')) {
+      const newClickCount = priceClickCount + 1;
+      setPriceClickCount(newClickCount);
+      
+      console.log("🔢 Price click count:", newClickCount);
+      
+      // Cycle through 3 states: asc → desc → reset
+      if (newClickCount % 3 === 1) {
+        // Click 1, 4, 7... → asc
+        console.log("📊 Sort by price asc");
+        setSortBy("price");
+        setSortOrder("asc");
+      } else if (newClickCount % 3 === 2) {
+        // Click 2, 5, 8... → desc  
+        console.log("📊 Sort by price desc");
+        setSortBy("price");
+        setSortOrder("desc");
+      } else {
+        // Click 3, 6, 9... → reset to default
+        console.log("🔄 Sort reset to default: createdAt desc");
+        setSortBy("createdAt");
+        setSortOrder("desc");
+        
+        // Force reload data với sort mặc định
+        const query = {
+          page: pagination.current || 1,
+          limit: pagination.pageSize || 5,
+          sortBy: "createdAt",
+          sortOrder: "desc",
+        };
+        
+        if (statusFilter !== "all") {
+          query.status = statusFilter;
+        }
+        
+        if (searchText.trim()) {
+          query.keyword = searchText.trim();
+        }
+        
+        if (categoryFilter !== "all") {
+          const selectedCategory = categoryItems.find(c => c._id === categoryFilter);
+          if (selectedCategory) {
+            query.categoryName = selectedCategory.name;
+          }
+        }
+        
+        console.log("🚀 Force dispatching query:", query);
+        dispatch(productListRequest(query));
+      }
+    }
+    
+    // Xử lý khi click vào createdAt column (cả khi có field và khi field undefined nhưng đang sort createdAt)
+    if ((sorter && sorter.field === 'createdAt') || (sorter && !sorter.field && sortBy === 'createdAt')) {
+      const newClickCount = createdAtClickCount + 1;
+      setCreatedAtClickCount(newClickCount);
+      
+      console.log("🔢 CreatedAt click count:", newClickCount);
+      
+      // Cycle through 3 states: desc → asc → reset (mặc định desc cho ngày tạo)
+      if (newClickCount % 3 === 1) {
+        // Click 1, 4, 7... → desc (mới nhất)
+        console.log("📊 Sort by createdAt desc");
+        setSortBy("createdAt");
+        setSortOrder("desc");
+      } else if (newClickCount % 3 === 2) {
+        // Click 2, 5, 8... → asc (cũ nhất)
+        console.log("📊 Sort by createdAt asc");
+        setSortBy("createdAt");
+        setSortOrder("asc");
+      } else {
+        // Click 3, 6, 9... → reset to default
+        console.log("🔄 Sort reset to default: createdAt desc");
+        setSortBy("createdAt");
+        setSortOrder("desc");
+        
+        // Force reload data với sort mặc định
+        const query = {
+          page: pagination.current || 1,
+          limit: pagination.pageSize || 5,
+          sortBy: "createdAt",
+          sortOrder: "desc",
+        };
+        
+        if (statusFilter !== "all") {
+          query.status = statusFilter;
+        }
+        
+        if (searchText.trim()) {
+          query.keyword = searchText.trim();
+        }
+        
+        if (categoryFilter !== "all") {
+          const selectedCategory = categoryItems.find(c => c._id === categoryFilter);
+          if (selectedCategory) {
+            query.categoryName = selectedCategory.name;
+          }
+        }
+        
+        console.log("🚀 Force dispatching query:", query);
+        dispatch(productListRequest(query));
+      }
+    }
+  };
+
   const columns = [
     {
       title: "Sản phẩm",
@@ -288,7 +411,10 @@ const ProductManagement = () => {
           <Avatar src={record.image} icon={<ShoppingCartOutlined />} style={{ backgroundColor: "#13C2C2" }} onError={() => false} />
           <div>
             <Text strong style={{ color: "#0D364C", display: "block", fontSize: 16 }}>{record.name}</Text>
-            <Text type="secondary" style={{ fontSize: 12, cursor: "pointer" }} onClick={() => navigator.clipboard.writeText(record._id)} title="Click để copy ID">
+            <Text type="secondary" style={{ fontSize: 12, cursor: "pointer" }} onClick={() => {
+              navigator.clipboard.writeText(record._id);
+              message.success("Đã copy ID vào clipboard");
+            }} title="Click để copy ID">
               <ShoppingCartOutlined style={{ marginRight: 4 }} />ID: {record._id}
             </Text>
           </div>
@@ -313,10 +439,33 @@ const ProductManagement = () => {
       title: "Giá bán",
       dataIndex: "price",
       key: "price",
+      sorter: {
+        multiple: false,
+      },
+      sortOrder: sortBy === 'price' ? (sortOrder === 'asc' ? 'ascend' : 'descend') : null,
       render: (price) => (
         <Tag color="#13C2C2" style={{ borderRadius: 16, padding: "4px 12px", fontSize: 14, fontWeight: 500 }}>
           {(price || 0).toLocaleString("vi-VN")}đ
         </Tag>
+      ),
+    },
+    {
+      title: "Ngày tạo",
+      dataIndex: "createdAt",
+      key: "createdAt",
+      sorter: {
+        multiple: false,
+      },
+      sortOrder: sortBy === 'createdAt' ? (sortOrder === 'asc' ? 'ascend' : 'descend') : null,
+      render: (createdAt) => (
+        <div>
+          <Text style={{ color: "#0D364C", fontSize: 14, display: "block" }}>
+            {createdAt ? new Date(createdAt).toLocaleDateString("vi-VN") : "N/A"}
+          </Text>
+          <Text type="secondary" style={{ fontSize: 12 }}>
+            {createdAt ? new Date(createdAt).toLocaleTimeString("vi-VN", { hour: '2-digit', minute: '2-digit' }) : ""}
+          </Text>
+        </div>
       ),
     },
     {
@@ -357,7 +506,7 @@ const ProductManagement = () => {
       total: apiPagination?.total || 0,
       showSizeChanger: true,
       showQuickJumper: true,
-      pageSizeOptions: ["10", "20", "50", "100"],
+      pageSizeOptions: ["5", "10", "20", "50", "100"],
       showTotal: (total, range) => (
         <Text style={{ color: "#0D364C" }}>
           Hiển thị {range[0]}-{range[1]} trong tổng số {total} sản phẩm
@@ -369,6 +518,8 @@ const ProductManagement = () => {
         const query = {
           page,
           limit: pageSize,
+          sortBy,
+          sortOrder,
         };
         
         if (statusFilter !== "all") query.status = statusFilter;
@@ -384,7 +535,7 @@ const ProductManagement = () => {
         setPagination({ current, pageSize: size });
       },
     }),
-    [apiPagination, pagination, hasActiveFilters, statusFilter, searchText, categoryFilter, categoryItems, dispatch]
+    [apiPagination, pagination, hasActiveFilters, statusFilter, searchText, categoryFilter, categoryItems, sortBy, sortOrder, dispatch]
   );
 
   // Backend handles pagination, so we use products directly
@@ -445,6 +596,23 @@ const ProductManagement = () => {
                 <Select.Option key={cat._id} value={cat._id}>{cat.name}</Select.Option>
               ))}
             </Select>
+            <Select
+              value={`${sortBy}-${sortOrder}`}
+              onChange={(value) => {
+                const [newSortBy, newSortOrder] = value.split('-');
+                setSortBy(newSortBy);
+                setSortOrder(newSortOrder);
+              }}
+              style={{ width: 200 }}
+              size="large"
+              placeholder="Sắp xếp"
+              suffixIcon={<FilterOutlined style={{ color: "#13C2C2" }} />}
+            >
+              <Select.Option value="createdAt-desc">Mới nhất</Select.Option>
+              <Select.Option value="createdAt-asc">Cũ nhất</Select.Option>
+              <Select.Option value="price-asc">Giá thấp đến cao</Select.Option>
+              <Select.Option value="price-desc">Giá cao đến thấp</Select.Option>
+            </Select>
           </Space>
           <Space>
             <Button onClick={handleRefresh} icon={<ReloadOutlined />} loading={loading} style={{ borderColor: "#13C2C2", color: "#13C2C2" }}>Làm mới</Button>
@@ -483,7 +651,16 @@ const ProductManagement = () => {
         )}
 
         <Spin spinning={loading || loadingList || creating || updating || deleting} tip={loadingList ? "Đang tải sản phẩm..." : undefined}>
-          <Table rowKey={(record) => record._id} columns={columns} dataSource={dataForPage} pagination={tablePagination} style={{ borderRadius: 12, overflow: "hidden" }} scroll={{ x: true }} size="middle" />
+          <Table 
+            rowKey={(record) => record._id} 
+            columns={columns} 
+            dataSource={dataForPage} 
+            pagination={tablePagination} 
+            onChange={handleTableChange}
+            style={{ borderRadius: 12, overflow: "hidden" }} 
+            scroll={{ x: true }} 
+            size="middle" 
+          />
         </Spin>
       </Card>
 
