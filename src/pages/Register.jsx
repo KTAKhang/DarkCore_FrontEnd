@@ -51,7 +51,7 @@ const Register = () => {
 
     useEffect(() => {
         if (registerMessage && step === 1) {
-            toast.success(registerMessage);
+            // toast.success(registerMessage);
             setStep(2);
         }
     }, [registerMessage, step]);

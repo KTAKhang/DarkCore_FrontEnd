@@ -5,7 +5,8 @@ import {
     LOGIN_REQUEST,
     LOGIN_SUCCESS,
     LOGIN_FAILURE,
-    LOGOUT,
+    LOGOUT_SUCCESS,
+    LOGOUT_FAILURE,
     SET_USER,
     REGISTER_SEND_OTP_REQUEST,
     REGISTER_SEND_OTP_SUCCESS,
@@ -100,8 +101,7 @@ const authReducer = (state = initialState, action) => {
                 isAuthenticated: false,
             };
 
-        // ===== LOGOUT =====
-        case LOGOUT:
+        case LOGOUT_SUCCESS:
             return {
                 ...state,
                 user: null,
@@ -110,6 +110,12 @@ const authReducer = (state = initialState, action) => {
                 error: null,
                 loading: false,
                 isAuthenticated: false,
+            };
+        case LOGOUT_FAILURE:
+            return {
+                ...state,
+                error: action.payload,
+                loading: false,
             };
 
         case SET_USER:

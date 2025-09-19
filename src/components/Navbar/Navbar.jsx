@@ -3,7 +3,7 @@ import { Menu, Search, Bell, Settings, User, LogOut, ChevronDown } from "lucide-
 import { useSidebar } from '../../contexts/SidebarContext';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from "react-redux";
-import { logout } from "../../redux/actions/authActions";
+import { logoutRequest } from "../../redux/actions/authActions";
 
 const Navbar = () => {
   const { toggleSidebar } = useSidebar();
@@ -53,7 +53,7 @@ const Navbar = () => {
   const handleLogout = () => {
     const confirmed = window.confirm("Bạn có chắc chắn muốn đăng xuất?");
     if (confirmed) {
-      dispatch(logout());
+      dispatch(logoutRequest());
       localStorage.removeItem('access_token');
       localStorage.removeItem('role');
       localStorage.removeItem('user'); // Also remove user data

@@ -6,7 +6,9 @@ export const LOGIN_FAILURE = "LOGIN_FAILURE";
 export const LOGIN_GOOGLE_REQUEST = "LOGIN_GOOGLE_REQUEST";
 export const LOGIN_GOOGLE_SUCCESS = "LOGIN_GOOGLE_SUCCESS";
 export const LOGIN_GOOGLE_FAILURE = "LOGIN_GOOGLE_FAILURE";
-export const LOGOUT = "LOGOUT";
+export const LOGOUT_REQUEST = "LOGOUT_REQUEST";
+export const LOGOUT_SUCCESS = "LOGOUT_SUCCESS";
+export const LOGOUT_FAILURE = "LOGOUT_FAILURE";
 export const SET_USER = "SET_USER";
 
 export const REGISTER_SEND_OTP_REQUEST = "REGISTER_SEND_OTP_REQUEST";
@@ -60,8 +62,18 @@ export const loginGoogleFailure = (error) => ({
     payload: error,
 });
 
-export const logout = () => ({
-    type: LOGOUT,
+export const logoutRequest = () => ({
+    type: LOGOUT_REQUEST,
+});
+
+export const logoutSuccess = (message) => ({
+    type: LOGOUT_SUCCESS,
+    payload: message,
+});
+
+export const logoutFailure = (error) => ({
+    type: LOGOUT_FAILURE,
+    payload: error,
 });
 
 export const registerSendOTPRequest = (credentials) => ({
