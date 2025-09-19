@@ -39,23 +39,33 @@ const { Option } = Select;
 const StaffManagement = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { list = [], loading } = useSelector((state) => state.staff || {});
+  const { list = [], loading, pagination: pageMeta = { page: 1, limit: 10, total: 0 } } = useSelector((state) => state.staff || {});
   
   const [searchText, setSearchText] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [roleFilter, setRoleFilter] = useState("all");
-  const [pagination, setPagination] = useState({ current: 1, pageSize: 10 });
+  const [sortBy, setSortBy] = useState("createdAt");
+  const [sortOrder, setSortOrder] = useState("desc");
   const [loadingRefresh, setLoadingRefresh] = useState(false);
 
   // Load staff with current filters
   const loadStaff = useCallback((query = {}) => {
-    dispatch(staffListRequest(query));
-  }, [dispatch]);
+    const payload = {
+      page: query.page ?? pageMeta.page ?? 1,
+      limit: query.limit ?? pageMeta.limit ?? 10,
+      sortBy: query.sortBy ?? sortBy,
+      sortOrder: query.sortOrder ?? sortOrder,
+    };
+    if (query.status) payload.status = query.status;
+    if (query.role) payload.role = query.role;
+    if (query.keyword) payload.keyword = query.keyword;
+    dispatch(staffListRequest(payload));
+  }, [dispatch, pageMeta.page, pageMeta.limit, sortBy, sortOrder]);
 
   useEffect(() => {
     // Initial load
-    loadStaff({});
-  }, [loadStaff]);
+    loadStaff({ page: 1, limit: 10, sortBy: "createdAt", sortOrder: "desc" });
+  }, []);
 
   // Auto-load when filters change with debounce for search
   useEffect(() => {
@@ -78,8 +88,7 @@ const StaffManagement = () => {
         hasFilters = true;
       }
       
-      loadStaff(query);
-      setPagination(prev => ({ ...prev, current: 1 }));
+      loadStaff({ ...query, page: 1 });
     }, searchText.trim() ? 500 : 0);
 
     return () => clearTimeout(timeoutId);
@@ -125,14 +134,14 @@ const StaffManagement = () => {
 
   const handleRefresh = useCallback(() => {
     setLoadingRefresh(true);
-    const query = {};
+    const query = { page: pageMeta.page, limit: pageMeta.limit, sortBy, sortOrder };
     if (statusFilter !== "all") query.status = statusFilter;
     if (roleFilter !== "all") query.role = roleFilter;
     if (searchText.trim()) query.keyword = searchText.trim();
-    
+
     loadStaff(query);
     setTimeout(() => setLoadingRefresh(false), 450);
-  }, [loadStaff, statusFilter, roleFilter, searchText]);
+  }, [loadStaff, statusFilter, roleFilter, searchText, pageMeta.page, pageMeta.limit, sortBy, sortOrder]);
 
   const handleStatusToggle = (record) => {
     const newStatus = record.status === "active" ? "inactive" : "active";
@@ -148,7 +157,9 @@ const StaffManagement = () => {
     () => [
       {
         title: "Thông tin nhân viên",
-        key: "staff",
+        key: "user_name",
+        dataIndex: "user_name",
+        sorter: true,
         render: (_, record, index) => (
           <Space>
             <Avatar
@@ -181,6 +192,18 @@ const StaffManagement = () => {
             </div>
           </Space>
         ),
+      },
+      {
+        title: "Ngày tạo",
+        dataIndex: "createdAt",
+        key: "createdAt",
+        sorter: true,
+        render: (value) => {
+          if (!value) return <span style={{ color: "#999" }}>N/A</span>;
+          const d = new Date(value);
+          const formatted = `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth()+1).toString().padStart(2, '0')}/${d.getFullYear()} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+          return <span style={{ color: "#0D364C" }}>{formatted}</span>;
+        }
       },
       {
         title: "Thông tin liên hệ",
@@ -258,9 +281,9 @@ const StaffManagement = () => {
 
   const tablePagination = useMemo(
     () => ({
-      current: pagination.current,
-      pageSize: pagination.pageSize,
-      total: filteredStaff.length,
+      current: pageMeta.page,
+      pageSize: pageMeta.limit,
+      total: pageMeta.total,
       showSizeChanger: true,
       showQuickJumper: true,
       pageSizeOptions: ["5", "10", "20", "50"],
@@ -270,17 +293,30 @@ const StaffManagement = () => {
           {hasActiveFilters && <span style={{ color: "#13C2C2" }}> (đã lọc)</span>}
         </span>
       ),
-      onChange: (page, pageSize) => setPagination({ current: page, pageSize }),
-      onShowSizeChange: (current, size) => setPagination({ current, pageSize: size }),
     }),
-    [filteredStaff.length, pagination, hasActiveFilters]
+    [pageMeta.page, pageMeta.limit, pageMeta.total, hasActiveFilters]
   );
 
-  const dataForPage = useMemo(() => {
-    const start = (pagination.current - 1) * pagination.pageSize;
-    const end = start + pagination.pageSize;
-    return filteredStaff.slice(start, end);
-  }, [filteredStaff, pagination]);
+  const handleTableChange = (paginationConfig, filters, sorter) => {
+    const nextPage = paginationConfig.current || 1;
+    const nextLimit = paginationConfig.pageSize || 10;
+    let nextSortBy = sortBy;
+    let nextSortOrder = sortOrder;
+    const sortField = sorter?.columnKey || sorter?.field;
+    if (sortField) {
+      if (sortField === "user_name") nextSortBy = "name";
+      else if (sortField === "createdAt") nextSortBy = "createdAt";
+      nextSortOrder = sorter.order === "ascend" ? "asc" : "desc";
+    }
+    setSortBy(nextSortBy);
+    setSortOrder(nextSortOrder);
+
+    const query = { page: nextPage, limit: nextLimit, sortBy: nextSortBy, sortOrder: nextSortOrder };
+    if (statusFilter !== "all") query.status = statusFilter;
+    if (roleFilter !== "all") query.role = roleFilter;
+    if (searchText.trim()) query.keyword = searchText.trim();
+    loadStaff(query);
+  };
 
   return (
     <div
@@ -354,6 +390,26 @@ const StaffManagement = () => {
               allowClear
               onSearch={(value) => setSearchText(value)}
             />
+            <Select
+              value={sortBy === "createdAt" ? "createdAt" : "name"}
+              onChange={(val) => {
+                const nextSortBy = val;
+                const nextSortOrder = val === "createdAt" ? "desc" : "asc";
+                setSortBy(nextSortBy);
+                setSortOrder(nextSortOrder);
+                const query = { page: 1, limit: pageMeta.limit, sortBy: nextSortBy, sortOrder: nextSortOrder };
+                if (statusFilter !== "all") query.status = statusFilter;
+                if (roleFilter !== "all") query.role = roleFilter;
+                if (searchText.trim()) query.keyword = searchText.trim();
+                loadStaff(query);
+              }}
+              style={{ width: 200 }}
+              size="large"
+              placeholder="Sắp xếp"
+            >
+              <Select.Option value="createdAt">Sắp xếp: Ngày tạo (mới nhất)</Select.Option>
+              <Select.Option value="name">Sắp xếp: Theo chữ cái (A→Z)</Select.Option>
+            </Select>
             <Select
               value={roleFilter}
               onChange={setRoleFilter}
@@ -433,8 +489,9 @@ const StaffManagement = () => {
           <Table
             rowKey={(record) => record._id || record.id}
             columns={columns}
-            dataSource={dataForPage}
+            dataSource={filteredStaff}
             pagination={tablePagination}
+            onChange={handleTableChange}
             style={{ borderRadius: 12, overflow: "hidden" }}
             scroll={{ x: true }}
             size="middle"

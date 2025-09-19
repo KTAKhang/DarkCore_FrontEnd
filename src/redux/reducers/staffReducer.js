@@ -15,6 +15,7 @@ import {
 
 const initialState = {
   list: [],
+  pagination: { page: 1, limit: 10, total: 0 },
   detail: null,
   loading: false,
   error: null,
@@ -28,8 +29,12 @@ export default function staffReducer(state = initialState, action) {
   switch (action.type) {
     case STAFF_LIST_REQUEST:
       return { ...state, loading: true, error: null };
-    case STAFF_LIST_SUCCESS:
-      return { ...state, loading: false, list: action.payload };
+    case STAFF_LIST_SUCCESS: {
+      const payload = action.payload || {};
+      const list = Array.isArray(payload) ? payload : (payload.data || []);
+      const pagination = Array.isArray(payload) ? { page: 1, limit: list.length, total: list.length } : (payload.pagination || { page: 1, limit: list.length, total: list.length });
+      return { ...state, loading: false, list, pagination };
+    }
     case STAFF_LIST_FAILURE:
       return { ...state, loading: false, error: action.payload };
 
