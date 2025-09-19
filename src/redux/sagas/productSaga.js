@@ -22,8 +22,8 @@ import {
   productStatsFailure,
 } from "../actions/productActions";
 
-// NOTE: Backend runs at 3001 and exposes routes under /api
-const API_BASE_URL = "http://localhost:3001/api";
+// NOTE: Backend runs at 3002 and exposes routes under /api
+const API_BASE_URL = "http://localhost:3002/api";
 
 function getAuthHeaders(isFormData = false) {
   const token = localStorage.getItem("token");

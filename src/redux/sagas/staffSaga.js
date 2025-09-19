@@ -28,25 +28,48 @@ const getAuthHeaders = () => {
 // 📌 Lấy danh sách staff
 function* fetchStaffList(action) {
   try {
-    console.log("📌 [Saga] Fetch staff list, params:", action.payload);
-
     const params = action.payload || {};
-    let request;
+    // Map UI params to backend params
+    const queryParams = {
+      page: params.page || 1,
+      limit: params.limit || 10,
+      sortBy: params.sortBy || undefined,
+      sortOrder: params.sortOrder || undefined,
+    };
     if (params.keyword && params.keyword.trim()) {
-      request = axios.get(`${API_BASE_URL}/staff/search`, { params: { keyword: params.keyword.trim() }, headers: getAuthHeaders() });
-    } else if ((params.role && params.role.trim()) || (params.status && params.status.trim())) {
-      const filterParams = {};
-      if (params.role) filterParams.role = params.role;
-      if (params.status) filterParams.status = params.status;
-      request = axios.get(`${API_BASE_URL}/staff/filter`, { params: filterParams, headers: getAuthHeaders() });
-    } else {
-      request = axios.get(`${API_BASE_URL}/staff`, { headers: getAuthHeaders() });
+      queryParams.keyword = params.keyword.trim();
     }
+    if (params.role && params.role !== "all") {
+      queryParams.role = params.role;
+    }
+    if (params.status && params.status !== "all") {
+      queryParams.status = params.status;
+    }
+
+    let request;
+    // If keyword present (search supports paging/sort now)
+    if (queryParams.keyword && !queryParams.role && !queryParams.status) {
+      request = axios.get(`${API_BASE_URL}/staff/search`, { params: queryParams, headers: getAuthHeaders() });
+    } else if ((queryParams.role || queryParams.status) && !queryParams.keyword) {
+      // Filters without keyword with paging/sort
+      const { role, status, page, limit, sortBy, sortOrder } = queryParams;
+      request = axios.get(`${API_BASE_URL}/staff/filter`, { params: { role, status, page, limit, sortBy, sortOrder }, headers: getAuthHeaders() });
+    } else {
+      // Default to paginated list with optional sort
+      request = axios.get(`${API_BASE_URL}/staff`, { params: queryParams, headers: getAuthHeaders() });
+    }
+
     const res = yield call(() => request);
 
-    console.log("📌 [Saga] Staff list response:", res.data);
+    // Normalize response: staff service returns { status, data, pagination } for list
+    let payload = res.data;
+    if (payload && payload.data && payload.pagination) {
+      // already normalized
+    } else if (Array.isArray(payload)) {
+      payload = { data: payload, pagination: { page: 1, limit: payload.length, total: payload.length } };
+    }
 
-    yield put({ type: STAFF_LIST_SUCCESS, payload: res.data });
+    yield put({ type: STAFF_LIST_SUCCESS, payload });
   } catch (err) {
     console.error("❌ [Saga] Fetch staff list error:", err);
     yield put({
