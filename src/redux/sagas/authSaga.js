@@ -14,7 +14,9 @@ import {
     REGISTER_CONFIRM_OTP_REQUEST,
     registerConfirmOTPSuccess,
     registerConfirmOTPFailure,
-    LOGOUT,
+    LOGOUT_REQUEST,
+    logoutSuccess,
+    logoutFailure,
     FORGOT_PASSWORD_REQUEST,
     forgotPasswordSuccess,
     forgotPasswordFailure,
@@ -26,6 +28,33 @@ import axios from "axios";
 
 const API_BASE_URL = 'http://localhost:3000';
 
+const apiLogout = async () => {
+    const response = await axios.post(
+        `${API_BASE_URL}/auth/logout`,
+        {},
+        { withCredentials: true } // QUAN TRỌNG: để gửi cookie refreshToken
+    );
+    return response.data;
+};
+
+function* handleLogout() {
+    try {
+        const response = yield call(apiLogout);
+
+        // clear localStorage
+        localStorage.removeItem("token");
+        localStorage.removeItem("role");
+        localStorage.removeItem("user");
+
+        yield put(logoutSuccess(response.message));
+        toast.success(response.message || "Logout successful");
+    } catch (error) {
+        const errorMessage = error.response?.data?.message || error.message || "Logout failed";
+        yield put(logoutFailure(errorMessage));
+        toast.error(errorMessage);
+    }
+}
+
 // API call for register send otp
 const apiRegisterSendOTP = async ({ user_name, email, password, phone, address }) => {
     const response = await axios.post(
@@ -36,7 +65,8 @@ const apiRegisterSendOTP = async ({ user_name, email, password, phone, address }
                 'accept': 'application/json',
                 'Content-Type': 'application/json'
             }
-        }
+        },
+
     );
     return response.data;
 };
@@ -106,7 +136,8 @@ const apiLoginByGoogle = async (idToken) => {
                 headers: {
                     'Content-Type': 'application/json',
                     accept: 'application/json',
-                }
+                },
+                withCredentials: true,
             }
         );
         return response.data;
@@ -122,10 +153,12 @@ const apiLogin = async (credentials) => {
             credentials,
             {
                 headers: {
-                    'Content-Type': 'application/json',
-                    'accept': 'application/json',
-                }
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                },
+                withCredentials: true,
             }
+
         );
         return response.data;
     } catch (error) {
@@ -238,17 +271,6 @@ function* resetPasswordSaga(action) {
     }
 }
 
-// Logout saga
-function* handleLogout() {
-    try {
-        localStorage.removeItem("token");
-        localStorage.removeItem("role");
-        localStorage.removeItem("user");
-        toast.success("Logout successful");
-    } catch (error) {
-        toast.error("Logout failed");
-    }
-}
 
 // Root saga
 export default function* authSaga() {
@@ -256,7 +278,7 @@ export default function* authSaga() {
     yield takeLatest(LOGIN_REQUEST, loginSaga);
     yield takeLatest(REGISTER_SEND_OTP_REQUEST, registerSendOTP);
     yield takeLatest(REGISTER_CONFIRM_OTP_REQUEST, registerConfirmOTP);
-    yield takeLatest(LOGOUT, handleLogout);
+    yield takeLatest(LOGOUT_REQUEST, handleLogout);
     yield takeLatest(FORGOT_PASSWORD_REQUEST, forgotPasswordSaga);
     yield takeLatest(RESET_PASSWORD_REQUEST, resetPasswordSaga);
 }
