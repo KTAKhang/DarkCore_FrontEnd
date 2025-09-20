@@ -19,6 +19,7 @@ const Header = ({ searchTerm, setSearchTerm, cartItems }) => {
                         <Link className="text-gray-700 hover:text-blue-600 transition-colors" to="/repair">Sửa chữa</Link>
                         <Link className="text-gray-700 hover:text-blue-600 transition-colors" to="/about">Về chúng tôi</Link>
                         <Link className="text-gray-700 hover:text-blue-600 transition-colors" to="/contact">Liên hệ</Link>
+                        <Link className="text-gray-700 hover:text-blue-600 transition-colors" to="/admin">Dashboard</Link>
                     </nav>
 
                     <div className="flex items-center space-x-4">
