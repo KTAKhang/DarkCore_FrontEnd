@@ -50,6 +50,7 @@ function* getProductsForHome(action) {
         if (query.keyword) queryParams.append("keyword", query.keyword);
         if (query.name) queryParams.append("name", query.name);
         if (query.categoryName) queryParams.append("categoryName", query.categoryName);
+        if (query.brand) queryParams.append("brand", query.brand);
         if (query.minPrice !== undefined && query.minPrice !== "") queryParams.append("minPrice", query.minPrice);
         if (query.maxPrice !== undefined && query.maxPrice !== "") queryParams.append("maxPrice", query.maxPrice);
         if (query.sortBy) queryParams.append("sortBy", query.sortBy);
@@ -113,6 +114,7 @@ function* getProductsByCategoryForHome(action) {
         if (query.limit) queryParams.append("limit", query.limit);
         if (query.keyword) queryParams.append("keyword", query.keyword);
         if (query.name) queryParams.append("name", query.name);
+        if (query.brand) queryParams.append("brand", query.brand);
         if (query.minPrice !== undefined && query.minPrice !== "") queryParams.append("minPrice", query.minPrice);
         if (query.maxPrice !== undefined && query.maxPrice !== "") queryParams.append("maxPrice", query.maxPrice);
         if (query.sortBy) queryParams.append("sortBy", query.sortBy);
