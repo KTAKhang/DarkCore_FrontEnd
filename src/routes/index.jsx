@@ -13,9 +13,13 @@ import CreateStaff from "../pages/Staffmanagement/CreateStaff";
 import StaffDetail from "../pages/Staffmanagement/StaffDetail";
 import ShowAllProduct from "../pages/CustomerVIew/ShowAllProduct";
 import ProductDetail from "../pages/CustomerVIew/ProductDetail";
+
+import WishlistPage from "../pages/CustomerVIew/WishlistPage";
+
 import ProfileManagement from "../pages/ProfileManagement/ProfileManagerment";
 import UpdatePassword from "../pages/ProfileManagement/UpdatePassword";
 import PrivateRoute from "../components/PrivateRouter";
+
 
 export const routes = [
   // Trang chủ
@@ -40,6 +44,10 @@ export const routes = [
   {
     path: "/product/:id",
     element: <ProductDetail />,
+  },
+  {
+    path: "/wishlist",
+    element: <WishlistPage />,
   },
 
   // Khu vực quản trị

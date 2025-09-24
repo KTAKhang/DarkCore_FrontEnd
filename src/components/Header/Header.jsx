@@ -1,3 +1,5 @@
+
+
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
@@ -26,6 +28,7 @@ const Header = ({ searchTerm, setSearchTerm, cartItems }) => {
             navigate("/");
         }
     };
+
 
     return (
         <header className="sticky top-0 bg-white shadow-sm border-b border-gray-100 z-50">
@@ -64,6 +67,7 @@ const Header = ({ searchTerm, setSearchTerm, cartItems }) => {
 
                     {/* Search + Cart + User */}
                     <div className="flex items-center space-x-4">
+
                         {/* Search */}
                         <div className="relative w-64 transition-all duration-300">
                             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
@@ -76,6 +80,7 @@ const Header = ({ searchTerm, setSearchTerm, cartItems }) => {
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
+
                         </div>
 
                         {storedUser ? (

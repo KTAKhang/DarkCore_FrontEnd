@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import PropTypes from 'prop-types';
 import Header from '../../components/Header/Header';
 import Footer from '../../components/Footer/Footer';
+// import { useWishlist } from '../../contexts/WishlistContext'; // Not used anymore
 import {
     categoryHomeListRequest,
     categoryHomeClearMessages
@@ -11,6 +12,7 @@ import {
 import {
     productHomeListRequest,
     productHomeBrandsRequest,
+    productHomeToggleFavoriteRequest,
     productHomeClearMessages
 } from '../../redux/actions/productHomeActions';
 
@@ -31,6 +33,7 @@ const ShowAllProduct = () => {
     let categories, categoriesLoading, categoriesError;
     let products, productsLoading, productsError, productsPagination;
     let brandsFromDB, brandsLoading, brandsError;
+    let toggleFavoriteLoading, toggleFavoriteError;
 
     try {
         const categoryData = categoryHomeState?.list || {};
@@ -49,6 +52,10 @@ const ShowAllProduct = () => {
         brandsLoading = brandsData.loading || false;
         brandsError = brandsData.error || null;
         
+        const toggleData = productHomeState?.toggleFavorite || {};
+        toggleFavoriteLoading = toggleData.loading || false;
+        toggleFavoriteError = toggleData.error || null;
+        
     } catch (error) {
         console.error('❌ Error destructuring Redux state:', error);
         categories = [];
@@ -61,12 +68,13 @@ const ShowAllProduct = () => {
         brandsFromDB = [];
         brandsLoading = false;
         brandsError = 'Destructuring error';
+        toggleFavoriteLoading = false;
+        toggleFavoriteError = null;
     }
 
     // Local state
     const [searchTerm, setSearchTerm] = useState('');
     const [cartItems, setCartItems] = useState(3);
-    const [wishlist, setWishlist] = useState([]);
     const [selectedCategory, setSelectedCategory] = useState('all');
     const [selectedBrand, setSelectedBrand] = useState('all');
 
@@ -78,18 +86,12 @@ const ShowAllProduct = () => {
     const [showFilters, setShowFilters] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize] = useState(8);
+    const [shouldReloadFavorites, setShouldReloadFavorites] = useState(false);
 
     const formatPrice = (price) => {
         return new Intl.NumberFormat('vi-VN').format(price) + '₫';
     };
 
-    const toggleWishlist = (productId) => {
-        setWishlist(prev =>
-            prev.includes(productId)
-                ? prev.filter(id => id !== productId)
-                : [...prev, productId]
-        );
-    };
 
     const addToCart = () => {
         setCartItems(prev => prev + 1);
@@ -98,6 +100,11 @@ const ShowAllProduct = () => {
 
     const handleProductClick = (productId) => {
         navigate(`/product/${productId}`);
+    };
+
+    const handleToggleFavorite = (productId) => {
+        dispatch(productHomeToggleFavoriteRequest(productId));
+        setShouldReloadFavorites(true);
     };
 
     // Load categories, products and brands on component mount
@@ -191,6 +198,14 @@ const ShowAllProduct = () => {
             }))
         ];
     }, [brandsError, brandsFromDB]);
+
+    // Reset shouldReloadFavorites flag after toggle
+    useEffect(() => {
+        if (shouldReloadFavorites && !toggleFavoriteLoading && !toggleFavoriteError) {
+            // Toggle was successful, Redux state is already updated automatically
+            setShouldReloadFavorites(false);
+        }
+    }, [shouldReloadFavorites, toggleFavoriteLoading, toggleFavoriteError]);
 
     // Clear errors when component unmounts
     useEffect(() => {
@@ -290,11 +305,11 @@ const ShowAllProduct = () => {
                         </div>
                     )}
                     <button
-                        onClick={() => toggleWishlist(product._id)}
+                        onClick={() => handleToggleFavorite(product._id)}
                         className="absolute bottom-3 right-3 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-red-50 transition-colors"
                     >
-                        <span className={`text-lg ${wishlist.includes(product._id) ? 'text-red-500' : 'text-gray-600'}`}>
-                            {wishlist.includes(product._id) ? '❤️' : '🤍'}
+                        <span className={`text-lg ${product.favorite ? 'text-red-500' : 'text-gray-600'}`}>
+                            {product.favorite ? '❤️' : '🤍'}
                         </span>
                     </button>
                     {!isInStock && (
@@ -359,7 +374,8 @@ const ShowAllProduct = () => {
             discount: PropTypes.number,
             description: PropTypes.string,
             short_desc: PropTypes.string,
-            brand: PropTypes.string
+            brand: PropTypes.string,
+            favorite: PropTypes.bool
         }).isRequired
     };
 
