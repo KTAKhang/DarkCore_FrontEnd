@@ -227,6 +227,7 @@ const authReducer = (state = initialState, action) => {
                 forgotPasswordError: null,
                 resetPasswordMessage: null,
                 resetPasswordError: null,
+                confirmRegisterSuccess: false,
             };
 
         default:

@@ -1,0 +1,461 @@
+import { Card, Avatar, Row, Col, Button, Form, Input, Select, Upload, message, Switch } from 'antd';
+import {
+  UserOutlined,
+  MailOutlined,
+  TeamOutlined,
+  CheckCircleOutlined,
+  SaveOutlined,
+  UploadOutlined,
+  CameraOutlined,
+  ArrowLeftOutlined,
+  EditOutlined,
+  PhoneOutlined,
+  HomeOutlined
+} from '@ant-design/icons';
+import { motion } from 'framer-motion';
+import { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import {
+  clearProfileMessages,
+  getProfileRequest,
+  updateProfileRequest
+} from '../../redux/actions/profileAction';
+
+const { Option } = Select;
+
+const ProfileManager = () => {
+  const dispatch = useDispatch();
+  const { user, loading, error, updateLoading, updateError, updateSuccess } = useSelector(state => state.profile);
+
+  const [editMode, setEditMode] = useState(false);
+  const [avatarFile, setAvatarFile] = useState(null);
+  const [avatarUrl, setAvatarUrl] = useState('');
+  const [form] = Form.useForm();
+  const storedUser = JSON.parse(localStorage.getItem("user"));
+
+  useEffect(() => {
+    dispatch(getProfileRequest());
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (user) {
+      setAvatarUrl(user.avatar || '');
+      form.setFieldsValue({
+        user_name: user.user_name,
+        phone: user.phone,
+        address: user.address,
+      });
+    }
+  }, [user, form]);
+
+  useEffect(() => {
+    if (updateSuccess && updateSuccess.data) {
+      setEditMode(false);
+      setAvatarFile(null);
+      message.success('Cập nhật thông tin thành công!');
+    }
+    if (updateError) {
+      message.error(`Có lỗi xảy ra: ${updateError}`);
+    }
+    dispatch(clearProfileMessages());
+  }, [updateSuccess, updateError]);
+
+  // Format date helper function
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    try {
+      return new Date(dateString).toLocaleDateString('vi-VN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch {
+      return 'Invalid Date';
+    }
+  };
+
+  // Role display mapping
+  const getRoleDisplayName = (roleName) => {
+    const roleMap = {
+      'admin': 'Quản trị viên',
+      'user': 'Người dùng',
+      'moderator': 'Điều hành viên'
+    };
+    return roleMap[roleName] || roleName;
+  };
+
+  // Handle avatar upload
+  const handleAvatarChange = (info) => {
+    if (info.file.status === 'uploading') {
+      return;
+    }
+    if (info.file.status === 'done' || info.fileList.length > 0) {
+      const file = info.file.originFileObj || info.file;
+      setAvatarFile(file);
+      const url = URL.createObjectURL(file);
+      setAvatarUrl(url);
+      message.success('Tải ảnh đại diện thành công!');
+    }
+  };
+
+  // Upload props
+  const uploadProps = {
+    name: 'avatar',
+    listType: 'picture',
+    showUploadList: false,
+    beforeUpload: (file) => {
+      const isJpgOrPng = file.type === 'image/jpeg' || file.type === 'image/png';
+      if (!isJpgOrPng) {
+        message.error('Chỉ có thể tải lên file JPG/PNG!');
+        return false;
+      }
+      const isLt2M = file.size / 1024 / 1024 < 2;
+      if (!isLt2M) {
+        message.error('Kích thước ảnh phải nhỏ hơn 2MB!');
+        return false;
+      }
+      return true;
+    },
+    onChange: handleAvatarChange,
+    customRequest: ({ onSuccess }) => {
+      // Custom request to prevent automatic upload
+      setTimeout(() => {
+        onSuccess("ok");
+      }, 0);
+    },
+  };
+
+  useEffect(() => {
+    if (updateSuccess) {
+      message.success("Cập nhật thành công!");
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
+      dispatch(clearProfileMessages());
+    }
+    if (error) {
+      message.error(error);
+    }
+  }, [updateSuccess, error]);
+  const handleSubmit = async (values) => {
+    const storedUser = JSON.parse(localStorage.getItem("user"));
+    const userId = storedUser ? storedUser._id : null;
+
+    if (!userId) {
+      message.error('Không tìm thấy thông tin người dùng!');
+      return;
+    }
+
+    // Sử dụng FormData để hỗ trợ cả file lẫn text
+    const formData = new FormData();
+    formData.append("userId", userId);
+    formData.append("user_name", values.user_name);
+    formData.append("phone", values.phone);
+    formData.append("address", values.address);
+
+    if (avatarFile) {
+      formData.append("avatar", avatarFile);
+    }
+
+    // Gửi request lên server
+    dispatch(updateProfileRequest(formData));
+  };
+
+
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-[#13C2C2]"></div>
+          <p className="mt-4 text-gray-600">Đang tải thông tin...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="text-center">
+          <p className="text-red-500 text-lg">Có lỗi xảy ra: {error}</p>
+          <Button
+            onClick={() => {
+              dispatch(getProfileRequest());
+            }}
+            className="mt-4"
+          >
+            Thử lại
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="text-center">
+          <p className="text-gray-600">Không tìm thấy thông tin người dùng</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex min-h-screen bg-white">
+      <div className="flex-1 bg-white">
+        <div className="p-8">
+          <div className="max-w-7xl mx-auto space-y-8">
+            {/* Header Section */}
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-center mb-12 relative"
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-[#13C2C2]/10 via-[#0D364C]/10 to-[#13C2C2]/10 blur-3xl -z-10"></div>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-[#0D364C] via-[#13C2C2] to-[#0D364C] bg-clip-text text-transparent">
+                Thông tin cá nhân
+              </h1>
+              <p className="text-gray-500 mt-2">Quản lý thông tin và cài đặt cá nhân của bạn</p>
+            </motion.div>
+
+            <Row gutter={[24, 24]} className="items-start">
+              {/* Left Column - Personal Info */}
+              <Col xs={24} md={8}>
+                <div className="sticky top-24 space-y-6">
+                  <Card
+                    className="rounded-3xl border-0 shadow-2xl hover:shadow-2xl transition-all duration-500 bg-white/90 backdrop-blur-lg overflow-visible"
+                  >
+                    <div className="text-center relative">
+                      {/* Avatar Container with animation */}
+                      <div className="relative inline-block group">
+                        {/* Animated rings */}
+                        <div className="absolute -inset-4 bg-gradient-to-r from-[#13C2C2] via-[#0D364C] to-[#13C2C2] rounded-full blur-lg opacity-20 group-hover:opacity-30 animate-pulse"></div>
+                        <div className="absolute -inset-4 bg-gradient-to-r from-[#0D364C] via-[#13C2C2] to-[#0D364C] rounded-full blur opacity-20 group-hover:opacity-30 animate-spin-slow"></div>
+                        {/* Avatar or Upload */}
+                        {editMode ? (
+                          <Upload {...uploadProps}>
+                            <div className="relative cursor-pointer">
+                              <Avatar
+                                size={160}
+                                src={avatarUrl || user.avatar}
+                                icon={!avatarUrl && !user.avatar && <UserOutlined />}
+                                className="ring-8 ring-white shadow-2xl border-4 border-gray-100 group-hover:scale-105 transition-all duration-500 relative z-10"
+                              />
+                              {/* Camera overlay */}
+                              <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 z-20">
+                                <CameraOutlined className="text-white text-2xl" />
+                              </div>
+                            </div>
+                          </Upload>
+                        ) : (
+                          <Avatar
+                            size={160}
+                            src={user.avatar}
+                            icon={!user.avatar && <UserOutlined />}
+                            className="ring-8 ring-white shadow-2xl border-4 border-gray-100 group-hover:scale-105 transition-all duration-500 relative z-10"
+                          />
+                        )}
+                        {/* Role Badge with animation */}
+                        <motion.div
+                          initial={{ y: 10, opacity: 0 }}
+                          animate={{ y: 0, opacity: 1 }}
+                          transition={{ delay: 0.2 }}
+                          className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 z-20"
+                        >
+                          <div
+                            className="px-6 py-2 bg-gradient-to-r from-[#0D364C] via-[#13C2C2] to-[#0D364C] text-white rounded-full text-sm font-medium shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 whitespace-nowrap"
+                          >
+                            {getRoleDisplayName(user.role_name)}
+                          </div>
+                        </motion.div>
+                      </div>
+                      {/* User Info with animation */}
+                      <motion.div
+                        initial={{ y: 20, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ delay: 0.3 }}
+                        className="mt-12 space-y-3"
+                      >
+                        <h2 className="text-3xl font-bold bg-gradient-to-r from-[#0D364C] via-[#13C2C2] to-[#0D364C] bg-clip-text text-transparent">
+                          {user.user_name}
+                        </h2>
+                        <p className="text-gray-500 font-medium">{user.email}</p>
+                      </motion.div>
+                      {/* Nút chỉnh sửa */}
+                      {!editMode && (
+                        <Button
+                          icon={<EditOutlined />}
+                          className="mt-6"
+                          onClick={() => setEditMode(true)}
+                        >
+                          Chỉnh sửa
+                        </Button>
+                      )}
+                    </div>
+                  </Card>
+                </div>
+              </Col>
+
+              {/* Right Column - User Details hoặc Form chỉnh sửa */}
+              <Col xs={24} md={16}>
+                <motion.div
+                  initial={{ x: 20, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ delay: 0.5 }}
+                >
+                  {!editMode ? (
+                    <Card
+                      className="rounded-3xl border-0 shadow-2xl hover:shadow-2xl transition-all duration-500 bg-white/90 backdrop-blur-lg"
+                      title={
+                        <div className="flex items-center space-x-3 py-2">
+                          <div className="w-1 h-8 bg-gradient-to-b from-[#0D364C] via-[#13C2C2] to-[#0D364C] rounded-full"></div>
+                          <h3 className="text-2xl font-bold bg-gradient-to-r from-[#0D364C] to-[#13C2C2] bg-clip-text text-transparent">
+                            Thông tin tài khoản
+                          </h3>
+                        </div>
+                      }
+                    >
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {[
+                          { label: "Tên người dùng", value: user.user_name, icon: <UserOutlined className="text-[#0D364C]" /> },
+                          { label: "Email", value: user.email, icon: <MailOutlined className="text-[#13C2C2]" /> },
+                          { label: "Số điện thoại", value: user.phone || 'Chưa cập nhật', icon: <PhoneOutlined className="text-[#0D364C]" /> },
+                          { label: "Địa chỉ", value: user.address || 'Chưa cập nhật', icon: <HomeOutlined className="text-[#13C2C2]" /> },
+                          { label: "Vai trò", value: getRoleDisplayName(user.role_name), icon: <TeamOutlined className="text-[#0D364C]" /> },
+                          { label: "Trạng thái", value: user.status ? 'Hoạt động' : 'Không hoạt động', icon: <CheckCircleOutlined className="text-[#13C2C2]" /> },
+                          { label: "Ngày tạo", value: formatDate(user.createdAt), icon: <UserOutlined className="text-[#0D364C]" /> },
+                          { label: "Cập nhật lần cuối", value: formatDate(user.updatedAt), icon: <UserOutlined className="text-[#13C2C2]" /> },
+                        ].map((item, index) => (
+                          <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.1 * index }}
+                            key={item.label}
+                            className="relative group overflow-hidden rounded-xl bg-gradient-to-br from-white to-gray-50 hover:from-[#13C2C2]/5 hover:to-[#0D364C]/5 transition-all duration-300 border border-gray-100 hover:border-[#13C2C2]/30 shadow-lg hover:shadow-md p-4"
+                          >
+                            <div className="absolute inset-0 bg-gradient-to-r from-[#13C2C2]/5 via-[#0D364C]/5 to-[#13C2C2]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                            <div className="relative flex items-center space-x-4">
+                              <div className="p-3 rounded-lg bg-white shadow-sm group-hover:shadow group-hover:scale-105 transition-all duration-300 group-hover:bg-gradient-to-br group-hover:from-[#13C2C2]/10 group-hover:to-[#0D364C]/10">
+                                {item.icon}
+                              </div>
+                              <div className="flex-1">
+                                <p className="text-sm text-gray-500 font-medium">{item.label}</p>
+                                <p className="text-base text-gray-900 font-semibold mt-1 group-hover:text-[#0D364C] transition-colors duration-300">
+                                  {item.value || 'N/A'}
+                                </p>
+                              </div>
+                            </div>
+                          </motion.div>
+                        ))}
+                      </div>
+                    </Card>
+                  ) : (
+                    <Card
+                      className="rounded-3xl border-0 shadow-2xl hover:shadow-2xl transition-all duration-500 bg-white/90 backdrop-blur-lg"
+                      title={
+                        <div className="flex items-center space-x-3 py-2">
+                          <div className="w-1 h-8 bg-gradient-to-b from-[#0D364C] via-[#13C2C2] to-[#0D364C] rounded-full"></div>
+                          <h3 className="text-2xl font-bold bg-gradient-to-r from-[#0D364C] to-[#13C2C2] bg-clip-text text-transparent">
+                            Chỉnh sửa thông tin
+                          </h3>
+                        </div>
+                      }
+                    >
+                      <Form
+                        form={form}
+                        layout="vertical"
+                        onFinish={handleSubmit}
+                        autoComplete="off"
+                      >
+                        <Form.Item
+                          label="Tên người dùng"
+                          name="user_name"
+                          initialValue={user.user_name}
+                          rules={[
+                            { required: true, message: 'Vui lòng nhập tên người dùng!' },
+                            { min: 2, message: 'Tên người dùng phải có ít nhất 2 ký tự!' }
+                          ]}
+                        >
+                          <Input
+                            size="large"
+                            className="rounded-xl border-2 hover:border-[#13C2C2] focus:border-[#13C2C2] transition-colors"
+                          />
+                        </Form.Item>
+
+                        {/* Phone */}
+                        <Form.Item
+                          label="Số điện thoại"
+                          name="phone"
+                          initialValue={user.phone}
+                          rules={[
+                            { required: true, message: 'Vui lòng nhập số điện thoại!' },
+                            { pattern: /^[0-9]{9,11}$/, message: 'Số điện thoại không hợp lệ!' },
+                          ]}
+                        >
+                          <Input
+                            size="large"
+                            placeholder="Nhập số điện thoại"
+                            className="rounded-xl border-2 hover:border-[#13C2C2] focus:border-[#13C2C2] transition-colors"
+                          />
+                        </Form.Item>
+
+                        {/* Address */}
+                        <Form.Item
+                          label="Địa chỉ"
+                          name="address"
+                          initialValue={user.address}
+                          rules={[
+                            { required: true, message: 'Vui lòng nhập địa chỉ!' },
+                            { min: 5, message: 'Địa chỉ phải có ít nhất 5 ký tự!' },
+                          ]}
+                        >
+                          <Input.TextArea
+                            rows={3}
+                            placeholder="Nhập địa chỉ"
+                            className="rounded-xl border-2 hover:border-[#13C2C2] focus:border-[#13C2C2] transition-colors"
+                          />
+                        </Form.Item>
+
+                        <div className="flex justify-end space-x-4 mt-8 pt-6 border-t border-gray-100">
+                          <Button
+                            size="large"
+                            className="px-8 py-2 h-auto rounded-xl border-2 border-gray-300 hover:border-gray-400 transition-colors"
+                            onClick={() => {
+                              setEditMode(false);
+                              setAvatarFile(null);
+                              setAvatarUrl(user.avatar || '');
+                              form.resetFields();
+                            }}
+                          >
+                            Hủy
+                          </Button>
+                          <Button
+                            type="primary"
+                            size="large"
+                            loading={updateLoading}
+                            icon={<SaveOutlined />}
+                            className="px-8 py-2 h-auto rounded-xl bg-gradient-to-r from-[#0D364C] via-[#13C2C2] to-[#0D364C] border-0 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300"
+                            htmlType="submit"
+                          >
+                            {updateLoading ? 'Đang lưu...' : 'Lưu thay đổi'}
+                          </Button>
+                        </div>
+                      </Form>
+
+                    </Card>
+                  )}
+                </motion.div>
+              </Col>
+            </Row>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default ProfileManager;
