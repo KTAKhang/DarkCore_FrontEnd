@@ -55,14 +55,16 @@ const Register = () => {
             setStep(2);
         }
     }, [registerMessage, step]);
+    console.log('confirmOtpMessage changed', confirmOtpMessage)
 
     useEffect(() => {
         if (confirmOtpMessage) {
-            toast.success('Đăng ký thành công! Đang chuyển về trang đăng nhập...');
+            // toast.success('Đăng ký thành công! Đang chuyển về trang đăng nhập...');
             setTimeout(() => {
-                navigate('/');
+                navigate('/login');
             }, 2000);
         }
+
     }, [confirmOtpMessage, navigate]);
 
     const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);

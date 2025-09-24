@@ -7,6 +7,7 @@ import productReducer from "./reducers/productReducer";
 import staffReducer from "./reducers/staffReducer";
 import categoryHomeReducer from "./reducers/categoryHomeReducer";
 import productHomeReducer from "./reducers/productHomeReducer";
+import profileReducer from "./reducers/profileReducer";
 
 import rootSaga from "./sagas/rootSaga";
 const rootReducer = combineReducers({
@@ -16,15 +17,16 @@ const rootReducer = combineReducers({
   staff: staffReducer,
   categoryHome: categoryHomeReducer,
   productHome: productHomeReducer,
+  profile: profileReducer,
 });
 
 const sagaMiddleware = createSagaMiddleware();
 
 // Enable Redux DevTools in development if available
 const composeEnhancers =
-  (import.meta.env.DEV && 
-   typeof window !== 'undefined' && 
-   window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__) ||
+  (import.meta.env.DEV &&
+    typeof window !== 'undefined' &&
+    window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__) ||
   ((f) => f);
 
 const store = createStore(

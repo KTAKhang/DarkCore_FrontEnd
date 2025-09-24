@@ -1,64 +1,197 @@
-import React from "react";
-import { Link } from "react-router-dom";
-import { useWishlist } from "../../contexts/WishlistContext";
+
+
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { logoutRequest } from "../../redux/actions/authActions";
+import { LogOut, Settings, User } from "lucide-react";
 
 const Header = ({ searchTerm, setSearchTerm, cartItems }) => {
-    const { getWishlistCount } = useWishlist();
-    const wishlistCount = getWishlistCount();
-    
+    const navigate = useNavigate();
+    const dispatch = useDispatch();
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+    // User từ localStorage
+    const storedUser = JSON.parse(localStorage.getItem("user") || "null");
+
+    const displayName = storedUser?.user_name || "Người dùng";
+    const displayAvatar = storedUser?.avatar?.startsWith("http")
+        ? storedUser.avatar
+        : "https://images.unsplash.com/photo-1574158622682-e40e69881006?w=60&h=60&fit=crop&crop=face";
+    const displayEmail = storedUser?.email || "user@email.com";
+    const handleLogout = () => {
+        if (window.confirm("Bạn có chắc chắn muốn đăng xuất?")) {
+            dispatch(logoutRequest());
+            localStorage.removeItem("access_token");
+            localStorage.removeItem("role");
+            localStorage.removeItem("user");
+            navigate("/");
+        }
+    };
+
+
     return (
-        <header className="bg-white shadow-sm border-b border-gray-100">
+        <header className="sticky top-0 bg-white shadow-sm border-b border-gray-100 z-50">
+
             <div className="container mx-auto px-4">
                 <div className="flex items-center justify-between h-16">
-                    <Link className="flex items-center space-x-2" to="/">
+                    {/* Logo */}
+                    <Link to="/" className="flex items-center space-x-2">
                         <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
                             <span className="text-white text-xl">💻</span>
                         </div>
                         <span className="text-xl font-bold text-gray-900">TechStore</span>
                     </Link>
 
+                    {/* Nav links */}
                     <nav className="hidden md:flex items-center space-x-8">
-                        <Link className="text-gray-700 hover:text-blue-600 transition-colors" to="/">Trang chủ</Link>
-                        <Link className="text-gray-700 hover:text-blue-600 transition-colors" to="/products">Sản phẩm</Link>
-                        <Link className="text-gray-700 hover:text-blue-600 transition-colors" to="/repair">Sửa chữa</Link>
-                        <Link className="text-gray-700 hover:text-blue-600 transition-colors" to="/about">Về chúng tôi</Link>
-                        <Link className="text-gray-700 hover:text-blue-600 transition-colors" to="/contact">Liên hệ</Link>
-                        <Link className="text-gray-700 hover:text-blue-600 transition-colors" to="/admin">Dashboard</Link>
+                        <Link to="/" className="text-gray-700 hover:text-blue-600">
+                            Trang chủ
+                        </Link>
+                        <Link to="/products" className="text-gray-700 hover:text-blue-600">
+                            Sản phẩm
+                        </Link>
+                        <Link to="/repair" className="text-gray-700 hover:text-blue-600">
+                            Sửa chữa
+                        </Link>
+                        <Link to="/about" className="text-gray-700 hover:text-blue-600">
+                            Về chúng tôi
+                        </Link>
+                        <Link to="/contact" className="text-gray-700 hover:text-blue-600">
+                            Liên hệ
+                        </Link>
+                        <Link to="/admin" className="text-gray-700 hover:text-blue-600">
+                            Dashboard
+                        </Link>
                     </nav>
 
+                    {/* Search + Cart + User */}
                     <div className="flex items-center space-x-4">
-                        <div className="relative transition-all duration-300 w-64">
-                            <div className="relative">
-                                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm">🔍</span>
-                                <input
-                                    type="text"
-                                    placeholder="Tìm kiếm laptop, máy tính bảng..."
-                                    className="w-full pl-10 pr-4 py-2 text-sm border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                />
-                            </div>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                            <Link to="/wishlist" className="relative w-10 h-10 flex items-center justify-center text-gray-600 hover:text-blue-600 transition-colors" style={{ color: '#13C2C2' }}>
-                                <span className="text-lg">🤍</span>
-                                {wishlistCount > 0 && (
-                                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
-                                        {wishlistCount}
-                                    </span>
-                                )}
-                            </Link>
-                            <Link to="/cart" className="relative w-10 h-10 flex items-center justify-center text-gray-600 hover:text-blue-600 transition-colors" style={{ color: '#13C2C2' }}>
-                                <span className="text-lg">🛒</span>
-                                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
-                                    {cartItems}
-                                </span>
-                            </Link>
 
-                            <Link to="/login" className="relative w-10 h-10 flex items-center justify-center text-gray-600 hover:text-blue-600 transition-colors" style={{ color: '#13C2C2' }}>
-                                <span className="text-lg">👤</span>
-                            </Link>
+                        {/* Search */}
+                        <div className="relative w-64 transition-all duration-300">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
+                                🔍
+                            </span>
+                            <input
+                                type="text"
+                                placeholder="Tìm kiếm laptop, máy tính bảng..."
+                                className="w-full pl-10 pr-4 py-2 text-sm border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+
                         </div>
+
+                        {storedUser ? (
+                            <>
+                                <button className="w-10 h-10 flex items-center justify-center text-gray-600 hover:text-blue-600 transition-colors">
+                                    <span className="text-lg">🤍</span>
+                                </button>
+                                {/* Cart */}
+                                <Link
+                                    to="/cart"
+                                    className="relative w-10 h-10 flex items-center justify-center text-gray-600 hover:text-blue-600"
+                                    style={{ color: "#13C2C2" }}
+                                >
+                                    <span className="text-lg">🛒</span>
+                                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
+                                        {cartItems}
+                                    </span>
+                                </Link>
+
+                                {/* Avatar + Dropdown */}
+                                <div className="relative">
+                                    <button
+                                        onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                                        className="w-10 h-10 flex items-center justify-center"
+                                    >
+                                        <img
+                                            src={displayAvatar}
+                                            alt="User Avatar"
+                                            className="w-10 h-10 rounded-full border border-gray-300 object-cover"
+                                            onError={(e) => {
+                                                e.currentTarget.src =
+                                                    "https://images.unsplash.com/photo-1574158622682-e40e69881006?w=60&h=60&fit=crop&crop=face";
+                                            }}
+                                        />
+                                    </button>
+
+                                    {isDropdownOpen && (
+                                        <div className="absolute right-0 top-full mt-3 w-96 z-[9999]">
+                                            <div
+                                                className="backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl overflow-hidden animate-in slide-in-from-top-2 duration-200"
+                                                style={{ background: 'rgba(255, 255, 255, 0.95)' }}
+                                            >
+                                                {/* User info header - now shows actual user data */}
+                                                <div className="p-4 border-b border-gray-200/50" style={{ background: 'linear-gradient(135deg, #135cc2ff, #0D364C)' }}>
+                                                    <div className="flex items-center space-x-3">
+                                                        <img
+                                                            src={displayAvatar}
+                                                            alt="User Avatar"
+                                                            className="w-12 h-12 rounded-full border-2 border-white/50 object-cover"
+                                                            onError={(e) => {
+                                                                e.currentTarget.src = "https://images.unsplash.com/photo-1574158622682-e40e69881006?w=100&h=100&fit=crop&crop=face";
+                                                            }}
+
+                                                        />
+                                                        <div>
+                                                            <p className="font-semibold text-white">{displayName}</p>
+                                                            <p className="text-sm text-white/80">{displayEmail}</p>
+
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Menu items */}
+                                                <div className="py-2">
+                                                    <button
+                                                        // onClick={() => { navigate("/admin/profile"); toggleDropdown(); }}
+                                                        className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-gray-50 transition-all duration-200 hover:translate-x-1"
+                                                    >
+                                                        <User className="w-5 h-5" style={{ color: '#135cc2ff' }} />
+                                                        <span>Trang cá nhân</span>
+                                                    </button>
+
+                                                    <button
+                                                        // onClick={() => { navigate("/admin/change-password"); toggleDropdown(); }}
+                                                        className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-gray-50 transition-all duration-200 hover:translate-x-1"
+                                                    >
+                                                        <Settings className="w-5 h-5" style={{ color: '#135cc2ff' }} />
+                                                        <span>Đổi mật khẩu</span>
+                                                    </button>
+
+                                                    <div className="border-t border-gray-200/50 mt-2 pt-2">
+                                                        <button
+                                                            onClick={() => { console.log("clicked"); handleLogout(); }}
+                                                            className="w-full flex items-center space-x-3 px-4 py-3 text-red-600 hover:bg-red-50 transition-all duration-200 hover:translate-x-1"
+                                                        >
+                                                            <LogOut className="w-5 h-5" />
+                                                            <span>Đăng xuất</span>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </>
+                        ) : (
+                            <>
+                                <Link
+                                    to="/login"
+                                    className="px-3 py-2 text-gray-600 hover:text-blue-600"
+                                >
+                                    Login
+                                </Link>
+                                <Link
+                                    to="/register"
+                                    className="px-3 py-2 text-gray-600 hover:text-blue-600"
+                                >
+                                    Register
+                                </Link>
+                            </>
+                        )}
                     </div>
                 </div>
             </div>

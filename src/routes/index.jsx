@@ -13,7 +13,13 @@ import CreateStaff from "../pages/Staffmanagement/CreateStaff";
 import StaffDetail from "../pages/Staffmanagement/StaffDetail";
 import ShowAllProduct from "../pages/CustomerVIew/ShowAllProduct";
 import ProductDetail from "../pages/CustomerVIew/ProductDetail";
+
 import WishlistPage from "../pages/CustomerVIew/WishlistPage";
+
+import ProfileManagement from "../pages/ProfileManagement/ProfileManagerment";
+import UpdatePassword from "../pages/ProfileManagement/UpdatePassword";
+import PrivateRoute from "../components/PrivateRouter";
+
 
 export const routes = [
   // Trang chủ
@@ -29,7 +35,7 @@ export const routes = [
     path: "/cart",
     element: <CartPage />,
   },
-  
+
   // Trang sản phẩm khách hàng
   {
     path: "/products",
@@ -47,7 +53,11 @@ export const routes = [
   // Khu vực quản trị
   {
     path: "/admin",
-    element: <AdminLayout />,
+    element: (
+      <PrivateRoute requiredRole="admin">
+        <AdminLayout />
+      </PrivateRoute>
+    ),
     children: [
       { index: true, element: <AdminPage /> },
       { path: "category", element: <CategoryManagement /> },
@@ -55,6 +65,8 @@ export const routes = [
       { path: "staff", element: <StaffManagement /> },
       { path: "staff/create", element: <CreateStaff /> },
       { path: "staff/:id", element: <StaffDetail /> },
+      { path: "profile", element: <ProfileManagement /> },
+      { path: "change-password", element: <UpdatePassword /> },
     ],
   },
 
