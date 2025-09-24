@@ -1,7 +1,11 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { useWishlist } from "../../contexts/WishlistContext";
 
 const Header = ({ searchTerm, setSearchTerm, cartItems }) => {
+    const { getWishlistCount } = useWishlist();
+    const wishlistCount = getWishlistCount();
+    
     return (
         <header className="bg-white shadow-sm border-b border-gray-100">
             <div className="container mx-auto px-4">
@@ -36,9 +40,14 @@ const Header = ({ searchTerm, setSearchTerm, cartItems }) => {
                             </div>
                         </div>
                         <div className="flex items-center space-x-2">
-                            <button className="w-10 h-10 flex items-center justify-center text-gray-600 hover:text-blue-600 transition-colors">
+                            <Link to="/wishlist" className="relative w-10 h-10 flex items-center justify-center text-gray-600 hover:text-blue-600 transition-colors" style={{ color: '#13C2C2' }}>
                                 <span className="text-lg">🤍</span>
-                            </button>
+                                {wishlistCount > 0 && (
+                                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
+                                        {wishlistCount}
+                                    </span>
+                                )}
+                            </Link>
                             <Link to="/cart" className="relative w-10 h-10 flex items-center justify-center text-gray-600 hover:text-blue-600 transition-colors" style={{ color: '#13C2C2' }}>
                                 <span className="text-lg">🛒</span>
                                 <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">

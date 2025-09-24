@@ -25,6 +25,16 @@ export const PRODUCT_HOME_BRANDS_REQUEST = "PRODUCT_HOME_BRANDS_REQUEST";
 export const PRODUCT_HOME_BRANDS_SUCCESS = "PRODUCT_HOME_BRANDS_SUCCESS";
 export const PRODUCT_HOME_BRANDS_FAILURE = "PRODUCT_HOME_BRANDS_FAILURE";
 
+// Get favorite products
+export const PRODUCT_HOME_FAVORITES_REQUEST = "PRODUCT_HOME_FAVORITES_REQUEST";
+export const PRODUCT_HOME_FAVORITES_SUCCESS = "PRODUCT_HOME_FAVORITES_SUCCESS";
+export const PRODUCT_HOME_FAVORITES_FAILURE = "PRODUCT_HOME_FAVORITES_FAILURE";
+
+// Toggle favorite status
+export const PRODUCT_HOME_TOGGLE_FAVORITE_REQUEST = "PRODUCT_HOME_TOGGLE_FAVORITE_REQUEST";
+export const PRODUCT_HOME_TOGGLE_FAVORITE_SUCCESS = "PRODUCT_HOME_TOGGLE_FAVORITE_SUCCESS";
+export const PRODUCT_HOME_TOGGLE_FAVORITE_FAILURE = "PRODUCT_HOME_TOGGLE_FAVORITE_FAILURE";
+
 // Clear messages/errors
 export const PRODUCT_HOME_CLEAR_MESSAGES = "PRODUCT_HOME_CLEAR_MESSAGES";
 
@@ -100,6 +110,36 @@ export const productHomeBrandsSuccess = (brands) => ({
 
 export const productHomeBrandsFailure = (error) => ({
     type: PRODUCT_HOME_BRANDS_FAILURE,
+    payload: error
+});
+
+export const productHomeFavoritesRequest = (query = {}) => ({
+    type: PRODUCT_HOME_FAVORITES_REQUEST,
+    payload: { query }
+});
+
+export const productHomeFavoritesSuccess = (items, pagination) => ({
+    type: PRODUCT_HOME_FAVORITES_SUCCESS,
+    payload: { items, pagination }
+});
+
+export const productHomeFavoritesFailure = (error) => ({
+    type: PRODUCT_HOME_FAVORITES_FAILURE,
+    payload: error
+});
+
+export const productHomeToggleFavoriteRequest = (id) => ({
+    type: PRODUCT_HOME_TOGGLE_FAVORITE_REQUEST,
+    payload: { id }
+});
+
+export const productHomeToggleFavoriteSuccess = (product) => ({
+    type: PRODUCT_HOME_TOGGLE_FAVORITE_SUCCESS,
+    payload: product
+});
+
+export const productHomeToggleFavoriteFailure = (error) => ({
+    type: PRODUCT_HOME_TOGGLE_FAVORITE_FAILURE,
     payload: error
 });
 

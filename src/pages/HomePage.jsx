@@ -4,12 +4,14 @@ import { useDispatch, useSelector } from 'react-redux';
 import PropTypes from 'prop-types';
 import Header from '../components/Header/Header';
 import Footer from '../components/Footer/Footer';
+import { useWishlist } from '../contexts/WishlistContext';
 import {
     categoryHomeListRequest,
     categoryHomeClearMessages
 } from '../redux/actions/categoryHomeActions';
 import {
     productHomeFeaturedRequest,
+    productHomeToggleFavoriteRequest,
     productHomeClearMessages
 } from '../redux/actions/productHomeActions';
 
@@ -61,6 +63,7 @@ const services = [
 const HomePage = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const { wishlist, toggleWishlist } = useWishlist();
   
   // Redux state with safe destructuring
   const categoryHomeState = useSelector(state => state?.categoryHome) || {};
@@ -68,6 +71,7 @@ const HomePage = () => {
 
   let categories, categoriesLoading, categoriesError;
   let featuredProducts, featuredLoading, featuredError;
+  let toggleFavoriteLoading, toggleFavoriteError;
 
   try {
     const categoryData = categoryHomeState?.list || {};
@@ -80,6 +84,10 @@ const HomePage = () => {
     featuredLoading = featuredData.loading || false;
     featuredError = featuredData.error || null;
     
+    const toggleData = productHomeState?.toggleFavorite || {};
+    toggleFavoriteLoading = toggleData.loading || false;
+    toggleFavoriteError = toggleData.error || null;
+    
   } catch (error) {
     console.error('❌ Error destructuring Redux state:', error);
     categories = [];
@@ -88,28 +96,28 @@ const HomePage = () => {
     featuredProducts = [];
     featuredLoading = false;
     featuredError = 'Destructuring error';
+    toggleFavoriteLoading = false;
+    toggleFavoriteError = null;
   }
 
   // Local state
   const [searchTerm, setSearchTerm] = useState('');
   const [cartItems, setCartItems] = useState(3);
-  const [wishlist, setWishlist] = useState([]);
+  const [shouldReloadFavorites, setShouldReloadFavorites] = useState(false);
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('vi-VN').format(price) + '₫';
   };
 
-  const toggleWishlist = (productId) => {
-    setWishlist(prev =>
-      prev.includes(productId)
-        ? prev.filter(id => id !== productId)
-        : [...prev, productId]
-    );
-  };
 
   const addToCart = () => {
     setCartItems(prev => prev + 1);
     // Add cart logic here
+  };
+
+  const handleToggleFavorite = (productId) => {
+    dispatch(productHomeToggleFavoriteRequest(productId));
+    setShouldReloadFavorites(true);
   };
 
   // Load categories and featured products on component mount
@@ -117,6 +125,14 @@ const HomePage = () => {
     dispatch(categoryHomeListRequest({ page: 1, limit: 8 }));
     dispatch(productHomeFeaturedRequest({ limit: 4 }));
   }, [dispatch]);
+
+  // Reset shouldReloadFavorites flag after toggle
+  useEffect(() => {
+    if (shouldReloadFavorites && !toggleFavoriteLoading && !toggleFavoriteError) {
+      // Toggle was successful, Redux state is already updated automatically
+      setShouldReloadFavorites(false);
+    }
+  }, [shouldReloadFavorites, toggleFavoriteLoading, toggleFavoriteError]);
 
   // Clear errors when component unmounts
   useEffect(() => {
@@ -286,14 +302,14 @@ const HomePage = () => {
               </span>
             </div>
           ))}
-          <button
-            onClick={() => toggleWishlist(productId)}
-            className="absolute bottom-3 right-3 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-red-50 transition-colors"
-          >
-            <span className={`text-lg ${wishlist.includes(productId) ? 'text-red-500' : 'text-gray-600'}`}>
-              {wishlist.includes(productId) ? '❤️' : '🤍'}
-            </span>
-          </button>
+                    <button
+                        onClick={() => handleToggleFavorite(productId)}
+                        className="absolute bottom-3 right-3 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-red-50 transition-colors"
+                    >
+                        <span className={`text-lg ${product.favorite ? 'text-red-500' : 'text-gray-600'}`}>
+                            {product.favorite ? '❤️' : '🤍'}
+                        </span>
+                    </button>
           {!isInStock && (
             <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
               <span className="bg-red-500 text-white px-4 py-2 rounded-lg font-bold">
