@@ -91,9 +91,9 @@ export const registerSendOTPFailure = (error) => ({
     payload: error,
 });
 
-export const registerConfirmOTPRequest = ({ otp }) => ({
+export const registerConfirmOTPRequest = ({ email, otp }) => ({
     type: REGISTER_CONFIRM_OTP_REQUEST,
-    payload: { otp },
+    payload: { email, otp },
 });
 
 export const registerConfirmOTPSuccess = (data) => ({
@@ -105,6 +105,7 @@ export const registerConfirmOTPFailure = (error) => ({
     type: REGISTER_CONFIRM_OTP_FAILURE,
     payload: error,
 });
+
 
 
 // Forgot Password Action Creators

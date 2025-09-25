@@ -89,30 +89,30 @@ function* registerSendOTP(action) {
     }
 }
 
-// API call for register send otp
-const apiRegisterConfirmOTP = async (otp) => {
-    console.log("OTP", otp)
+// API call for register confirm otp
+const apiRegisterConfirmOTP = async (email, otp) => {
+    console.log("Email", email, "OTP", otp);
     const response = await axios.post(
         `${API_BASE_URL}/auth/register/confirm`,
-        { otp: String(otp) },
+        { email, otp: String(otp) },
         {
             headers: {
-                'accept': 'application/json',
-                'Content-Type': 'application/json'
-            }
+                accept: "application/json",
+                "Content-Type": "application/json",
+            },
         }
     );
     return response.data;
 };
 
 
+
 function* registerConfirmOTP(action) {
     try {
-        const { otp } = action.payload;
-        console.log("OTP", otp)
-        const response = yield call(apiRegisterConfirmOTP, otp);
+        const { email, otp } = action.payload;
+        const response = yield call(apiRegisterConfirmOTP, email, otp);
 
-        if (response.status === 'OK') {
+        if (response.status === "OK") {
             yield put(registerConfirmOTPSuccess(response.message));
             toast.success(response.message);
         } else {
@@ -124,6 +124,7 @@ function* registerConfirmOTP(action) {
         toast.error(errorMessage);
     }
 }
+
 
 
 // API call for Google login

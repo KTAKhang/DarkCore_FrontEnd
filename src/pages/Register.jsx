@@ -109,7 +109,7 @@ const Register = () => {
             return;
         }
 
-        dispatch(registerConfirmOTPRequest({ otp: formData.otp }));
+        dispatch(registerConfirmOTPRequest({ email: formData.email, otp: formData.otp }));
     };
 
     const handleBackToStep1 = () => {
