@@ -31,8 +31,10 @@ export default function staffReducer(state = initialState, action) {
       return { ...state, loading: true, error: null };
     case STAFF_LIST_SUCCESS: {
       const payload = action.payload || {};
-      const list = Array.isArray(payload) ? payload : (payload.data || []);
-      const pagination = Array.isArray(payload) ? { page: 1, limit: list.length, total: list.length } : (payload.pagination || { page: 1, limit: list.length, total: list.length });
+      const list = Array.isArray(payload) ? payload : (payload.data || payload.items || []);
+      const pagination = Array.isArray(payload)
+        ? { page: 1, limit: list.length, total: list.length }
+        : (payload.pagination || state.pagination);
       return { ...state, loading: false, list, pagination };
     }
     case STAFF_LIST_FAILURE:
@@ -55,7 +57,7 @@ export default function staffReducer(state = initialState, action) {
     case STAFF_DETAIL_REQUEST:
       return { ...state, detail: null, loading: true, error: null };
     case STAFF_DETAIL_SUCCESS:
-      return { ...state, detail: action.payload, loading: false };
+      return { ...state, detail: action.payload, loading: false, error: null };
     case STAFF_DETAIL_FAILURE:
       return { ...state, detail: null, loading: false, error: action.payload };
 

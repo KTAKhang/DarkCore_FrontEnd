@@ -9,8 +9,7 @@ import AdminPage from "../pages/AdminPage";
 import CategoryManagement from "../pages/Categorymanagement/CategoryManagement";
 import ProductManagement from "../pages/Productmanagement/ProductManagement";
 import StaffManagement from "../pages/Staffmanagement/StaffManagement";
-import CreateStaff from "../pages/Staffmanagement/CreateStaff"; // thêm dòng này
-import StaffDetail from "../pages/Staffmanagement/StaffDetail";
+// Removed standalone staff pages; create/detail handled via modals in StaffManagement
 
 export const routes = [
   // Trang login (HomePage)
@@ -36,8 +35,6 @@ export const routes = [
       { path: "category", element: <CategoryManagement /> },
       { path: "product", element: <ProductManagement /> },
       { path: "staff", element: <StaffManagement /> },
-      { path: "staff/create", element: <CreateStaff /> }, 
-      { path: "staff/:id", element: <StaffDetail /> },
     ],
   },
 
