@@ -45,9 +45,8 @@ const ForgotPassword = () => {
     // Handle reset password success
     useEffect(() => {
         if (resetPasswordMessage) {
-            toast.success('Mật khẩu đã được đặt lại thành công! Đang chuyển về trang đăng nhập...');
             setTimeout(() => {
-                navigate('/');
+                navigate('/login');
             }, 2000);
         }
     }, [resetPasswordMessage, navigate]);

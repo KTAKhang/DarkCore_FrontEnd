@@ -3,6 +3,9 @@ import authSaga from "./authSaga";
 import categorySaga from "./categorySaga";
 import productSaga from "./productSaga";
 import staffSaga from "./staffSaga";
+import categoryHomeSaga from "./categoryHomeSaga";
+import productHomeSaga from "./productHomeSaga";
+import profileSaga from "./profileSaga";
 
 export default function* rootSaga() {
   yield all([
@@ -10,5 +13,8 @@ export default function* rootSaga() {
     categorySaga(),
     productSaga(),
     staffSaga(),
+    categoryHomeSaga(),
+    productHomeSaga(),
+    profileSaga(),
   ]);
 }

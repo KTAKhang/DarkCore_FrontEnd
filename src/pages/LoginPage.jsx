@@ -10,7 +10,7 @@ import { ArrowLeft } from 'lucide-react';
 
 const LoginPage = () => {
     const dispatch = useDispatch();
-    const { loading, error, isAuthenticated } = useSelector(state => state.auth);
+    const { loading, error, isAuthenticated, role } = useSelector(state => state.auth);
     const navigate = useNavigate();
 
     const [formData, setFormData] = useState({
@@ -23,9 +23,14 @@ const LoginPage = () => {
     // Redirect if already authenticated
     useEffect(() => {
         if (isAuthenticated) {
-            navigate("/admin", { replace: true });
+            if (role === "admin") {
+                navigate("/admin", { replace: true });
+            }
+            if (role === "customer") {
+                navigate("/", { replace: true });
+            }
         }
-    }, [isAuthenticated, navigate]);
+    }, [isAuthenticated, role, navigate]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();

@@ -24,6 +24,7 @@ const initialState = {
   items: [],
   item: null,
   stats: { total: 0, visible: 0, hidden: 0 },
+  pagination: { page: 1, limit: 5, total: 0 },
   loadingList: false,
   loadingDetail: false,
   loadingStats: false,
@@ -39,7 +40,13 @@ const categoryReducer = (state = initialState, action) => {
     case CATEGORY_LIST_REQUEST:
       return { ...state, loadingList: true, error: null };
     case CATEGORY_LIST_SUCCESS:
-      return { ...state, loadingList: false, items: action.payload, error: null };
+      return { 
+        ...state, 
+        loadingList: false, 
+        items: action.payload.items || [], 
+        pagination: action.payload.pagination || state.pagination,
+        error: null 
+      };
     case CATEGORY_LIST_FAILURE:
       return { ...state, loadingList: false, error: action.payload };
 
@@ -57,7 +64,7 @@ const categoryReducer = (state = initialState, action) => {
         ...state,
         creating: false,
         items: [action.payload.item, ...state.items],
-        message: action.payload.message || "Category created",
+        message: action.payload.message || "Danh mục đã được tạo thành công",
       };
     case CATEGORY_CREATE_FAILURE:
       return { ...state, creating: false, error: action.payload };
@@ -70,7 +77,7 @@ const categoryReducer = (state = initialState, action) => {
         updating: false,
         items: state.items.map((c) => (c._id === action.payload.item._id ? action.payload.item : c)),
         item: action.payload.item,
-        message: action.payload.message || "Category updated",
+        message: action.payload.message || "Danh mục đã được cập nhật thành công",
       };
     case CATEGORY_UPDATE_FAILURE:
       return { ...state, updating: false, error: action.payload };
@@ -82,7 +89,7 @@ const categoryReducer = (state = initialState, action) => {
         ...state,
         deleting: false,
         items: state.items.filter((c) => c._id !== action.payload.id),
-        message: action.payload.message || "Category deleted",
+        message: action.payload.message || "Danh mục đã được xóa thành công",
       };
     case CATEGORY_DELETE_FAILURE:
       return { ...state, deleting: false, error: action.payload };

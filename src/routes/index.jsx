@@ -9,10 +9,23 @@ import AdminPage from "../pages/AdminPage";
 import CategoryManagement from "../pages/Categorymanagement/CategoryManagement";
 import ProductManagement from "../pages/Productmanagement/ProductManagement";
 import StaffManagement from "../pages/Staffmanagement/StaffManagement";
+
 // Removed standalone staff pages; create/detail handled via modals in StaffManagement
 
+
+import ShowAllProduct from "../pages/CustomerVIew/ShowAllProduct";
+import ProductDetail from "../pages/CustomerVIew/ProductDetail";
+
+import WishlistPage from "../pages/CustomerVIew/WishlistPage";
+
+import ProfileManagement from "../pages/ProfileManagement/ProfileManagerment";
+import UpdatePassword from "../pages/ProfileManagement/UpdatePassword";
+import PrivateRoute from "../components/PrivateRouter";
+
+
+
 export const routes = [
-  // Trang login (HomePage)
+  // Trang chủ
   {
     path: "/",
     element: <HomePage />,
@@ -26,15 +39,38 @@ export const routes = [
     element: <CartPage />,
   },
 
+  // Trang sản phẩm khách hàng
+  {
+    path: "/products",
+    element: <ShowAllProduct />,
+  },
+  {
+    path: "/product/:id",
+    element: <ProductDetail />,
+  },
+  {
+    path: "/wishlist",
+    element: <WishlistPage />,
+  },
+
   // Khu vực quản trị
   {
     path: "/admin",
-    element: <AdminLayout />,
+    element: (
+      <PrivateRoute requiredRole="admin">
+        <AdminLayout />
+      </PrivateRoute>
+    ),
     children: [
       { index: true, element: <AdminPage /> },
       { path: "category", element: <CategoryManagement /> },
       { path: "product", element: <ProductManagement /> },
       { path: "staff", element: <StaffManagement /> },
+
+     
+      { path: "profile", element: <ProfileManagement /> },
+      { path: "change-password", element: <UpdatePassword /> },
+
     ],
   },
 

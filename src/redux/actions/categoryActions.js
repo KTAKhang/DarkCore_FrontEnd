@@ -35,7 +35,7 @@ export const CATEGORY_CLEAR_MESSAGES = "CATEGORY_CLEAR_MESSAGES";
 
 // Action creators
 export const categoryListRequest = (query = {}) => ({ type: CATEGORY_LIST_REQUEST, payload: { query } });
-export const categoryListSuccess = (items) => ({ type: CATEGORY_LIST_SUCCESS, payload: items });
+export const categoryListSuccess = (items, pagination) => ({ type: CATEGORY_LIST_SUCCESS, payload: { items, pagination } });
 export const categoryListFailure = (error) => ({ type: CATEGORY_LIST_FAILURE, payload: error });
 
 export const categoryDetailRequest = (id) => ({ type: CATEGORY_DETAIL_REQUEST, payload: { id } });

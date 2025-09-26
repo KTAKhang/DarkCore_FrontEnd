@@ -3,7 +3,7 @@ import { Menu, Search, Bell, Settings, User, LogOut, ChevronDown } from "lucide-
 import { useSidebar } from '../../contexts/SidebarContext';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from "react-redux";
-import { logout } from "../../redux/actions/authActions";
+import { logoutRequest } from "../../redux/actions/authActions";
 
 const Navbar = () => {
   const { toggleSidebar } = useSidebar();
@@ -53,7 +53,7 @@ const Navbar = () => {
   const handleLogout = () => {
     const confirmed = window.confirm("Bạn có chắc chắn muốn đăng xuất?");
     if (confirmed) {
-      dispatch(logout());
+      dispatch(logoutRequest());
       localStorage.removeItem('access_token');
       localStorage.removeItem('role');
       localStorage.removeItem('user'); // Also remove user data
@@ -62,10 +62,11 @@ const Navbar = () => {
   };
 
   const storedUser = JSON.parse(localStorage.getItem("user"));
-  console.log("userData", storedUser.avatar);
   const displayName = storedUser?.user_name || "Người dùng";
   const displayEmail = storedUser?.email || "user@email.com";
-  const displayAvatar = storedUser?.avatar || "https://images.unsplash.com/photo-1574158622682-e40e69881006?w=100&h=100&fit=crop&crop=face";
+  const displayAvatar = storedUser?.avatar?.startsWith("http")
+    ? storedUser.avatar
+    : "https://images.unsplash.com/photo-1574158622682-e40e69881006?w=100&h=100&fit=crop&crop=face";
   const roleName = storedUser?.role_name || "user";
   console.log("displayName", displayName);
   return (
@@ -151,8 +152,9 @@ const Navbar = () => {
                           alt="User Avatar"
                           className="w-12 h-12 rounded-full border-2 border-white/50 object-cover"
                           onError={(e) => {
-                            e.target.src = "https://images.unsplash.com/photo-1574158622682-e40e69881006?w=60&h=60&fit=crop&crop=face";
+                            e.currentTarget.src = "https://images.unsplash.com/photo-1574158622682-e40e69881006?w=100&h=100&fit=crop&crop=face";
                           }}
+
                         />
                         <div>
                           <p className="font-semibold text-white">{displayName}</p>

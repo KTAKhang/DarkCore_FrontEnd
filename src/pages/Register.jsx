@@ -51,18 +51,20 @@ const Register = () => {
 
     useEffect(() => {
         if (registerMessage && step === 1) {
-            toast.success(registerMessage);
+            // toast.success(registerMessage);
             setStep(2);
         }
     }, [registerMessage, step]);
+    console.log('confirmOtpMessage changed', confirmOtpMessage)
 
     useEffect(() => {
         if (confirmOtpMessage) {
-            toast.success('Đăng ký thành công! Đang chuyển về trang đăng nhập...');
+            // toast.success('Đăng ký thành công! Đang chuyển về trang đăng nhập...');
             setTimeout(() => {
-                navigate('/');
+                navigate('/login');
             }, 2000);
         }
+
     }, [confirmOtpMessage, navigate]);
 
     const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -107,7 +109,7 @@ const Register = () => {
             return;
         }
 
-        dispatch(registerConfirmOTPRequest({ otp: formData.otp }));
+        dispatch(registerConfirmOTPRequest({ email: formData.email, otp: formData.otp }));
     };
 
     const handleBackToStep1 = () => {

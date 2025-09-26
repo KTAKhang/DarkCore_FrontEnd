@@ -22,8 +22,7 @@ import {
   productStatsFailure,
 } from "../actions/productActions";
 
-// NOTE: Backend runs at 3002 and exposes routes under /api
-const API_BASE_URL = "http://localhost:3002/api";
+const API_BASE_URL = 'http://localhost:3000';
 
 function getAuthHeaders(isFormData = false) {
   const token = localStorage.getItem("token");
@@ -57,15 +56,23 @@ const apiList = async (query = {}) => {
     params.append("categoryName", query.categoryName.trim());
   }
   
+  // Add sort parameters if provided
+  if (query.sortBy && query.sortBy.trim()) {
+    params.append("sortBy", query.sortBy.trim());
+  }
+  if (query.sortOrder && query.sortOrder.trim()) {
+    params.append("sortOrder", query.sortOrder.trim());
+  }
+  
   const queryString = params.toString();
-  const url = queryString ? `${API_BASE_URL}/products?${queryString}` : `${API_BASE_URL}/products`;
+  const url = queryString ? `${API_BASE_URL}/catalog/api/products?${queryString}` : `${API_BASE_URL}/catalog/api/products`;
   
   const res = await axios.get(url, { headers: getAuthHeaders() });
   return res.data;
 };
 
 const apiDetail = async (id) => {
-  const res = await axios.get(`${API_BASE_URL}/products/${id}`, { headers: getAuthHeaders() });
+  const res = await axios.get(`${API_BASE_URL}/catalog/api/products/${id}`, { headers: getAuthHeaders() });
   return res.data;
 };
 
@@ -108,10 +115,10 @@ const apiCreate = async (payload) => {
   }
   
   console.log("=== Sending to backend ===");
-  console.log("URL:", `${API_BASE_URL}/products`);
+  console.log("URL:", `${API_BASE_URL}/catalog/api/products`);
   console.log("Data type:", hasImageFiles ? "FormData" : "JSON");
   
-  const res = await axios.post(`${API_BASE_URL}/products`, data, { headers: getAuthHeaders(hasImageFiles) });
+  const res = await axios.post(`${API_BASE_URL}/catalog/api/products`, data, { headers: getAuthHeaders(hasImageFiles) });
   console.log("Backend response:", res.data);
   return res.data;
 };
@@ -143,17 +150,17 @@ const apiUpdate = async (id, payload) => {
     data = formData;
   }
   
-  const res = await axios.put(`${API_BASE_URL}/products/${id}`, data, { headers: getAuthHeaders(hasImageFiles) });
+  const res = await axios.put(`${API_BASE_URL}/catalog/api/products/${id}`, data, { headers: getAuthHeaders(hasImageFiles) });
   return res.data;
 };
 
 const apiDelete = async (id) => {
-  const res = await axios.delete(`${API_BASE_URL}/products/${id}`, { headers: getAuthHeaders() });
+  const res = await axios.delete(`${API_BASE_URL}/catalog/api/products/${id}`, { headers: getAuthHeaders() });
   return res.data;
 };
 
 const apiStats = async () => {
-  const res = await axios.get(`${API_BASE_URL}/products/stats`, { headers: getAuthHeaders() });
+  const res = await axios.get(`${API_BASE_URL}/catalog/api/products/stats`, { headers: getAuthHeaders() });
   return res.data;
 };
 
@@ -165,7 +172,7 @@ function* listWorker(action) {
     if (data.status === "OK") {
       yield put(productListSuccess(data.data || [], data.pagination));
     } else {
-      throw new Error(data.message || "Failed to fetch products");
+      throw new Error(data.message || "Không thể tải danh sách sản phẩm");
     }
   } catch (error) {
     yield put(productListFailure(error.message));
@@ -179,7 +186,7 @@ function* detailWorker(action) {
     if (data.status === "OK") {
       yield put(productDetailSuccess(data.data));
     } else {
-      throw new Error(data.message || "Failed to fetch product detail");
+      throw new Error(data.message || "Không thể tải chi tiết sản phẩm");
     }
   } catch (error) {
     yield put(productDetailFailure(error.message));
@@ -192,11 +199,11 @@ function* createWorker(action) {
     const data = yield call(apiCreate, action.payload);
     if (data.status === "OK") {
       yield put(productCreateSuccess(data.data, data.message));
-      toast.success(data.message || "Product created");
+      toast.success(data.message || "Sản phẩm đã được tạo thành công");
     } else {
       // Bubble up server message with full details for debugging
       const message = typeof data.message === 'string' ? data.message : JSON.stringify(data.message);
-      throw new Error(message || "Create product failed");
+      throw new Error(message || "Tạo sản phẩm thất bại");
     }
   } catch (error) {
     const friendly = error?.response?.data?.message || error.message;
@@ -211,10 +218,10 @@ function* updateWorker(action) {
     const data = yield call(apiUpdate, id, payload);
     if (data.status === "OK") {
       yield put(productUpdateSuccess(data.data, data.message));
-      toast.success(data.message || "Product updated");
+      toast.success(data.message || "Sản phẩm đã được cập nhật thành công");
     } else {
       const message = typeof data.message === 'string' ? data.message : JSON.stringify(data.message);
-      throw new Error(message || "Update product failed");
+      throw new Error(message || "Cập nhật sản phẩm thất bại");
     }
   } catch (error) {
     const friendly = error?.response?.data?.message || error.message;
@@ -229,9 +236,9 @@ function* deleteWorker(action) {
     const data = yield call(apiDelete, id);
     if (data.status === "OK") {
       yield put(productDeleteSuccess(id, data.message));
-      toast.success(data.message || "Product deleted");
+      toast.success(data.message || "Sản phẩm đã được xóa thành công");
     } else {
-      throw new Error(data.message || "Delete product failed");
+      throw new Error(data.message || "Xóa sản phẩm thất bại");
     }
   } catch (error) {
     yield put(productDeleteFailure(error.message));
@@ -245,7 +252,7 @@ function* statsWorker() {
     if (data.status === "OK") {
       yield put(productStatsSuccess(data.data));
     } else {
-      throw new Error(data.message || "Failed to fetch product stats");
+      throw new Error(data.message || "Không thể tải thống kê sản phẩm");
     }
   } catch (error) {
     yield put(productStatsFailure(error.message));
