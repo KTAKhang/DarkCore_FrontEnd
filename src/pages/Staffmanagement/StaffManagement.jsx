@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { staffListRequest, updateStaffRequest } from "../../redux/actions/staffActions";
+import { staffListRequest, staffCreateRequest, updateStaffRequest } from "../../redux/actions/staffActions";
 import { useNavigate } from "react-router-dom";
 import {
   Card,
@@ -21,7 +21,7 @@ import {
   Alert,
   Tooltip,
 } from "antd";
-import {
+import { 
   EditOutlined,
   PlusOutlined,
   EyeOutlined,
@@ -32,6 +32,7 @@ import {
   ReloadOutlined,
   FilterOutlined,
 } from "@ant-design/icons";
+import { Modal, Form } from "antd";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -47,6 +48,10 @@ const StaffManagement = () => {
   const [sortBy, setSortBy] = useState("createdAt");
   const [sortOrder, setSortOrder] = useState("desc");
   const [loadingRefresh, setLoadingRefresh] = useState(false);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [selectedStaff, setSelectedStaff] = useState(null);
+  const [form] = Form.useForm();
 
   // Load staff with current filters
   const loadStaff = useCallback((query = {}) => {
@@ -121,15 +126,19 @@ const StaffManagement = () => {
     return filters.length > 0 ? filters.join(" • ") : "";
   };
 
+  // Helpers to support both boolean and legacy string status values
+  const isActive = (status) => status === true || status === "active";
+  const toDisplayStatusText = (status) => (isActive(status) ? "Hoạt động" : "Ngừng hoạt động");
+
   // Calculate stats
   const displayStats = {
     total: staff.length,
-    active: staff.filter(s => s.status === "active").length,
-    inactive: staff.filter(s => s.status === "inactive").length,
+    active: staff.filter(s => isActive(s.status)).length,
+    inactive: staff.filter(s => !isActive(s.status)).length,
   };
 
   const handleCreate = () => {
-    navigate("/admin/staff/create");
+    setIsCreateOpen(true);
   };
 
   const handleRefresh = useCallback(() => {
@@ -144,13 +153,15 @@ const StaffManagement = () => {
   }, [loadStaff, statusFilter, roleFilter, searchText, pageMeta.page, pageMeta.limit, sortBy, sortOrder]);
 
   const handleStatusToggle = (record) => {
-    const newStatus = record.status === "active" ? "inactive" : "active";
+    const current = record.status;
+    const newStatus = typeof current === "boolean" ? !current : (current === "active" ? "inactive" : "active");
     dispatch(updateStaffRequest(record._id || record.id, { status: newStatus }));
-    message.success(`Đã ${newStatus === "active" ? "kích hoạt" : "vô hiệu hóa"} nhân viên ${record.user_name}`);
+    message.success(`Đã ${typeof newStatus === "boolean" ? (newStatus ? "kích hoạt" : "vô hiệu hóa") : (newStatus === "active" ? "kích hoạt" : "vô hiệu hóa")} nhân viên ${record.user_name}`);
   };
 
   const handleViewDetail = (record) => {
-    navigate(`/admin/staff/${record._id || record.id}`);
+    setSelectedStaff(record);
+    setIsDetailOpen(true);
   };
 
   const columns = useMemo(
@@ -238,14 +249,14 @@ const StaffManagement = () => {
         key: "status",
         render: (status) => (
           <Badge
-            status={status === "active" ? "success" : "error"}
+            status={isActive(status) ? "success" : "error"}
             text={
               <Tag
-                color={status === "active" ? "#52c41a" : "#ff4d4f"}
-                icon={status === "active" ? <CheckCircleOutlined /> : <StopOutlined />}
+                color={isActive(status) ? "#52c41a" : "#ff4d4f"}
+                icon={isActive(status) ? <CheckCircleOutlined /> : <StopOutlined />}
                 style={{ borderRadius: 16, fontWeight: 500, padding: "4px 12px" }}
               >
-                {status === "active" ? "Hoạt động" : "Ngừng hoạt động"}
+                {toDisplayStatusText(status)}
               </Tag>
             }
           />
@@ -264,12 +275,12 @@ const StaffManagement = () => {
                 style={{ color: "#13C2C2" }} 
               />
             </Tooltip>
-            <Tooltip title={record.status === "active" ? "Vô hiệu hóa" : "Kích hoạt"}>
+            <Tooltip title={isActive(record.status) ? "Vô hiệu hóa" : "Kích hoạt"}>
               <Button
                 type="text"
-                icon={record.status === "active" ? <StopOutlined /> : <CheckCircleOutlined />}
+                icon={isActive(record.status) ? <StopOutlined /> : <CheckCircleOutlined />}
                 onClick={() => handleStatusToggle(record)}
-                style={{ color: record.status === "active" ? "#ff4d4f" : "#52c41a" }}
+                style={{ color: isActive(record.status) ? "#ff4d4f" : "#52c41a" }}
               />
             </Tooltip>
           </Space>
@@ -498,6 +509,100 @@ const StaffManagement = () => {
             locale={{ emptyText: "Không có nhân viên nào" }}
           />
         </Spin>
+
+        {/* Create Staff Modal */}
+        <Modal
+          open={isCreateOpen}
+          title={null}
+          onCancel={() => setIsCreateOpen(false)}
+          footer={null}
+          destroyOnClose
+          width={720}
+        >
+          <Card style={{ borderRadius: 12, border: "1px solid #13C2C220" }}>
+            <Title level={3} style={{ marginTop: 0, color: "#0D364C" }}>Tạo nhân viên</Title>
+            <Form form={form} layout="vertical" size="large" onFinish={(values) => {
+              dispatch(staffCreateRequest(values));
+              setIsCreateOpen(false);
+              setTimeout(() => handleRefresh(), 600);
+            }}>
+              <Row gutter={[16,16]}>
+                <Col span={12}>
+                  <Form.Item name="user_name" label="Họ tên" rules={[{ required: true }, { min: 3 }]}>
+                    <Input placeholder="Nhập họ tên" />
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item name="email" label="Email" rules={[{ required: true }, { type: "email" }]}>
+                    <Input placeholder="Nhập email" />
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item name="password" label="Mật khẩu" rules={[{ required: true }, { min: 6 }]}>
+                    <Input.Password placeholder="Mật khẩu" />
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item name="confirmPassword" label="Xác nhận mật khẩu" dependencies={["password"]} rules={[{ required: true }, ({ getFieldValue }) => ({ validator(_, value) { if (!value || getFieldValue("password") === value) return Promise.resolve(); return Promise.reject(new Error("Mật khẩu xác nhận không khớp!")); } })]}>
+                    <Input.Password placeholder="Nhập lại mật khẩu" />
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item name="phone" label="Số điện thoại" rules={[{ required: true }, { pattern: /^[0-9]{10,11}$/ }]}>
+                    <Input placeholder="Số điện thoại" />
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item name="address" label="Địa chỉ" rules={[{ required: true }, { min: 10 }]}>
+                    <Input placeholder="Địa chỉ" />
+                  </Form.Item>
+                </Col>
+                <Col span={24}>
+                  <Form.Item name="role" label="Vai trò" rules={[{ required: true }]}> 
+                    <Select placeholder="Chọn vai trò">
+                      <Select.Option value="sales-staff">Nhân viên bán hàng</Select.Option>
+                      <Select.Option value="repair-staff">Nhân viên sửa chữa</Select.Option>
+                    </Select>
+                  </Form.Item>
+                </Col>
+              </Row>
+              <Space style={{ display: "flex", justifyContent: "flex-end" }}>
+                <Button onClick={() => setIsCreateOpen(false)}>Hủy</Button>
+                <Button type="primary" htmlType="submit">Tạo</Button>
+              </Space>
+            </Form>
+          </Card>
+        </Modal>
+
+        {/* View Detail Modal */}
+        <Modal
+          open={isDetailOpen}
+          title={null}
+          onCancel={() => setIsDetailOpen(false)}
+          footer={null}
+          destroyOnClose
+          width={800}
+        >
+          {selectedStaff && (
+            <Card style={{ borderRadius: 12, border: "1px solid #13C2C220" }}>
+              <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+                <Space align="center">
+                  <Avatar size={64} src={selectedStaff.avatar || ""} icon={<UserOutlined />} />
+                  <div>
+                    <Title level={3} style={{ margin: 0 }}>{selectedStaff.user_name}</Title>
+                    <div>{selectedStaff.email}</div>
+                  </div>
+                </Space>
+                <Row gutter={[16,16]}>
+                  <Col span={12}>📞 {selectedStaff.phone || "N/A"}</Col>
+                  <Col span={12}>📍 {selectedStaff.address || "N/A"}</Col>
+                  <Col span={12}>Vai trò: {selectedStaff.role_name}</Col>
+                  <Col span={12}>Trạng thái: {toDisplayStatusText(selectedStaff.status)}</Col>
+                </Row>
+              </Space>
+            </Card>
+          )}
+        </Modal>
       </Card>
     </div>
   );

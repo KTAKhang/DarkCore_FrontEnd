@@ -9,8 +9,10 @@ import AdminPage from "../pages/AdminPage";
 import CategoryManagement from "../pages/Categorymanagement/CategoryManagement";
 import ProductManagement from "../pages/Productmanagement/ProductManagement";
 import StaffManagement from "../pages/Staffmanagement/StaffManagement";
-import CreateStaff from "../pages/Staffmanagement/CreateStaff";
-import StaffDetail from "../pages/Staffmanagement/StaffDetail";
+
+// Removed standalone staff pages; create/detail handled via modals in StaffManagement
+
+
 import ShowAllProduct from "../pages/CustomerVIew/ShowAllProduct";
 import ProductDetail from "../pages/CustomerVIew/ProductDetail";
 
@@ -19,6 +21,7 @@ import WishlistPage from "../pages/CustomerVIew/WishlistPage";
 import ProfileManagement from "../pages/ProfileManagement/ProfileManagerment";
 import UpdatePassword from "../pages/ProfileManagement/UpdatePassword";
 import PrivateRoute from "../components/PrivateRouter";
+
 
 
 export const routes = [
@@ -63,10 +66,11 @@ export const routes = [
       { path: "category", element: <CategoryManagement /> },
       { path: "product", element: <ProductManagement /> },
       { path: "staff", element: <StaffManagement /> },
-      { path: "staff/create", element: <CreateStaff /> },
-      { path: "staff/:id", element: <StaffDetail /> },
+
+     
       { path: "profile", element: <ProfileManagement /> },
       { path: "change-password", element: <UpdatePassword /> },
+
     ],
   },
 
