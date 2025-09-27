@@ -1,10 +1,11 @@
 
 
-import React, { useState } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { logoutRequest } from "../../redux/actions/authActions";
 import { LogOut, Settings, User } from "lucide-react";
+import PropTypes from "prop-types";
 
 const Header = ({ searchTerm, setSearchTerm, cartItems }) => {
     const navigate = useNavigate();
@@ -85,9 +86,14 @@ const Header = ({ searchTerm, setSearchTerm, cartItems }) => {
 
                         {storedUser ? (
                             <>
-                                <button className="w-10 h-10 flex items-center justify-center text-gray-600 hover:text-blue-600 transition-colors">
-                                    <span className="text-lg">🤍</span>
-                                </button>
+                                {/* Wishlist */}
+                                <Link
+                                    to="/wishlist"
+                                    className="w-10 h-10 flex items-center justify-center text-gray-600 hover:text-red-500 transition-colors"
+                                    title="Danh sách yêu thích"
+                                >
+                                    <span className="text-lg">❤️</span>
+                                </Link>
                                 {/* Cart */}
                                 <Link
                                     to="/cart"
@@ -197,6 +203,12 @@ const Header = ({ searchTerm, setSearchTerm, cartItems }) => {
             </div>
         </header>
     );
+};
+
+Header.propTypes = {
+    searchTerm: PropTypes.string,
+    setSearchTerm: PropTypes.func,
+    cartItems: PropTypes.number,
 };
 
 export default Header;
