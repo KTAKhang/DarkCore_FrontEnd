@@ -176,7 +176,6 @@ function* listWorker(action) {
     }
   } catch (error) {
     yield put(productListFailure(error.message));
-    toast.error(error.message);
   }
 }
 
@@ -190,7 +189,6 @@ function* detailWorker(action) {
     }
   } catch (error) {
     yield put(productDetailFailure(error.message));
-    toast.error(error.message);
   }
 }
 
@@ -208,7 +206,6 @@ function* createWorker(action) {
   } catch (error) {
     const friendly = error?.response?.data?.message || error.message;
     yield put(productCreateFailure(friendly));
-    toast.error(friendly);
   }
 }
 
@@ -226,7 +223,6 @@ function* updateWorker(action) {
   } catch (error) {
     const friendly = error?.response?.data?.message || error.message;
     yield put(productUpdateFailure(friendly));
-    toast.error(friendly);
   }
 }
 
@@ -242,7 +238,6 @@ function* deleteWorker(action) {
     }
   } catch (error) {
     yield put(productDeleteFailure(error.message));
-    toast.error(error.message);
   }
 }
 
@@ -256,7 +251,6 @@ function* statsWorker() {
     }
   } catch (error) {
     yield put(productStatsFailure(error.message));
-    toast.error(error.message);
   }
 }
 

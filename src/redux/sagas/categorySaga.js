@@ -233,25 +233,7 @@ function* listWorker(action) {
       throw new Error(data.message || "Không thể tải danh sách danh mục");
     }
   } catch (error) {
-    console.error("❌ Category list error:", error);
-    console.error("❌ Error response:", error.response?.data);
-    console.error("❌ Error status:", error.response?.status);
-    
-    let errorMessage = error.response?.data?.message || error.message;
-    
-    // Handle specific error cases
-    if (error.response?.status === 403) {
-      if (error.response?.data?.message?.includes("Access denied")) {
-        errorMessage = "Bạn không có quyền truy cập quản lý danh mục. Chỉ Admin mới có thể truy cập tính năng này.";
-      } else {
-        errorMessage = "Phiên đăng nhập không hợp lệ. Vui lòng đăng nhập lại.";
-      }
-    } else if (error.response?.status === 401) {
-      errorMessage = "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
-    }
-    
-    yield put(categoryListFailure(errorMessage));
-    toast.error(errorMessage);
+    yield put(categoryListFailure(error.response?.data?.message || error.message));
   }
 }
 
@@ -264,9 +246,7 @@ function* detailWorker(action) {
       throw new Error(data.message || "Không thể tải chi tiết danh mục");
     }
   } catch (error) {
-    console.error("❌ Category detail error:", error);
     yield put(categoryDetailFailure(error.response?.data?.message || error.message));
-    toast.error(error.response?.data?.message || error.message);
   }
 }
 
@@ -280,9 +260,7 @@ function* createWorker(action) {
       throw new Error(data.message || "Tạo danh mục thất bại");
     }
   } catch (error) {
-    console.error("❌ Category create error:", error);
     yield put(categoryCreateFailure(error.response?.data?.message || error.message));
-    toast.error(error.response?.data?.message || error.message);
   }
 }
 
@@ -297,9 +275,7 @@ function* updateWorker(action) {
       throw new Error(data.message || "Cập nhật danh mục thất bại");
     }
   } catch (error) {
-    console.error("❌ Category update error:", error);
     yield put(categoryUpdateFailure(error.response?.data?.message || error.message));
-    toast.error(error.response?.data?.message || error.message);
   }
 }
 
@@ -314,9 +290,7 @@ function* deleteWorker(action) {
       throw new Error(data.message || "Xóa danh mục thất bại");
     }
   } catch (error) {
-    console.error("❌ Category delete error:", error);
     yield put(categoryDeleteFailure(error.response?.data?.message || error.message));
-    toast.error(error.response?.data?.message || error.message);
   }
 }
 
@@ -329,9 +303,7 @@ function* statsWorker() {
       throw new Error(data.message || "Không thể tải thống kê danh mục");
     }
   } catch (error) {
-    console.error("❌ Category stats error:", error);
     yield put(categoryStatsFailure(error.response?.data?.message || error.message));
-    toast.error(error.response?.data?.message || error.message);
   }
 }
 
