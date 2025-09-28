@@ -113,7 +113,7 @@ const CreateCategory = ({ visible, onClose, onSuccess }) => {
               <Divider style={customStyles.divider} />
 
               <Form form={form} layout="vertical" onFinish={handleFinish} initialValues={{ status: true }} size="large">
-                <Form.Item label={<span style={customStyles.label}>Tên Category</span>} name="name" rules={[{ required: true, message: "Vui lòng nhập tên category!" }, { min: 2, message: "Tên category phải có ít nhất 2 ký tự!" }, { max: 50, message: "Tên category không được vượt quá 50 ký tự!" }]}>
+                <Form.Item label={<span style={customStyles.label}>Tên Category</span>} name="name" rules={[{ required: true, message: "Vui lòng nhập tên category!" }]}>
                   <Input placeholder="Nhập tên category" style={customStyles.input} />
                 </Form.Item>
 

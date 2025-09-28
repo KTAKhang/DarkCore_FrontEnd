@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   Card,
@@ -14,7 +14,6 @@ import {
   Badge,
   Avatar,
   Spin,
-  message,
   Select,
   Alert,
 } from "antd";
@@ -38,6 +37,7 @@ import {
   categoryCreateRequest,
   categoryUpdateRequest,
   categoryStatsRequest,
+  categoryClearMessages,
 } from "../../redux/actions/categoryActions";
 
 const { Title } = Typography;
@@ -47,14 +47,25 @@ const CATEGORY_COLORS = ["#13C2C2", "#52c41a", "#fa8c16", "#722ED1", "#0D364C"];
 
 const CategoryManagement = () => {
   const dispatch = useDispatch();
-  const { items: categoryItems, stats, pagination: apiPagination, loadingList, loadingStats, creating, updating } = useSelector((state) => state.category);
+  const { items: categoryItems, stats, pagination: apiPagination, loadingList, loadingStats, creating, updating, error, message } = useSelector((state) => state.category);
   const [loading, setLoading] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [statusFilter, setStatusFilter] = useState("all"); // "all", "active", "inactive"
   const [pagination, setPagination] = useState({ current: 1, pageSize: 5 });
-  const [sortBy, setSortBy] = useState("createdAt"); // "createdAt"
-  const [sortOrder, setSortOrder] = useState("desc"); // "asc", "desc"
+  const [sortBy, setSortBy] = useState("default"); // "default", "createdat", "name"
+  const [sortOrder, setSortOrder] = useState(""); // "asc", "desc", "" (empty for default)
   const [createdAtClickCount, setCreatedAtClickCount] = useState(0); // Track clicks on createdAt column
+  const [isInitialLoad, setIsInitialLoad] = useState(true); // Prevent duplicate initial calls
+  const paginationRef = useRef(pagination);
+  const prevFiltersRef = useRef({ searchText, statusFilter });
+  
+  // Default sort state - cố định không thay đổi (không sort gì cả)
+  const defaultSort = { sortBy: "default", sortOrder: "" };
+  
+  // Update ref when pagination changes
+  useEffect(() => {
+    paginationRef.current = pagination;
+  }, [pagination]);
 
   // Modals state
   const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
@@ -64,17 +75,29 @@ const CategoryManagement = () => {
 
 
   useEffect(() => {
-    // Initial load - get all categories and stats
-    dispatch(categoryListRequest({ page: 1, limit: 5, sortBy: "createdAt", sortOrder: "desc" }));
-    dispatch(categoryStatsRequest());
-  }, [dispatch]);
+    // Initial load - get all categories and stats (only once)
+    if (isInitialLoad) {
+      dispatch(categoryListRequest({ page: 1, limit: 5, sortBy: "default", sortOrder: "" }));
+      dispatch(categoryStatsRequest());
+      setIsInitialLoad(false);
+    }
+  }, [dispatch, isInitialLoad]);
 
   // Auto-load when filters change with debounce for search
   useEffect(() => {
+    // Skip if this is initial load (already handled above)
+    if (isInitialLoad) return;
+    
+    // Check if filters actually changed
+    const prevFilters = prevFiltersRef.current;
+    const filtersChanged = prevFilters.searchText !== searchText || prevFilters.statusFilter !== statusFilter;
+    
+    if (!filtersChanged) return;
+    
     const timeoutId = setTimeout(() => {
       const query = {
-        page: pagination.current,
-        limit: pagination.pageSize,
+        page: 1, // Luôn bắt đầu từ trang 1 khi filter thay đổi
+        limit: paginationRef.current.pageSize,
         sortBy,
         sortOrder,
       };
@@ -90,13 +113,39 @@ const CategoryManagement = () => {
       dispatch(categoryListRequest(query));
       
       // Reset to first page when filtering
-      if (pagination.current !== 1) {
+      if (paginationRef.current.current !== 1) {
         setPagination(prev => ({ ...prev, current: 1 }));
       }
+      
+      // Update prev filters
+      prevFiltersRef.current = { searchText, statusFilter };
     }, searchText.trim() ? 500 : 0); // 500ms debounce for search
 
     return () => clearTimeout(timeoutId);
-  }, [searchText, statusFilter, pagination, sortBy, sortOrder, dispatch]);
+  }, [searchText, statusFilter, sortBy, sortOrder, dispatch, isInitialLoad]);
+
+  // Handle sort changes without resetting pagination
+  useEffect(() => {
+    // Skip if this is initial load (already handled above)
+    if (isInitialLoad) return;
+    
+    const query = {
+      page: paginationRef.current.current, // Keep current page
+      limit: paginationRef.current.pageSize,
+      sortBy,
+      sortOrder,
+    };
+    
+    if (statusFilter !== "all") {
+      query.status = statusFilter;
+    }
+    
+    if (searchText.trim()) {
+      query.keyword = searchText.trim();
+    }
+    
+    dispatch(categoryListRequest(query));
+  }, [sortBy, sortOrder, dispatch, isInitialLoad, statusFilter, searchText]);
 
   const categories = useMemo(() => {
     // Backend now sets default status = true, so we can use it directly
@@ -280,7 +329,7 @@ const CategoryManagement = () => {
         sorter: {
           multiple: false,
         },
-        sortOrder: sortBy === 'createdAt' ? (sortOrder === 'asc' ? 'ascend' : 'descend') : null,
+        sortOrder: sortBy === 'default' ? null : (sortBy === 'createdat' ? (sortOrder === 'asc' ? 'ascend' : 'descend') : null),
         render: (date) => (
           <div>
             <span style={{ color: "#0D364C", fontSize: 14, display: "block" }}>
@@ -303,63 +352,63 @@ const CategoryManagement = () => {
         ),
       },
     ],
-    [handleOpenDetailModal, handleOpenUpdateModal, sortBy, sortOrder]
+    [handleOpenDetailModal, handleOpenUpdateModal, sortBy, sortOrder, message]
   );
 
   const handleTableChange = (pagination, filters, sorter) => {
-    console.log("=== Category handleTableChange Debug ===");
-    console.log("sorter:", sorter);
-    console.log("sorter.field:", sorter?.field);
-    console.log("sorter.order:", sorter?.order);
-    console.log("Current sortBy:", sortBy);
-    console.log("Current sortOrder:", sortOrder);
-    console.log("createdAtClickCount:", createdAtClickCount);
-    
-    // Xử lý khi click vào createdAt column (cả khi có field và khi field undefined nhưng đang sort createdAt)
-    if ((sorter && sorter.field === 'createdAt') || (sorter && !sorter.field && sortBy === 'createdAt')) {
+    // Xử lý khi click vào createdAt column (cả khi có field và khi field undefined nhưng đang sort createdat)
+    if ((sorter && sorter.field === 'createdAt') || (sorter && !sorter.field && sortBy === 'createdat')) {
       const newClickCount = createdAtClickCount + 1;
       setCreatedAtClickCount(newClickCount);
       
-      console.log("🔢 CreatedAt click count:", newClickCount);
-      
-      // Cycle through 3 states: desc → asc → reset (mặc định desc cho ngày tạo)
+      // Cycle through 3 states: desc → asc → reset to default
       if (newClickCount % 3 === 1) {
         // Click 1, 4, 7... → desc (mới nhất)
-        console.log("📊 Sort by createdAt desc");
-        setSortBy("createdAt");
+        setSortBy("createdat");
         setSortOrder("desc");
       } else if (newClickCount % 3 === 2) {
         // Click 2, 5, 8... → asc (cũ nhất)
-        console.log("📊 Sort by createdAt asc");
-        setSortBy("createdAt");
+        setSortBy("createdat");
         setSortOrder("asc");
       } else {
-        // Click 3, 6, 9... → reset to default
-        console.log("🔄 Sort reset to default: createdAt desc");
-        setSortBy("createdAt");
-        setSortOrder("desc");
+        // Click 3, 6, 9... → reset to default (no sort)
+        setSortBy("default");
+        setSortOrder("");
         
-        // Force reload data với sort mặc định
-        const query = {
-          page: pagination.current || 1,
-          limit: pagination.pageSize || 5,
-          sortBy: "createdAt",
-          sortOrder: "desc",
-        };
-        
-        if (statusFilter !== "all") {
-          query.status = statusFilter;
-        }
-        
-        if (searchText.trim()) {
-          query.keyword = searchText.trim();
-        }
-        
-        console.log("🚀 Force dispatching query:", query);
-        dispatch(categoryListRequest(query));
+        // Không dispatch ở đây, để useEffect xử lý
       }
     }
   };
+
+  // Handle sort option change from dropdown
+  const handleSortChange = (value) => {
+    switch (value) {
+      case "default":
+        setSortBy("default");
+        setSortOrder("");
+        break;
+      case "newest":
+        setSortBy("createdat");
+        setSortOrder("desc");
+        break;
+      case "oldest":
+        setSortBy("createdat");
+        setSortOrder("asc");
+        break;
+      case "name-asc":
+        setSortBy("name");
+        setSortOrder("asc");
+        break;
+      case "name-desc":
+        setSortBy("name");
+        setSortOrder("desc");
+        break;
+      default:
+        setSortBy(defaultSort.sortBy);
+        setSortOrder(defaultSort.sortOrder);
+    }
+  };
+
 
   const tablePagination = useMemo(
     () => ({
@@ -391,6 +440,18 @@ const CategoryManagement = () => {
       },
       onShowSizeChange: (current, size) => {
         setPagination({ current, pageSize: size });
+        // Dispatch API call với page size mới
+        const query = {
+          page: current,
+          limit: size,
+          sortBy,
+          sortOrder,
+        };
+        
+        if (statusFilter !== "all") query.status = statusFilter;
+        if (searchText.trim()) query.keyword = searchText.trim();
+        
+        dispatch(categoryListRequest(query));
       },
     }),
     [apiPagination, pagination, hasActiveFilters, statusFilter, searchText, sortBy, sortOrder, dispatch]
@@ -475,19 +536,18 @@ const CategoryManagement = () => {
               <Select.Option value="inactive">Đang ẩn</Select.Option>
             </Select>
             <Select
-              value={`${sortBy}-${sortOrder}`}
-              onChange={(value) => {
-                const [newSortBy, newSortOrder] = value.split('-');
-                setSortBy(newSortBy);
-                setSortOrder(newSortOrder);
-              }}
+              value={sortBy === "default" ? "default" : `${sortBy}-${sortOrder}`}
+              onChange={handleSortChange}
               style={{ width: 180 }}
               size="large"
               placeholder="Sắp xếp"
               suffixIcon={<FilterOutlined style={{ color: "#13C2C2" }} />}
             >
-              <Select.Option value="createdAt-desc">Mới nhất</Select.Option>
-              <Select.Option value="createdAt-asc">Cũ nhất</Select.Option>
+              <Select.Option value="default">Mặc định</Select.Option>
+              <Select.Option value="newest">Mới nhất</Select.Option>
+              <Select.Option value="oldest">Cũ nhất</Select.Option>
+              <Select.Option value="name-asc">Tên A-Z</Select.Option>
+              <Select.Option value="name-desc">Tên Z-A</Select.Option>
             </Select>
           </Space>
           <Space>
@@ -495,6 +555,37 @@ const CategoryManagement = () => {
             <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsCreateModalVisible(true)} style={{ backgroundColor: "#0D364C", borderColor: "#0D364C" }}>Thêm Category</Button>
           </Space>
         </div>
+
+        {/* Error and Success Messages */}
+        {error && (
+          <Alert
+            message={error}
+            type="error"
+            showIcon
+            closable
+            onClose={() => dispatch(categoryClearMessages())}
+            style={{ 
+              marginBottom: 16, 
+              borderColor: "#ff4d4f", 
+              backgroundColor: "#fff2f0"
+            }}
+          />
+        )}
+        
+        {message && (
+          <Alert
+            message={message}
+            type="success"
+            showIcon
+            closable
+            onClose={() => dispatch(categoryClearMessages())}
+            style={{ 
+              marginBottom: 16, 
+              borderColor: "#52c41a", 
+              backgroundColor: "#f6ffed"
+            }}
+          />
+        )}
 
         {/* Filter status indicator */}
         {hasActiveFilters && (

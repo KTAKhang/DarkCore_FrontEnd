@@ -24,16 +24,14 @@ import {
     resetPasswordSuccess,
     resetPasswordFailure
 } from "../actions/authActions";
-import axios from "axios";
+import apiClient from "../../utils/axiosConfigNoCredentials";
 
 const API_BASE_URL = 'http://localhost:3000';
 
 const apiLogout = async () => {
-    const response = await axios.post(
-        `${API_BASE_URL}/auth/logout`,
-        {},
-        { withCredentials: true } // QUAN TRỌNG: để gửi cookie refreshToken
-    );
+    console.log('📡 AuthSaga apiLogout');
+    const response = await apiClient.post('/auth/logout', {});
+    console.log('📡 AuthSaga apiLogout - Response:', response.data);
     return response.data;
 };
 

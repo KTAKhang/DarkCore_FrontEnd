@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback, useEffect } from "react";
+import { useMemo, useState, useCallback, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   Card,
@@ -38,6 +38,7 @@ import {
   productCreateRequest,
   productUpdateRequest,
   productStatsRequest,
+  productClearMessages,
 } from "../../redux/actions/productActions";
 import { categoryListRequest } from "../../redux/actions/categoryActions";
 
@@ -45,7 +46,7 @@ const { Title, Text } = Typography;
 
 const ProductManagement = () => {
   const dispatch = useDispatch();
-  const { items: productItems, stats, pagination: apiPagination, loadingList, loadingStats, creating, updating, deleting } = useSelector((state) => state.product);
+  const { items: productItems, stats, pagination: apiPagination, loadingList, loadingStats, creating, updating, deleting, error, message: successMessage } = useSelector((state) => state.product);
   const { items: categoryItems } = useSelector((state) => state.category);
   
   const [loading, setLoading] = useState(false);
@@ -53,10 +54,20 @@ const ProductManagement = () => {
   const [statusFilter, setStatusFilter] = useState("all"); // "all", "active", "inactive"
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [pagination, setPagination] = useState({ current: 1, pageSize: 5 });
-  const [sortBy, setSortBy] = useState("createdAt"); // "price", "createdAt"
-  const [sortOrder, setSortOrder] = useState("desc"); // "asc", "desc"
+  const [sortBy, setSortBy] = useState("default"); // "default", "price", "createdat", "name"
+  const [sortOrder, setSortOrder] = useState(""); // "asc", "desc", "" (empty for default)
   const [priceClickCount, setPriceClickCount] = useState(0); // Track clicks on price column
   const [createdAtClickCount, setCreatedAtClickCount] = useState(0); // Track clicks on createdAt column
+  const paginationRef = useRef(pagination);
+  const prevFiltersRef = useRef({ searchText, statusFilter, categoryFilter });
+  
+  // Default sort state - cố định không thay đổi (không sort gì cả)
+  const defaultSort = { sortBy: "default", sortOrder: "" };
+  
+  // Update ref when pagination changes
+  useEffect(() => {
+    paginationRef.current = pagination;
+  }, [pagination]);
 
   const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
   const [isUpdateModalVisible, setIsUpdateModalVisible] = useState(false);
@@ -65,17 +76,25 @@ const ProductManagement = () => {
 
   // Load data on component mount
   useEffect(() => {
-    dispatch(productListRequest({ page: 1, limit: 5, sortBy: "createdAt", sortOrder: "desc" }));
+    dispatch(productListRequest({ page: 1, limit: 5, sortBy: "default", sortOrder: "" }));
     dispatch(productStatsRequest());
     dispatch(categoryListRequest({})); // Load categories for filters
   }, [dispatch]);
 
   // Auto-load when filters change with debounce for search
   useEffect(() => {
+    // Check if filters actually changed
+    const prevFilters = prevFiltersRef.current;
+    const filtersChanged = prevFilters.searchText !== searchText || 
+                          prevFilters.statusFilter !== statusFilter || 
+                          prevFilters.categoryFilter !== categoryFilter;
+    
+    if (!filtersChanged) return;
+    
     const timeoutId = setTimeout(() => {
       const query = {
-        page: pagination.current,
-        limit: pagination.pageSize,
+        page: 1, // Luôn bắt đầu từ trang 1 khi filter thay đổi
+        limit: paginationRef.current.pageSize,
         sortBy,
         sortOrder,
       };
@@ -98,13 +117,44 @@ const ProductManagement = () => {
       dispatch(productListRequest(query));
       
       // Reset to first page when filtering
-      if (pagination.current !== 1) {
+      if (paginationRef.current.current !== 1) {
         setPagination(prev => ({ ...prev, current: 1 }));
       }
+      
+      // Update prev filters
+      prevFiltersRef.current = { searchText, statusFilter, categoryFilter };
     }, searchText.trim() ? 500 : 0); // 500ms debounce for search
 
     return () => clearTimeout(timeoutId);
-  }, [searchText, statusFilter, categoryFilter, pagination, sortBy, sortOrder, dispatch, categoryItems]);
+  }, [searchText, statusFilter, categoryFilter, sortBy, sortOrder, dispatch, categoryItems]);
+
+  // Handle sort changes without resetting pagination
+  useEffect(() => {
+    console.log("🔄 Sort change - dispatching API call");
+    const query = {
+      page: paginationRef.current.current, // Keep current page
+      limit: paginationRef.current.pageSize,
+      sortBy,
+      sortOrder,
+    };
+    
+    if (statusFilter !== "all") {
+      query.status = statusFilter;
+    }
+    
+    if (searchText.trim()) {
+      query.keyword = searchText.trim();
+    }
+    
+    if (categoryFilter !== "all") {
+      const selectedCategory = categoryItems.find(c => c._id === categoryFilter);
+      if (selectedCategory) {
+        query.categoryName = selectedCategory.name;
+      }
+    }
+    
+    dispatch(productListRequest(query));
+  }, [sortBy, sortOrder, dispatch, statusFilter, searchText, categoryFilter, categoryItems]);
 
   // Map backend product data to frontend format
   const products = useMemo(() => {
@@ -289,118 +339,82 @@ const ProductManagement = () => {
   }, [dispatch, handleRefresh]);
 
   const handleTableChange = (pagination, filters, sorter) => {
-    console.log("=== handleTableChange Debug ===");
-    console.log("sorter:", sorter);
-    console.log("sorter.field:", sorter?.field);
-    console.log("sorter.order:", sorter?.order);
-    console.log("Current sortBy:", sortBy);
-    console.log("Current sortOrder:", sortOrder);
-    console.log("priceClickCount:", priceClickCount);
-    
     // Xử lý khi click vào price column (cả khi có field và khi field undefined nhưng đang sort price)
     if ((sorter && sorter.field === 'price') || (sorter && !sorter.field && sortBy === 'price')) {
       const newClickCount = priceClickCount + 1;
       setPriceClickCount(newClickCount);
       
-      console.log("🔢 Price click count:", newClickCount);
-      
-      // Cycle through 3 states: asc → desc → reset
+      // Cycle through 3 states: asc → desc → reset to default
       if (newClickCount % 3 === 1) {
         // Click 1, 4, 7... → asc
-        console.log("📊 Sort by price asc");
         setSortBy("price");
         setSortOrder("asc");
       } else if (newClickCount % 3 === 2) {
         // Click 2, 5, 8... → desc  
-        console.log("📊 Sort by price desc");
         setSortBy("price");
         setSortOrder("desc");
       } else {
-        // Click 3, 6, 9... → reset to default
-        console.log("🔄 Sort reset to default: createdAt desc");
-        setSortBy("createdAt");
-        setSortOrder("desc");
+        // Click 3, 6, 9... → reset to default (no sort)
+        setSortBy("default");
+        setSortOrder("");
         
-        // Force reload data với sort mặc định
-        const query = {
-          page: pagination.current || 1,
-          limit: pagination.pageSize || 5,
-          sortBy: "createdAt",
-          sortOrder: "desc",
-        };
-        
-        if (statusFilter !== "all") {
-          query.status = statusFilter;
-        }
-        
-        if (searchText.trim()) {
-          query.keyword = searchText.trim();
-        }
-        
-        if (categoryFilter !== "all") {
-          const selectedCategory = categoryItems.find(c => c._id === categoryFilter);
-          if (selectedCategory) {
-            query.categoryName = selectedCategory.name;
-          }
-        }
-        
-        console.log("🚀 Force dispatching query:", query);
-        dispatch(productListRequest(query));
+        // Không dispatch ở đây, để useEffect xử lý
       }
     }
     
-    // Xử lý khi click vào createdAt column (cả khi có field và khi field undefined nhưng đang sort createdAt)
-    if ((sorter && sorter.field === 'createdAt') || (sorter && !sorter.field && sortBy === 'createdAt')) {
+    // Xử lý khi click vào createdAt column (cả khi có field và khi field undefined nhưng đang sort createdat)
+    if ((sorter && sorter.field === 'createdAt') || (sorter && !sorter.field && sortBy === 'createdat')) {
       const newClickCount = createdAtClickCount + 1;
       setCreatedAtClickCount(newClickCount);
       
-      console.log("🔢 CreatedAt click count:", newClickCount);
-      
-      // Cycle through 3 states: desc → asc → reset (mặc định desc cho ngày tạo)
+      // Cycle through 3 states: desc → asc → reset to default
       if (newClickCount % 3 === 1) {
         // Click 1, 4, 7... → desc (mới nhất)
-        console.log("📊 Sort by createdAt desc");
-        setSortBy("createdAt");
+        setSortBy("createdat");
         setSortOrder("desc");
       } else if (newClickCount % 3 === 2) {
         // Click 2, 5, 8... → asc (cũ nhất)
-        console.log("📊 Sort by createdAt asc");
-        setSortBy("createdAt");
+        setSortBy("createdat");
         setSortOrder("asc");
       } else {
-        // Click 3, 6, 9... → reset to default
-        console.log("🔄 Sort reset to default: createdAt desc");
-        setSortBy("createdAt");
-        setSortOrder("desc");
+        // Click 3, 6, 9... → reset to default (no sort)
+        setSortBy("default");
+        setSortOrder("");
         
-        // Force reload data với sort mặc định
-        const query = {
-          page: pagination.current || 1,
-          limit: pagination.pageSize || 5,
-          sortBy: "createdAt",
-          sortOrder: "desc",
-        };
-        
-        if (statusFilter !== "all") {
-          query.status = statusFilter;
-        }
-        
-        if (searchText.trim()) {
-          query.keyword = searchText.trim();
-        }
-        
-        if (categoryFilter !== "all") {
-          const selectedCategory = categoryItems.find(c => c._id === categoryFilter);
-          if (selectedCategory) {
-            query.categoryName = selectedCategory.name;
-          }
-        }
-        
-        console.log("🚀 Force dispatching query:", query);
-        dispatch(productListRequest(query));
+        // Không dispatch ở đây, để useEffect xử lý
       }
     }
   };
+
+  // Handle sort option change from dropdown
+  const handleSortChange = (value) => {
+    switch (value) {
+      case "default":
+        setSortBy("default");
+        setSortOrder("");
+        break;
+      case "newest":
+        setSortBy("createdat");
+        setSortOrder("desc");
+        break;
+      case "oldest":
+        setSortBy("createdat");
+        setSortOrder("asc");
+        break;
+      case "price-asc":
+        setSortBy("price");
+        setSortOrder("asc");
+        break;
+      case "price-desc":
+        setSortBy("price");
+        setSortOrder("desc");
+        break;
+      default:
+        setSortBy(defaultSort.sortBy);
+        setSortOrder(defaultSort.sortOrder);
+    }
+  };
+
 
   const columns = [
     {
@@ -442,7 +456,7 @@ const ProductManagement = () => {
       sorter: {
         multiple: false,
       },
-      sortOrder: sortBy === 'price' ? (sortOrder === 'asc' ? 'ascend' : 'descend') : null,
+      sortOrder: sortBy === 'default' ? null : (sortBy === 'price' ? (sortOrder === 'asc' ? 'ascend' : 'descend') : null),
       render: (price) => (
         <Tag color="#13C2C2" style={{ borderRadius: 16, padding: "4px 12px", fontSize: 14, fontWeight: 500 }}>
           {(price || 0).toLocaleString("vi-VN")}đ
@@ -456,7 +470,7 @@ const ProductManagement = () => {
       sorter: {
         multiple: false,
       },
-      sortOrder: sortBy === 'createdAt' ? (sortOrder === 'asc' ? 'ascend' : 'descend') : null,
+      sortOrder: sortBy === 'default' ? null : (sortBy === 'createdat' ? (sortOrder === 'asc' ? 'ascend' : 'descend') : null),
       render: (createdAt) => (
         <div>
           <Text style={{ color: "#0D364C", fontSize: 14, display: "block" }}>
@@ -533,6 +547,22 @@ const ProductManagement = () => {
       },
       onShowSizeChange: (current, size) => {
         setPagination({ current, pageSize: size });
+        // Dispatch API call với page size mới
+        const query = {
+          page: current,
+          limit: size,
+          sortBy,
+          sortOrder,
+        };
+        
+        if (statusFilter !== "all") query.status = statusFilter;
+        if (searchText.trim()) query.keyword = searchText.trim();
+        if (categoryFilter !== "all") {
+          const selectedCategory = categoryItems.find(c => c._id === categoryFilter);
+          if (selectedCategory) query.categoryName = selectedCategory.name;
+        }
+        
+        dispatch(productListRequest(query));
       },
     }),
     [apiPagination, pagination, hasActiveFilters, statusFilter, searchText, categoryFilter, categoryItems, sortBy, sortOrder, dispatch]
@@ -597,19 +627,16 @@ const ProductManagement = () => {
               ))}
             </Select>
             <Select
-              value={`${sortBy}-${sortOrder}`}
-              onChange={(value) => {
-                const [newSortBy, newSortOrder] = value.split('-');
-                setSortBy(newSortBy);
-                setSortOrder(newSortOrder);
-              }}
+              value={sortBy === "default" ? "default" : `${sortBy}-${sortOrder}`}
+              onChange={handleSortChange}
               style={{ width: 200 }}
               size="large"
               placeholder="Sắp xếp"
               suffixIcon={<FilterOutlined style={{ color: "#13C2C2" }} />}
             >
-              <Select.Option value="createdAt-desc">Mới nhất</Select.Option>
-              <Select.Option value="createdAt-asc">Cũ nhất</Select.Option>
+              <Select.Option value="default">Mặc định</Select.Option>
+              <Select.Option value="newest">Mới nhất</Select.Option>
+              <Select.Option value="oldest">Cũ nhất</Select.Option>
               <Select.Option value="price-asc">Giá thấp đến cao</Select.Option>
               <Select.Option value="price-desc">Giá cao đến thấp</Select.Option>
             </Select>
@@ -619,6 +646,37 @@ const ProductManagement = () => {
             <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsCreateModalVisible(true)} style={{ backgroundColor: "#0D364C", borderColor: "#0D364C" }}>Thêm Sản phẩm</Button>
           </Space>
         </div>
+
+        {/* Error and Success Messages */}
+        {error && (
+          <Alert
+            message={error}
+            type="error"
+            showIcon
+            closable
+            onClose={() => dispatch(productClearMessages())}
+            style={{ 
+              marginBottom: 16, 
+              borderColor: "#ff4d4f", 
+              backgroundColor: "#fff2f0"
+            }}
+          />
+        )}
+        
+        {successMessage && (
+          <Alert
+            message={successMessage}
+            type="success"
+            showIcon
+            closable
+            onClose={() => dispatch(productClearMessages())}
+            style={{ 
+              marginBottom: 16, 
+              borderColor: "#52c41a", 
+              backgroundColor: "#f6ffed"
+            }}
+          />
+        )}
 
         {/* Filter status indicator */}
         {hasActiveFilters && (
