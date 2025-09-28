@@ -129,16 +129,16 @@ const CreateProduct = ({ visible, onClose, onSuccess, categories = [] }) => {
                   </Select>
                 </Form.Item>
 
-                <Form.Item label={<Space><ShoppingOutlined style={{ color: "#13C2C2" }} /><span style={customStyles.label}>Tên sản phẩm</span></Space>} name="name" rules={[{ required: true, message: "Vui lòng nhập tên sản phẩm!" }, { min: 2, message: "Ít nhất 2 ký tự" }, { max: 100, message: "Tối đa 100 ký tự" }]}>
-                  <Input placeholder="Nhập tên sản phẩm" style={customStyles.input} maxLength={100} showCount />
+                <Form.Item label={<Space><ShoppingOutlined style={{ color: "#13C2C2" }} /><span style={customStyles.label}>Tên sản phẩm</span></Space>} name="name" rules={[{ required: true, message: "Vui lòng nhập tên sản phẩm!" }]}>
+                  <Input placeholder="Nhập tên sản phẩm" style={customStyles.input} maxLength={200} showCount />
                 </Form.Item>
 
                 <Form.Item label={<Space><DollarOutlined style={{ color: "#13C2C2" }} /><span style={customStyles.label}>Giá sản phẩm</span></Space>} name="price" rules={[{ required: true, message: "Vui lòng nhập giá sản phẩm!" }]}>
-                  <InputNumber min={1000} max={1000000000} style={{ width: "100%", ...customStyles.input }} placeholder="Nhập giá sản phẩm" formatter={(v) => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")} parser={(v) => v.replace(/\$\s?|(,*)/g, "")} />
+                  <InputNumber min={0} max={999999999} style={{ width: "100%", ...customStyles.input }} placeholder="Nhập giá sản phẩm" formatter={(v) => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")} parser={(v) => v.replace(/\$\s?|(,*)/g, "")} />
                 </Form.Item>
 
                 <Form.Item label={<Space><ShoppingOutlined style={{ color: "#13C2C2" }} /><span style={customStyles.label}>Số lượng</span></Space>} name="quantity" rules={[{ required: true, message: "Vui lòng nhập số lượng!" }]}>
-                  <InputNumber min={1} max={100000} style={{ width: "100%", ...customStyles.input }} placeholder="Nhập số lượng" precision={0} />
+                  <InputNumber min={0} max={999999} style={{ width: "100%", ...customStyles.input }} placeholder="Nhập số lượng" precision={0} />
                 </Form.Item>
 
                 <Form.Item label={<Space><ShoppingOutlined style={{ color: "#13C2C2" }} /><span style={customStyles.label}>Thương hiệu</span></Space>} name="brand">

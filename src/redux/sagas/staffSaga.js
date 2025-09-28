@@ -1,5 +1,5 @@
 import { takeLatest, call, put } from "redux-saga/effects";
-import axios from "axios";
+import apiClient from "../../utils/axiosConfigNoCredentials";
 import { toast } from "react-toastify";
 import {
   STAFF_LIST_REQUEST,
