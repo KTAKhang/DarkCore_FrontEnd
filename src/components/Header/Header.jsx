@@ -60,9 +60,7 @@ const Header = ({ searchTerm, setSearchTerm, cartItems }) => {
                         <Link to="/contact" className="text-gray-700 hover:text-blue-600">
                             Liên hệ
                         </Link>
-                        <Link to="/admin" className="text-gray-700 hover:text-blue-600">
-                            Dashboard
-                        </Link>
+
                     </nav>
 
                     {/* Search + Cart + User */}
@@ -146,7 +144,7 @@ const Header = ({ searchTerm, setSearchTerm, cartItems }) => {
                                                 {/* Menu items */}
                                                 <div className="py-2">
                                                     <button
-                                                        // onClick={() => { navigate("/admin/profile"); toggleDropdown(); }}
+                                                        onClick={() => { navigate("/customer/profile"); toggleDropdown(); }}
                                                         className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-gray-50 transition-all duration-200 hover:translate-x-1"
                                                     >
                                                         <User className="w-5 h-5" style={{ color: '#135cc2ff' }} />
@@ -154,7 +152,7 @@ const Header = ({ searchTerm, setSearchTerm, cartItems }) => {
                                                     </button>
 
                                                     <button
-                                                        // onClick={() => { navigate("/admin/change-password"); toggleDropdown(); }}
+                                                        onClick={() => { navigate("/customer/change-password"); toggleDropdown(); }}
                                                         className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-gray-50 transition-all duration-200 hover:translate-x-1"
                                                     >
                                                         <Settings className="w-5 h-5" style={{ color: '#135cc2ff' }} />
