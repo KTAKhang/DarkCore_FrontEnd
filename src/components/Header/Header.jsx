@@ -23,9 +23,6 @@ const Header = ({ searchTerm, setSearchTerm, cartItems }) => {
     const handleLogout = () => {
         if (window.confirm("Bạn có chắc chắn muốn đăng xuất?")) {
             dispatch(logoutRequest());
-            localStorage.removeItem("access_token");
-            localStorage.removeItem("role");
-            localStorage.removeItem("user");
             navigate("/");
         }
     };
