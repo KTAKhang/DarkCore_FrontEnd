@@ -85,7 +85,7 @@ const Register = () => {
         if (!formData.email) newErrors.email = 'Vui lòng nhập email';
         else if (!validateEmail(formData.email)) newErrors.email = 'Email không hợp lệ';
         if (!formData.password) newErrors.password = 'Vui lòng nhập mật khẩu';
-        else if (!validatePassword(formData.password)) newErrors.password = 'Mật khẩu ít nhất 6 ký tự';
+        else if (!validatePassword(formData.password)) newErrors.password = 'Mật khẩu ít nhất 8 ký tự';
         if (!formData.phone) newErrors.phone = 'Vui lòng nhập số điện thoại';
         if (!formData.address) newErrors.address = 'Vui lòng nhập địa chỉ';
 

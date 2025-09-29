@@ -57,7 +57,7 @@ const ForgotPassword = () => {
     };
 
     const validatePassword = (password) => {
-        return password.length >= 6;
+        return password.length !== 8;
     };
 
     const handleInputChange = (field, value) => {
@@ -101,7 +101,7 @@ const ForgotPassword = () => {
         if (!formData.newPassword) {
             newErrors.newPassword = 'Vui lòng nhập mật khẩu mới';
         } else if (!validatePassword(formData.newPassword)) {
-            newErrors.newPassword = 'Mật khẩu phải có ít nhất 6 ký tự';
+            newErrors.newPassword = 'Mật khẩu phải có 8 ký tự';
         }
 
         if (!formData.confirmPassword) {

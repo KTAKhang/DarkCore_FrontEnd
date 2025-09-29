@@ -21,6 +21,7 @@ import WishlistPage from "../pages/CustomerVIew/WishlistPage";
 import ProfileManagement from "../pages/ProfileManagement/ProfileManagerment";
 import UpdatePassword from "../pages/ProfileManagement/UpdatePassword";
 import PrivateRoute from "../components/PrivateRouter";
+import CustomerLayout from "../layout/CustomerLayout";
 
 
 
@@ -51,6 +52,20 @@ export const routes = [
   {
     path: "/wishlist",
     element: <WishlistPage />,
+  },
+
+  // Khu vực quản trị
+  {
+    path: "/customer",
+    element: (
+      <PrivateRoute requiredRole="customer">
+        <CustomerLayout />
+      </PrivateRoute>
+    ),
+    children: [
+      { path: "profile", element: <ProfileManagement /> },
+      { path: "change-password", element: <UpdatePassword /> },
+    ],
   },
 
   // Khu vực quản trị
