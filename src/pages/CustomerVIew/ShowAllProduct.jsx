@@ -87,6 +87,12 @@ const ShowAllProduct = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize] = useState(8);
     const [shouldReloadFavorites, setShouldReloadFavorites] = useState(false);
+    const [isInitialLoad, setIsInitialLoad] = useState(true); // Prevent duplicate initial calls
+    
+    // Debug sort state changes
+    useEffect(() => {
+        console.log("🔄 ShowAllProduct Sort state changed:", { sortBy });
+    }, [sortBy]);
 
     const formatPrice = (price) => {
         return new Intl.NumberFormat('vi-VN').format(price) + '₫';
@@ -117,6 +123,7 @@ const ShowAllProduct = () => {
 
         // Gọi API brands để lấy danh sách thương hiệu
         dispatch(productHomeBrandsRequest());
+        setIsInitialLoad(false);
     }, [dispatch, currentPage, pageSize]);
 
     // Reset selectedBrand khi brands data thay đổi (nếu selectedBrand không còn hợp lệ)
@@ -131,6 +138,9 @@ const ShowAllProduct = () => {
 
     // Reset currentPage về 1 khi filter thay đổi (with debounce)
     useEffect(() => {
+        // Skip if this is initial load
+        if (isInitialLoad) return;
+        
         const timeoutId = setTimeout(() => {
             if (currentPage !== 1) {
                 setCurrentPage(1);
@@ -139,7 +149,7 @@ const ShowAllProduct = () => {
 
         return () => clearTimeout(timeoutId);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [searchTerm, selectedCategory, selectedBrand, sortBy]);
+    }, [searchTerm, selectedCategory, selectedBrand, isInitialLoad]);
 
     // Track data changes
     useEffect(() => {
@@ -218,6 +228,12 @@ const ShowAllProduct = () => {
 
     // Load products with filters
     useEffect(() => {
+        // Skip if this is initial load
+        if (isInitialLoad) return;
+        
+        console.log('🔄 ShowAllProduct Filter/Sort change - dispatching API call');
+        console.log('🔄 ShowAllProduct Current state:', { searchTerm, selectedCategory, selectedBrand, sortBy, currentPage });
+        
         const query = {
             page: currentPage,
             limit: pageSize
@@ -257,21 +273,21 @@ const ShowAllProduct = () => {
                 query.sortBy = 'price';
                 query.sortOrder = 'desc';
                 break;
-            case 'rating':
-                query.sortBy = 'rating';
-                query.sortOrder = 'desc';
-                break;
             case 'newest':
                 query.sortBy = 'createdat';
                 query.sortOrder = 'desc';
+                break;
+            case 'oldest':
+                query.sortBy = 'createdat';
+                query.sortOrder = 'asc';
                 break;
             default:
                 break;
         }
 
-        console.log('🔄 Loading products with query:', query);
+        console.log('🔄 ShowAllProduct Filter/Sort query:', query);
         dispatch(productHomeListRequest(query));
-    }, [dispatch, currentPage, pageSize, searchTerm, selectedCategory, selectedBrand, sortBy, categories, categoriesError]);
+    }, [dispatch, currentPage, pageSize, searchTerm, selectedCategory, selectedBrand, sortBy, categories, categoriesError, isInitialLoad]);
 
     // Early return if Redux state is not properly initialized
     if (!categoryHomeState || !productHomeState || Object.keys(categoryHomeState).length === 0 || Object.keys(productHomeState).length === 0) {
@@ -328,7 +344,10 @@ const ShowAllProduct = () => {
                     </h3>
                     {(product.description || product.short_desc) && (
                         <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-                            {product.description || product.short_desc}
+                            {(product.description || product.short_desc).length > 50 
+                                ? (product.description || product.short_desc).substring(0, 50) + '...'
+                                : (product.description || product.short_desc)
+                            }
                         </p>
                     )}
                     {product.brand && (
@@ -429,8 +448,8 @@ const ShowAllProduct = () => {
                                 <option value="default">Mặc định</option>
                                 <option value="price-low">Giá thấp đến cao</option>
                                 <option value="price-high">Giá cao đến thấp</option>
-                                <option value="rating">Đánh giá cao</option>
                                 <option value="newest">Mới nhất</option>
+                                <option value="oldest">Cũ nhất</option>
                             </select>
                         </div>
 
@@ -474,7 +493,7 @@ const ShowAllProduct = () => {
                                                 <span>⚠️</span>
                                                 <span>Sử dụng dữ liệu mẫu (Backend chưa sẵn sàng)</span>
                                             </div>
-                                            {displayCategories.map(category => (
+                                            {displayCategories.filter(category => category.status !== false).map(category => (
                                                 <button
                                                     key={category._id}
                                                     onClick={() => setSelectedCategory(category._id)}
@@ -489,7 +508,7 @@ const ShowAllProduct = () => {
                                             ))}
                                         </div>
                                     ) : (
-                                        displayCategories && Array.isArray(displayCategories) ? displayCategories.map(category => (
+                                        displayCategories && Array.isArray(displayCategories) ? displayCategories.filter(category => category.status !== false).map(category => (
                                             <button
                                                 key={category._id}
                                                 onClick={() => setSelectedCategory(category._id)}
