@@ -15,7 +15,6 @@ import {
 
 const API_BASE_URL = "http://localhost:3000";
 
-// ===== API CALL (có check refresh token) =====
 const apiCall = async (method, url, data = null, isForm = false) => {
     const token = localStorage.getItem("token");
     try {
@@ -42,7 +41,6 @@ const apiCall = async (method, url, data = null, isForm = false) => {
                 const newToken = refreshRes.data?.token?.access_token;
                 if (newToken) {
                     localStorage.setItem("token", newToken);
-                    // thử gọi lại với token mới
                     const retryRes = await axios({
                         method,
                         url: `${API_BASE_URL}${url}`,
@@ -65,15 +63,25 @@ const apiCall = async (method, url, data = null, isForm = false) => {
     }
 };
 
-// ===== GET ALL CUSTOMERS =====
+function buildQuery(params) {
+    const query = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== "") {
+            query.append(key, value);
+        }
+    });
+    return query.toString();
+}
+
 function* getAllCustomersSaga(action) {
     try {
         const { page, limit, search, status, isGoogleAccount, sort } = action.payload || {};
-        const query = new URLSearchParams({
-            page, limit, search, status, isGoogleAccount, sort
-        }).toString();
 
-        const response = yield call(() => apiCall("get", `/customer/get-all?${query}`));
+        const query = buildQuery({ page, limit, search, status, isGoogleAccount, sort });
+
+        const response = yield call(() => apiCall("get", `/customer/get-all?${query}`, true));
+        console.log("response:", response);
+
         if (response.status === "OK") {
             yield put(getAllCustomersSuccess(response.data));
         } else {
