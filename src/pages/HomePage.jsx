@@ -6,10 +6,6 @@ import Header from '../components/Header/Header';
 import Footer from '../components/Footer/Footer';
 import { useWishlist } from '../contexts/WishlistContext';
 import {
-    categoryHomeListRequest,
-    categoryHomeClearMessages
-} from '../redux/actions/categoryHomeActions';
-import {
     productHomeFeaturedRequest,
     productHomeToggleFavoriteRequest,
     productHomeClearMessages
@@ -66,19 +62,12 @@ const HomePage = () => {
   const { wishlist, toggleWishlist } = useWishlist();
   
   // Redux state with safe destructuring
-  const categoryHomeState = useSelector(state => state?.categoryHome) || {};
   const productHomeState = useSelector(state => state?.productHome) || {};
 
-  let categories, categoriesLoading, categoriesError;
   let featuredProducts, featuredLoading, featuredError;
   let toggleFavoriteLoading, toggleFavoriteError;
 
   try {
-    const categoryData = categoryHomeState?.list || {};
-    categories = categoryData.items || [];
-    categoriesLoading = categoryData.loading || false;
-    categoriesError = categoryData.error || null;
-    
     const featuredData = productHomeState?.featured || {};
     featuredProducts = featuredData.items || [];
     featuredLoading = featuredData.loading || false;
@@ -90,9 +79,6 @@ const HomePage = () => {
     
   } catch (error) {
     console.error('❌ Error destructuring Redux state:', error);
-    categories = [];
-    categoriesLoading = false;
-    categoriesError = 'Destructuring error';
     featuredProducts = [];
     featuredLoading = false;
     featuredError = 'Destructuring error';
@@ -120,9 +106,8 @@ const HomePage = () => {
     setShouldReloadFavorites(true);
   };
 
-  // Load categories and featured products on component mount
+  // Load featured products on component mount
   useEffect(() => {
-    dispatch(categoryHomeListRequest({ page: 1, limit: 8 }));
     dispatch(productHomeFeaturedRequest({ limit: 4 }));
   }, [dispatch]);
 
@@ -137,46 +122,10 @@ const HomePage = () => {
   // Clear errors when component unmounts
   useEffect(() => {
     return () => {
-      dispatch(categoryHomeClearMessages());
       dispatch(productHomeClearMessages());
     };
   }, [dispatch]);
 
-  // Memoize fallback categories to prevent re-creation on every render
-  const fallbackCategories = useMemo(() => [
-    {
-      _id: "laptops",
-      name: "Laptop",
-      description: "Laptop gaming, văn phòng, đồ họa",
-      icon: "💻",
-      productCount: "150+",
-      image: "https://cdn2.cellphones.com.vn/x/media/catalog/product/t/e/text_ng_n_3__8_97_1.png?_gl=1*apgeb1*_gcl_aw*R0NMLjE3NTc2NjA2MTEuQ2p3S0NBandpWV9HQmhCRUVpd0FGYWdodmk3OFpYeTd2YzFhLU1nQ1Znb2hnaTNaNTNfdlk5ektoRHQ2MXZfcU1CS1dmclIyQ2VjbmpSb0M1TFFRQXZEX0J3RQ..*_gcl_au*ODU3MjE3NDQuMTc1NzY2MDYxMA..*_ga*MTIyNDM0ODEyMC4xNjY4OTQ3MjM3*_ga_QLK8WFHNK9*czE3NTc2NjA2MTAkbzE1JGcxJHQxNzU3NjYwNjE0JGo1NiRsMCRoMTU0NjQ3NDM1NQ.."
-    },
-    {
-      _id: "tablets",
-      name: "Máy tính bảng",
-      description: "iPad, Android tablet, Windows tablet",
-      icon: "📱",
-      productCount: "80+",
-      image: "https://cdn2.fptshop.com.vn/unsafe/750x0/filters:format(webp):quality(75)/i_Pad_A16_Wi_Fi_Blue_PDP_Image_Position_1_VN_VI_7db84c95a3.jpg"
-    },
-    {
-      _id: "accessories",
-      name: "Phụ kiện",
-      description: "Chuột, bàn phím, tai nghe, sạc",
-      icon: "🎧",
-      productCount: "200+",
-      image: "https://cdn2.fptshop.com.vn/unsafe/750x0/filters:format(webp):quality(75)/airpods_pro_3_1_c24b2a2c9b.png"
-    },
-    {
-      _id: "repair",
-      name: "Sửa chữa",
-      description: "Sửa laptop, thay màn hình, nâng cấp",
-      icon: "🔧",
-      productCount: "Dịch vụ 24/7",
-      image: "https://giatin.com.vn/wp-content/uploads/2019/11/sua-laptop-tai-da-nang.jpg"
-    }
-  ], []);
 
   // Fallback products data when API fails
   const fallbackProducts = useMemo(() => [
@@ -246,10 +195,6 @@ const HomePage = () => {
     }
   ], []);
 
-  // Memoize display data to prevent re-creation on every render
-  const displayCategories = useMemo(() => {
-    return (categoriesError || !categories || !Array.isArray(categories)) ? fallbackCategories : categories;
-  }, [categoriesError, categories, fallbackCategories]);
 
   // Use fallback products if API fails or featuredProducts is null/undefined
   const displayProducts = useMemo(() => {
@@ -324,7 +269,10 @@ const HomePage = () => {
           </h3>
           {(product.description || product.short_desc) && (
             <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-              {product.description || product.short_desc}
+              {(product.description || product.short_desc).length > 50 
+                ? (product.description || product.short_desc).substring(0, 50) + '...'
+                : (product.description || product.short_desc)
+              }
             </p>
           )}
           {product.brand && (
@@ -459,62 +407,6 @@ const HomePage = () => {
     }).isRequired,
   };
 
-  const CategoryCard = ({ category }) => {
-    const categoryId = category._id || category.id;
-    const categoryImage = category.image || category.images?.[0] || '/placeholder-category.jpg';
-    const categoryIcon = category.icon || '📱';
-    const productCount = category.productCount || `${category.products?.length || 0}+`;
-    
-    const handleCategoryClick = () => {
-      navigate(`/products?category=${categoryId}`);
-    };
-    
-    return (
-      <div 
-        className="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer"
-        onClick={handleCategoryClick}
-      >
-        <div className="relative h-48 overflow-hidden">
-          <img
-            src={categoryImage}
-            alt={category.name}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-          />
-          <div className="absolute top-4 left-4 w-12 h-12 bg-white/90 backdrop-blur-sm rounded-lg flex items-center justify-center">
-            <span className="text-xl">{categoryIcon}</span>
-          </div>
-        </div>
-        <div className="p-6">
-          <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
-            {category.name}
-          </h3>
-          <p className="text-gray-600 text-sm mb-3 leading-relaxed">
-            {category.description || `Khám phá các sản phẩm ${category.name} chất lượng cao`}
-          </p>
-          <div className="flex items-center justify-between">
-            <span className="text-blue-600 font-medium text-sm">{productCount} sản phẩm</span>
-            <span className="text-gray-400 group-hover:text-blue-600 group-hover:translate-x-1 transition-all">
-              →
-            </span>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  CategoryCard.propTypes = {
-    category: PropTypes.shape({
-      _id: PropTypes.string,
-      id: PropTypes.string,
-      name: PropTypes.string.isRequired,
-      description: PropTypes.string,
-      icon: PropTypes.string,
-      productCount: PropTypes.string,
-      image: PropTypes.string,
-      images: PropTypes.array,
-      products: PropTypes.array,
-    }).isRequired,
-  };
 
   return (
     <div className="min-h-screen bg-white">
@@ -553,46 +445,6 @@ const HomePage = () => {
           <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-white to-transparent"></div>
         </section>
 
-        {/* Categories Section */}
-        <section className="py-16 bg-gray-50">
-          <div className="container mx-auto px-4">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold text-gray-900 mb-4">Danh mục sản phẩm</h2>
-              <p className="text-gray-600 text-lg max-w-2xl mx-auto">
-                Khám phá các danh mục sản phẩm công nghệ hàng đầu với chất lượng đảm bảo
-              </p>
-            </div>
-
-            {/* Backend Connection Warning for Categories */}
-            {categoriesError && (
-              <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
-                <div className="flex items-center space-x-2">
-                  <span className="text-orange-500 text-lg">⚠️</span>
-                  <div>
-                    <h4 className="text-orange-800 font-medium">Không thể tải danh mục từ server</h4>
-                    <p className="text-orange-700 text-sm">
-                      Hiện tại đang sử dụng dữ liệu mẫu. Vui lòng kiểm tra kết nối mạng.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {categoriesLoading ? (
-              <div className="text-center py-12">
-                <div className="text-6xl mb-4">⏳</div>
-                <h3 className="text-xl font-medium text-gray-900 mb-2">Đang tải danh mục...</h3>
-                <p className="text-gray-600">Vui lòng chờ trong giây lát</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {displayCategories.map(category => (
-                  <CategoryCard key={category._id || category.id} category={category} />
-                ))}
-              </div>
-            )}
-          </div>
-        </section>
 
         {/* Featured Products Section */}
         <section className="py-16 bg-white">
