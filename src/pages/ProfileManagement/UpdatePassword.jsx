@@ -1,21 +1,24 @@
-import { useState } from "react";
-import { Card, Input, Button, message, Form, Typography, Space, Divider } from "antd";
+import { useState, useEffect } from "react";
+import { Card, Input, Button, message, Typography, Divider } from "antd";
 import { LockOutlined, KeyOutlined, SafetyOutlined, CheckCircleOutlined } from "@ant-design/icons";
+import { useDispatch, useSelector } from "react-redux";
+import { changePasswordRequest, clearProfileMessages } from "../../redux/actions/profileAction";
+import PropTypes from 'prop-types';
 
 const { Title, Text } = Typography;
 
 // Motion component simulation (since framer-motion isn't available)
-const Motion = ({ children, className, delay = 0, ...props }) => {
+const Motion = ({ children, className = '', delay = 0, ...props }) => {
   const [isVisible, setIsVisible] = useState(false);
 
-  useState(() => {
+  useEffect(() => {
     const timer = setTimeout(() => setIsVisible(true), delay * 100);
     return () => clearTimeout(timer);
   }, [delay]);
 
   return (
     <div
-      className={`${className || ''} transition-all duration-500 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'
+      className={`${className} transition-all duration-500 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'
         }`}
       {...props}
     >
@@ -24,14 +27,49 @@ const Motion = ({ children, className, delay = 0, ...props }) => {
   );
 };
 
+Motion.propTypes = {
+  children: PropTypes.node.isRequired,
+  className: PropTypes.string,
+  delay: PropTypes.number,
+};
+
 export default function UpdatePassword() {
+  const dispatch = useDispatch();
+  const {
+    changePasswordLoading,
+    changePasswordError,
+    changePasswordSuccess
+  } = useSelector(state => state.profile);
+
   const [formData, setFormData] = useState({
     oldPassword: '',
     newPassword: '',
     confirmPassword: ''
   });
-  const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+
+  // Handle success/error from Redux
+  useEffect(() => {
+    if (changePasswordSuccess) {
+      setFormData({
+        oldPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      });
+      // Clear errors
+      setErrors({});
+      dispatch(clearProfileMessages());
+    }
+  }, [changePasswordSuccess]);
+
+  useEffect(() => {
+    if (changePasswordError) {
+      message.error({
+        content: changePasswordError,
+        duration: 4,
+      });
+    }
+  }, [changePasswordError]);
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
@@ -57,8 +95,8 @@ export default function UpdatePassword() {
 
     if (!formData.newPassword) {
       newErrors.newPassword = 'Vui lòng nhập mật khẩu mới!';
-    } else if (formData.newPassword.length < 6) {
-      newErrors.newPassword = 'Mật khẩu phải có ít nhất 6 ký tự!';
+    } else if (formData.newPassword.length !== 8) {
+      newErrors.newPassword = 'Mật khẩu phải có 8 ký tự!';
     }
 
     if (!formData.confirmPassword) {
@@ -74,42 +112,14 @@ export default function UpdatePassword() {
   const handleSubmit = async () => {
     if (!validateForm()) return;
 
-    setLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      setLoading(false);
-      message.success({
-        content: "Đổi mật khẩu thành công!",
-        icon: <CheckCircleOutlined style={{ color: '#13C2C2' }} />,
-      });
-      setFormData({
-        oldPassword: '',
-        newPassword: '',
-        confirmPassword: ''
-      });
-    }, 1200);
+    dispatch(changePasswordRequest({
+      old_password: formData.oldPassword,
+      new_password: formData.newPassword
+    }));
   };
 
   const customStyles = `
-    .modern-container {
-      min-height: 100vh;
-      background: #fff;
-      position: relative;
-      overflow: hidden;
-    }
-    
-    .modern-container::before {
-      content: '';
-      position: absolute;
-      top: -50%;
-      left: -50%;
-      width: 200%;
-      height: 200%;
-      background: radial-gradient(circle at 20% 80%, rgba(19, 194, 194, 0.1) 0%, transparent 50%),
-                  radial-gradient(circle at 80% 20%, rgba(13, 54, 76, 0.15) 0%, transparent 50%),
-                  radial-gradient(circle at 40% 40%, rgba(19, 194, 194, 0.08) 0%, transparent 50%);
-      animation: float 20s ease-in-out infinite;
-    }
+   
     
     @keyframes float {
       0%, 100% { transform: translate(0, 0) rotate(0deg); }
@@ -374,7 +384,7 @@ export default function UpdatePassword() {
   ];
 
   const passwordRules = [
-    "Mật khẩu phải có ít nhất 6 ký tự",
+    "Mật khẩu phải có 8 ký tự",
     "Chứa ít nhất một chữ cái viết hoa (A-Z)",
     "Chứa ít nhất một chữ cái viết thường (a-z)",
     "Chứa ít nhất một số (0-9)"
@@ -383,7 +393,7 @@ export default function UpdatePassword() {
   return (
     <>
       <style>{customStyles}</style>
-      <div className="modern-container flex justify-center items-center min-h-screen p-4">
+      <div className="modern-container flex justify-center ">
         <Motion className="w-full max-w-4xl" delay={2}>
           <div className="flex flex-col md:flex-row gap-8">
             {/* Left: Đổi mật khẩu */}
@@ -457,9 +467,9 @@ export default function UpdatePassword() {
                     className="modern-button mt-2"
                     type="primary"
                     htmlType="submit"
-                    loading={loading}
+                    loading={changePasswordLoading}
                     icon={<SafetyOutlined />}
-                    disabled={loading}
+                    disabled={changePasswordLoading}
                   >
                     Đổi mật khẩu
                   </Button>
