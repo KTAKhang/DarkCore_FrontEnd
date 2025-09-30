@@ -23,25 +23,12 @@ import {
     productHomeToggleFavoriteFailure,
 } from "../actions/productHomeActions";
 
-// API base URL
-const API_BASE_URL = "http://localhost:3000/cataloghome/api";
+import apiClient from "../../utils/axiosConfigNoCredentials";
 
 // Helper function to make API calls
 function* apiCall(url, options = {}) {
-    const response = yield call(fetch, url, {
-        headers: {
-            "Content-Type": "application/json",
-            ...options.headers,
-        },
-        ...options,
-    });
-
-    if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data = yield response.json();
-    return data;
+    const response = yield call(apiClient.get, url, options);
+    return response.data;
 }
 
 // Saga for getting products list
@@ -62,7 +49,7 @@ function* getProductsForHome(action) {
         if (query.sortBy) queryParams.append("sortBy", query.sortBy);
         if (query.sortOrder) queryParams.append("sortOrder", query.sortOrder);
 
-        const url = `${API_BASE_URL}/producthome?${queryParams.toString()}`;
+        const url = `/cataloghome/api/producthome?${queryParams.toString()}`;
         const result = yield call(apiCall, url);
 
         if (result.status === "OK") {
@@ -79,7 +66,7 @@ function* getProductsForHome(action) {
 function* getProductByIdForHome(action) {
     try {
         const { id } = action.payload;
-        const url = `${API_BASE_URL}/producthome/${id}`;
+        const url = `/cataloghome/api/producthome/${id}`;
         const result = yield call(apiCall, url);
 
         if (result.status === "OK") {
@@ -96,7 +83,12 @@ function* getProductByIdForHome(action) {
 function* getFeaturedProducts(action) {
     try {
         const { limit } = action.payload;
-        const url = `${API_BASE_URL}/producthome/featured?limit=${limit}`;
+        
+        // Build query string properly
+        const queryParams = new URLSearchParams();
+        if (limit) queryParams.append("limit", limit);
+        
+        const url = `/cataloghome/api/producthome/featured?${queryParams.toString()}`;
         const result = yield call(apiCall, url);
 
         if (result.status === "OK") {
@@ -126,7 +118,7 @@ function* getProductsByCategoryForHome(action) {
         if (query.sortBy) queryParams.append("sortBy", query.sortBy);
         if (query.sortOrder) queryParams.append("sortOrder", query.sortOrder);
 
-        const url = `${API_BASE_URL}/producthome/category/${categoryId}?${queryParams.toString()}`;
+        const url = `/cataloghome/api/producthome/category/${categoryId}?${queryParams.toString()}`;
         const result = yield call(apiCall, url);
 
         if (result.status === "OK") {
@@ -142,7 +134,7 @@ function* getProductsByCategoryForHome(action) {
 // Saga for getting brands list
 function* getBrands() {
     try {
-        const url = `${API_BASE_URL}/producthome/brands`;
+        const url = `/cataloghome/api/producthome/brands`;
         const result = yield call(apiCall, url);
 
         if (result.status === "OK") {
@@ -173,7 +165,7 @@ function* getFavoriteProducts(action) {
         if (query.sortBy) queryParams.append("sortBy", query.sortBy);
         if (query.sortOrder) queryParams.append("sortOrder", query.sortOrder);
 
-        const url = `${API_BASE_URL}/producthome/favorites?${queryParams.toString()}`;
+        const url = `/cataloghome/api/producthome/favorites?${queryParams.toString()}`;
         const result = yield call(apiCall, url);
 
         if (result.status === "OK") {
@@ -190,7 +182,7 @@ function* getFavoriteProducts(action) {
 function* toggleFavoriteProduct(action) {
     try {
         const { id } = action.payload;
-        const url = `${API_BASE_URL}/producthome/${id}/favorite`;
+        const url = `/cataloghome/api/producthome/${id}/favorite`;
         
         const result = yield call(apiCall, url, {
             method: 'PUT'

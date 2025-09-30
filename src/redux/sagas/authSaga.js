@@ -33,9 +33,11 @@ const apiLogout = async () => {
     const response = await axios.post(
         `${API_BASE_URL}/auth/logout`,
         {},
+
         { withCredentials: true }
     );
     return response.data;
+
 };
 
 function* handleLogout() {
