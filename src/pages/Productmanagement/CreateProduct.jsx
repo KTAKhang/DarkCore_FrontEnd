@@ -54,14 +54,42 @@ const CreateProduct = ({ visible, onClose, onSuccess, categories = [] }) => {
       console.log("values.short_desc:", values.short_desc);
       console.log("values.detail_desc:", values.detail_desc);
       
+      // Validate required fields
+      const trimmedName = values.name?.trim();
+      const trimmedShortDesc = values.short_desc?.trim();
+      const trimmedDetailDesc = values.detail_desc?.trim();
+      const trimmedBrand = values.brand?.trim();
+      
+      // Check for empty required fields
+      if (!trimmedName) {
+        message.error("Vui lòng nhập tên sản phẩm!");
+        setIsSubmitting(false);
+        return;
+      }
+      if (!trimmedShortDesc) {
+        message.error("Vui lòng nhập mô tả ngắn!");
+        setIsSubmitting(false);
+        return;
+      }
+      if (!trimmedDetailDesc) {
+        message.error("Vui lòng nhập mô tả chi tiết!");
+        setIsSubmitting(false);
+        return;
+      }
+      if (!trimmedBrand) {
+        message.error("Vui lòng nhập thương hiệu!");
+        setIsSubmitting(false);
+        return;
+      }
+      
       const payload = {
         _id: undefined,
-        name: values.name.trim(),
+        name: trimmedName,
         category_id: values.category_id,
         price: values.price,
-        short_desc: (values.short_desc || "").trim(),
-        detail_desc: (values.detail_desc || "").trim(),
-        brand: (values.brand || "").trim(),
+        short_desc: trimmedShortDesc,
+        detail_desc: trimmedDetailDesc,
+        brand: trimmedBrand,
         quantity: values.quantity,
         status: values.status !== undefined ? values.status : true,
         images,
@@ -120,7 +148,7 @@ const CreateProduct = ({ visible, onClose, onSuccess, categories = [] }) => {
 
               <Divider style={customStyles.divider} />
 
-              <Form form={form} layout="vertical" onFinish={handleFinish} initialValues={{ quantity: 1, price: 1000, status: true, short_desc: "", detail_desc: "", brand: "" }} size="large">
+              <Form form={form} layout="vertical" onFinish={handleFinish} initialValues={{ quantity: 1, price: 1000, status: true }} size="large">
                 <Form.Item label={<Space><AppstoreOutlined style={{ color: "#13C2C2" }} /><span style={customStyles.label}>Danh mục sản phẩm</span></Space>} name="category_id" rules={[{ required: true, message: "Vui lòng chọn danh mục sản phẩm!" }]}>
                   <Select placeholder="Chọn danh mục sản phẩm" style={customStyles.input}>
                     {activeCategories.map((cat) => (
@@ -141,16 +169,16 @@ const CreateProduct = ({ visible, onClose, onSuccess, categories = [] }) => {
                   <InputNumber min={0} max={999999} style={{ width: "100%", ...customStyles.input }} placeholder="Nhập số lượng" precision={0} />
                 </Form.Item>
 
-                <Form.Item label={<Space><ShoppingOutlined style={{ color: "#13C2C2" }} /><span style={customStyles.label}>Thương hiệu</span></Space>} name="brand">
-                  <Input placeholder="Nhập thương hiệu (tuỳ chọn)" style={customStyles.input} maxLength={50} showCount />
+                <Form.Item label={<Space><ShoppingOutlined style={{ color: "#13C2C2" }} /><span style={customStyles.label}>Thương hiệu</span></Space>} name="brand" rules={[{ required: true, message: "Vui lòng nhập thương hiệu!" }]}>
+                  <Input placeholder="Nhập thương hiệu" style={customStyles.input} maxLength={50} showCount />
                 </Form.Item>
 
-                <Form.Item label={<Space><InfoCircleOutlined style={{ color: "#13C2C2" }} /><span style={customStyles.label}>Mô tả ngắn</span></Space>} name="short_desc">
-                  <Input.TextArea rows={2} placeholder="Nhập mô tả ngắn (tuỳ chọn)" style={{ borderRadius: 8 }} showCount maxLength={200} />
+                <Form.Item label={<Space><InfoCircleOutlined style={{ color: "#13C2C2" }} /><span style={customStyles.label}>Mô tả ngắn</span></Space>} name="short_desc" rules={[{ required: true, message: "Vui lòng nhập mô tả ngắn!" }]}>
+                  <Input.TextArea rows={2} placeholder="Nhập mô tả ngắn" style={{ borderRadius: 8 }} showCount maxLength={200} />
                 </Form.Item>
                 
-                <Form.Item label={<Space><InfoCircleOutlined style={{ color: "#13C2C2" }} /><span style={customStyles.label}>Mô tả chi tiết</span></Space>} name="detail_desc">
-                  <Input.TextArea rows={4} placeholder="Nhập mô tả chi tiết (tuỳ chọn)" style={{ borderRadius: 8 }} showCount maxLength={1000} />
+                <Form.Item label={<Space><InfoCircleOutlined style={{ color: "#13C2C2" }} /><span style={customStyles.label}>Mô tả chi tiết</span></Space>} name="detail_desc" rules={[{ required: true, message: "Vui lòng nhập mô tả chi tiết!" }]}>
+                  <Input.TextArea rows={4} placeholder="Nhập mô tả chi tiết" style={{ borderRadius: 8 }} showCount maxLength={1000} />
                 </Form.Item>
 
                 <Form.Item label={<span style={customStyles.label}>Hình ảnh sản phẩm</span>} name="image" valuePropName="fileList" getValueFromEvent={(e) => (Array.isArray(e) ? e : e?.fileList)} rules={[{ required: true, message: "Vui lòng chọn hình ảnh cho sản phẩm!" }]}>

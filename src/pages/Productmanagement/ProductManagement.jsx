@@ -46,7 +46,7 @@ const { Title, Text } = Typography;
 
 const ProductManagement = () => {
   const dispatch = useDispatch();
-  const { items: productItems, stats, pagination: apiPagination, loadingList, loadingStats, creating, updating, deleting, error, message: successMessage } = useSelector((state) => state.product);
+  const { items: productItems, stats, pagination: apiPagination, loadingList, loadingStats, creating, updating, deleting, error } = useSelector((state) => state.product);
   const { items: categoryItems } = useSelector((state) => state.category);
   
   const [loading, setLoading] = useState(false);
@@ -56,8 +56,13 @@ const ProductManagement = () => {
   const [pagination, setPagination] = useState({ current: 1, pageSize: 5 });
   const [sortBy, setSortBy] = useState("default"); // "default", "price", "createdat", "name"
   const [sortOrder, setSortOrder] = useState(""); // "asc", "desc", "" (empty for default)
-  const [priceClickCount, setPriceClickCount] = useState(0); // Track clicks on price column
-  const [createdAtClickCount, setCreatedAtClickCount] = useState(0); // Track clicks on createdAt column
+  
+  // Debug sort state changes
+  useEffect(() => {
+    console.log("🔄 Sort state changed:", { sortBy, sortOrder });
+  }, [sortBy, sortOrder]);
+  // Removed click count states - using Ant Design sorter.order instead
+  const [isInitialLoad, setIsInitialLoad] = useState(true); // Prevent duplicate initial calls
   const paginationRef = useRef(pagination);
   const prevFiltersRef = useRef({ searchText, statusFilter, categoryFilter });
   
@@ -79,10 +84,14 @@ const ProductManagement = () => {
     dispatch(productListRequest({ page: 1, limit: 5, sortBy: "default", sortOrder: "" }));
     dispatch(productStatsRequest());
     dispatch(categoryListRequest({})); // Load categories for filters
+    setIsInitialLoad(false);
   }, [dispatch]);
 
   // Auto-load when filters change with debounce for search
   useEffect(() => {
+    // Skip initial load to avoid duplicate calls
+    if (isInitialLoad) return;
+    
     // Check if filters actually changed
     const prevFilters = prevFiltersRef.current;
     const filtersChanged = prevFilters.searchText !== searchText || 
@@ -114,6 +123,8 @@ const ProductManagement = () => {
         }
       }
       
+      console.log("🔄 Filter change - dispatching API call");
+      console.log("🔄 Filter query:", query);
       dispatch(productListRequest(query));
       
       // Reset to first page when filtering
@@ -126,11 +137,17 @@ const ProductManagement = () => {
     }, searchText.trim() ? 500 : 0); // 500ms debounce for search
 
     return () => clearTimeout(timeoutId);
-  }, [searchText, statusFilter, categoryFilter, sortBy, sortOrder, dispatch, categoryItems]);
+  }, [searchText, statusFilter, categoryFilter, dispatch, categoryItems, isInitialLoad, sortBy, sortOrder]); // Added sortBy, sortOrder to dependencies
 
   // Handle sort changes without resetting pagination
   useEffect(() => {
+    // Skip initial load to avoid duplicate calls
+    if (isInitialLoad) return;
+    
     console.log("🔄 Sort change - dispatching API call");
+    console.log("🔄 Current sort state:", { sortBy, sortOrder });
+    console.log("🔄 Current pagination:", paginationRef.current);
+    
     const query = {
       page: paginationRef.current.current, // Keep current page
       limit: paginationRef.current.pageSize,
@@ -153,8 +170,9 @@ const ProductManagement = () => {
       }
     }
     
+    console.log("🔄 Sort query:", query);
     dispatch(productListRequest(query));
-  }, [sortBy, sortOrder, dispatch, statusFilter, searchText, categoryFilter, categoryItems]);
+  }, [sortBy, sortOrder, dispatch, statusFilter, searchText, categoryFilter, categoryItems, isInitialLoad]);
 
   // Map backend product data to frontend format
   const products = useMemo(() => {
@@ -261,22 +279,10 @@ const ProductManagement = () => {
       status: created.status !== undefined ? created.status : true,
     };
     
-    // Only add description fields if they have actual content
-    if (created.short_desc && created.short_desc.trim() !== "") {
-      console.log("Adding short_desc to payload:", created.short_desc.trim());
-      payload.short_desc = created.short_desc.trim();
-    } else {
-      console.log("short_desc is empty or undefined, not adding to payload");
-    }
-    if (created.detail_desc && created.detail_desc.trim() !== "") {
-      console.log("Adding detail_desc to payload:", created.detail_desc.trim());
-      payload.detail_desc = created.detail_desc.trim();
-    } else {
-      console.log("detail_desc is empty or undefined, not adding to payload");
-    }
-    if (created.brand && created.brand.trim() !== "") {
-      payload.brand = created.brand.trim();
-    }
+    // Add required fields (now all fields are required)
+    payload.short_desc = created.short_desc?.trim() || "";
+    payload.detail_desc = created.detail_desc?.trim() || "";
+    payload.brand = created.brand?.trim() || "";
     
     console.log("=== Final payload to saga ===");
     console.log("payload:", payload);
@@ -310,16 +316,10 @@ const ProductManagement = () => {
       status: updated.status !== undefined ? updated.status : true,
     };
     
-    // Only add description fields if they have actual content
-    if (updated.short_desc && updated.short_desc.trim() !== "") {
-      payload.short_desc = updated.short_desc.trim();
-    }
-    if (updated.detail_desc && updated.detail_desc.trim() !== "") {
-      payload.detail_desc = updated.detail_desc.trim();
-    }
-    if (updated.brand && updated.brand.trim() !== "") {
-      payload.brand = updated.brand.trim();
-    }
+    // Add required fields (now all fields are required)
+    payload.short_desc = updated.short_desc?.trim() || "";
+    payload.detail_desc = updated.detail_desc?.trim() || "";
+    payload.brand = updated.brand?.trim() || "";
     
     // Handle images
     if (updated.images && Array.isArray(updated.images)) {
@@ -339,50 +339,45 @@ const ProductManagement = () => {
   }, [dispatch, handleRefresh]);
 
   const handleTableChange = (pagination, filters, sorter) => {
-    // Xử lý khi click vào price column (cả khi có field và khi field undefined nhưng đang sort price)
-    if ((sorter && sorter.field === 'price') || (sorter && !sorter.field && sortBy === 'price')) {
-      const newClickCount = priceClickCount + 1;
-      setPriceClickCount(newClickCount);
-      
-      // Cycle through 3 states: asc → desc → reset to default
-      if (newClickCount % 3 === 1) {
-        // Click 1, 4, 7... → asc
-        setSortBy("price");
-        setSortOrder("asc");
-      } else if (newClickCount % 3 === 2) {
-        // Click 2, 5, 8... → desc  
-        setSortBy("price");
-        setSortOrder("desc");
-      } else {
-        // Click 3, 6, 9... → reset to default (no sort)
-        setSortBy("default");
-        setSortOrder("");
-        
-        // Không dispatch ở đây, để useEffect xử lý
-      }
-    }
+    console.log("🔄 handleTableChange called:", { pagination, sorter });
     
-    // Xử lý khi click vào createdAt column (cả khi có field và khi field undefined nhưng đang sort createdat)
-    if ((sorter && sorter.field === 'createdAt') || (sorter && !sorter.field && sortBy === 'createdat')) {
-      const newClickCount = createdAtClickCount + 1;
-      setCreatedAtClickCount(newClickCount);
+    // Chỉ xử lý sort khi có sorter.field và sorter.order (click vào column header)
+    if (sorter && sorter.field && sorter.order) {
+      console.log("🔄 Column header clicked:", sorter.field, sorter.order);
       
-      // Cycle through 3 states: desc → asc → reset to default
-      if (newClickCount % 3 === 1) {
-        // Click 1, 4, 7... → desc (mới nhất)
-        setSortBy("createdat");
-        setSortOrder("desc");
-      } else if (newClickCount % 3 === 2) {
-        // Click 2, 5, 8... → asc (cũ nhất)
-        setSortBy("createdat");
-        setSortOrder("asc");
-      } else {
-        // Click 3, 6, 9... → reset to default (no sort)
-        setSortBy("default");
-        setSortOrder("");
-        
-        // Không dispatch ở đây, để useEffect xử lý
+      // Xử lý khi click vào price column
+      if (sorter.field === 'price') {
+        // Logic đơn giản: dựa vào sorter.order từ Ant Design
+        if (sorter.order === 'ascend') {
+          setSortBy("price");
+          setSortOrder("asc");
+        } else if (sorter.order === 'descend') {
+          setSortBy("price");
+          setSortOrder("desc");
+        } else {
+          // No sort
+          setSortBy("default");
+          setSortOrder("");
+        }
       }
+      
+      // Xử lý khi click vào createdAt column
+      if (sorter.field === 'createdAt') {
+        // Logic đơn giản: dựa vào sorter.order từ Ant Design
+        if (sorter.order === 'descend') {
+          setSortBy("createdat");
+          setSortOrder("desc");
+        } else if (sorter.order === 'ascend') {
+          setSortBy("createdat");
+          setSortOrder("asc");
+        } else {
+          // No sort
+          setSortBy("default");
+          setSortOrder("");
+        }
+      }
+    } else {
+      console.log("🔄 Pagination change only - no sort handling");
     }
   };
 
@@ -528,6 +523,7 @@ const ProductManagement = () => {
         </Text>
       ),
       onChange: (page, pageSize) => {
+        console.log("🔄 Pagination change:", { page, pageSize, sortBy, sortOrder });
         setPagination({ current: page, pageSize });
         const query = {
           page,
@@ -543,6 +539,7 @@ const ProductManagement = () => {
           if (selectedCategory) query.categoryName = selectedCategory.name;
         }
         
+        console.log("🔄 Pagination query:", query);
         dispatch(productListRequest(query));
       },
       onShowSizeChange: (current, size) => {
@@ -627,7 +624,14 @@ const ProductManagement = () => {
               ))}
             </Select>
             <Select
-              value={sortBy === "default" ? "default" : `${sortBy}-${sortOrder}`}
+              value={(() => {
+                if (sortBy === "default") return "default";
+                if (sortBy === "createdat" && sortOrder === "desc") return "newest";
+                if (sortBy === "createdat" && sortOrder === "asc") return "oldest";
+                if (sortBy === "price" && sortOrder === "asc") return "price-asc";
+                if (sortBy === "price" && sortOrder === "desc") return "price-desc";
+                return "default";
+              })()}
               onChange={handleSortChange}
               style={{ width: 200 }}
               size="large"
@@ -663,20 +667,7 @@ const ProductManagement = () => {
           />
         )}
         
-        {successMessage && (
-          <Alert
-            message={successMessage}
-            type="success"
-            showIcon
-            closable
-            onClose={() => dispatch(productClearMessages())}
-            style={{ 
-              marginBottom: 16, 
-              borderColor: "#52c41a", 
-              backgroundColor: "#f6ffed"
-            }}
-          />
-        )}
+        {/* Removed success message alert - using toast notification instead */}
 
         {/* Filter status indicator */}
         {hasActiveFilters && (

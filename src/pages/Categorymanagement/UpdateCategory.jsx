@@ -39,10 +39,24 @@ const UpdateCategory = ({ visible, onClose, onSuccess, categoryData }) => {
   }, [visible, categoryData, form]);
 
   const handleFinish = async (values) => {
+    // Validate required fields
+    const trimmedName = values.name?.trim();
+    const trimmedDescription = values.description?.trim();
+    
+    // Check for empty required fields
+    if (!trimmedName) {
+      message.error("Vui lòng nhập tên category!");
+      return;
+    }
+    if (!trimmedDescription) {
+      message.error("Vui lòng nhập mô tả category!");
+      return;
+    }
+
     const payload = {
       _id: categoryData?._id,
-      name: values.name,
-      description: values.description || "",
+      name: trimmedName,
+      description: trimmedDescription,
       status: values.status !== undefined ? values.status : true,
     };
 
@@ -121,8 +135,8 @@ const UpdateCategory = ({ visible, onClose, onSuccess, categoryData }) => {
                   <Input placeholder="Nhập tên category" style={customStyles.input} />
                 </Form.Item>
 
-                <Form.Item label={<span style={customStyles.label}>Mô tả</span>} name="description">
-                  <Input.TextArea rows={3} placeholder="Nhập mô tả category (tùy chọn)" style={{ borderRadius: 8 }} maxLength={200} showCount />
+                <Form.Item label={<span style={customStyles.label}>Mô tả</span>} name="description" rules={[{ required: true, message: "Vui lòng nhập mô tả category!" }]}>
+                  <Input.TextArea rows={3} placeholder="Nhập mô tả category" style={{ borderRadius: 8 }} maxLength={200} showCount />
                 </Form.Item>
 
                 <Form.Item label={<span style={customStyles.label}>Hình ảnh</span>} name="image">

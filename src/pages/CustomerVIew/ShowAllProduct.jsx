@@ -138,7 +138,8 @@ const ShowAllProduct = () => {
         }, 100); // Small debounce to prevent rapid state updates
 
         return () => clearTimeout(timeoutId);
-    }, [searchTerm, selectedCategory, selectedBrand, sortBy, currentPage]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [searchTerm, selectedCategory, selectedBrand, sortBy]);
 
     // Track data changes
     useEffect(() => {
@@ -268,6 +269,7 @@ const ShowAllProduct = () => {
                 break;
         }
 
+        console.log('🔄 Loading products with query:', query);
         dispatch(productHomeListRequest(query));
     }, [dispatch, currentPage, pageSize, searchTerm, selectedCategory, selectedBrand, sortBy, categories, categoriesError]);
 
@@ -590,11 +592,120 @@ const ShowAllProduct = () => {
                         </button>
                     </div>
                 ) : displayProducts.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                        {displayProducts.map(product => (
-                            <ProductCard key={product._id} product={product} />
-                        ))}
-                    </div>
+                    <>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                            {displayProducts.map(product => (
+                                <ProductCard key={product._id} product={product} />
+                            ))}
+                        </div>
+                        
+                        {/* Pagination */}
+                        {productsPagination && productsPagination.total > pageSize && (
+                            <div className="mt-8 flex items-center justify-center">
+                                <div className="flex items-center space-x-2">
+                                    {/* Previous Button */}
+                                    <button
+                                        onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                                        disabled={currentPage === 1 || productsLoading}
+                                        className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        {productsLoading ? '⏳' : 'Trước'}
+                                    </button>
+                                    
+                                    {/* Page Numbers */}
+                                    {(() => {
+                                        const totalPages = Math.ceil(productsPagination.total / pageSize);
+                                        const maxVisiblePages = 5;
+                                        let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+                                        let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+                                        
+                                        if (endPage - startPage + 1 < maxVisiblePages) {
+                                            startPage = Math.max(1, endPage - maxVisiblePages + 1);
+                                        }
+                                        
+                                        const pages = [];
+                                        
+                                        // First page
+                                        if (startPage > 1) {
+                                            pages.push(
+                                                <button
+                                                    key={1}
+                                                    onClick={() => setCurrentPage(1)}
+                                                    className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700"
+                                                >
+                                                    1
+                                                </button>
+                                            );
+                                            if (startPage > 2) {
+                                                pages.push(
+                                                    <span key="ellipsis1" className="px-3 py-2 text-sm text-gray-500">
+                                                        ...
+                                                    </span>
+                                                );
+                                            }
+                                        }
+                                        
+                                        // Page numbers
+                                        for (let i = startPage; i <= endPage; i++) {
+                                            pages.push(
+                                                <button
+                                                    key={i}
+                                                    onClick={() => setCurrentPage(i)}
+                                                    disabled={productsLoading}
+                                                    className={`px-3 py-2 text-sm font-medium rounded-lg ${
+                                                        i === currentPage
+                                                            ? 'bg-blue-600 text-white border border-blue-600'
+                                                            : 'text-gray-500 bg-white border border-gray-300 hover:bg-gray-50 hover:text-gray-700'
+                                                    } disabled:opacity-50 disabled:cursor-not-allowed`}
+                                                >
+                                                    {i}
+                                                </button>
+                                            );
+                                        }
+                                        
+                                        // Last page
+                                        if (endPage < totalPages) {
+                                            if (endPage < totalPages - 1) {
+                                                pages.push(
+                                                    <span key="ellipsis2" className="px-3 py-2 text-sm text-gray-500">
+                                                        ...
+                                                    </span>
+                                                );
+                                            }
+                                            pages.push(
+                                                <button
+                                                    key={totalPages}
+                                                    onClick={() => setCurrentPage(totalPages)}
+                                                    className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700"
+                                                >
+                                                    {totalPages}
+                                                </button>
+                                            );
+                                        }
+                                        
+                                        return pages;
+                                    })()}
+                                    
+                                    {/* Next Button */}
+                                    <button
+                                        onClick={() => setCurrentPage(prev => {
+                                            const totalPages = Math.ceil(productsPagination.total / pageSize);
+                                            return Math.min(totalPages, prev + 1);
+                                        })}
+                                        disabled={currentPage >= Math.ceil(productsPagination.total / pageSize) || productsLoading}
+                                        className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        {productsLoading ? '⏳' : 'Sau'}
+                                    </button>
+                                </div>
+                                
+                                {/* Page Info */}
+                                <div className="ml-6 text-sm text-gray-600">
+                                    Trang {currentPage} / {Math.ceil(productsPagination.total / pageSize)}
+                                </div>
+                            </div>
+                        )}
+                    </>
                 ) : (
                     <div className="text-center py-12">
                         <div className="text-6xl mb-4">🔍</div>

@@ -16,6 +16,7 @@ import {
   Spin,
   Select,
   Alert,
+  message,
 } from "antd";
 import {
   EditOutlined,
@@ -47,14 +48,19 @@ const CATEGORY_COLORS = ["#13C2C2", "#52c41a", "#fa8c16", "#722ED1", "#0D364C"];
 
 const CategoryManagement = () => {
   const dispatch = useDispatch();
-  const { items: categoryItems, stats, pagination: apiPagination, loadingList, loadingStats, creating, updating, error, message } = useSelector((state) => state.category);
+  const { items: categoryItems, stats, pagination: apiPagination, loadingList, loadingStats, creating, updating, error } = useSelector((state) => state.category);
   const [loading, setLoading] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [statusFilter, setStatusFilter] = useState("all"); // "all", "active", "inactive"
   const [pagination, setPagination] = useState({ current: 1, pageSize: 5 });
   const [sortBy, setSortBy] = useState("default"); // "default", "createdat", "name"
   const [sortOrder, setSortOrder] = useState(""); // "asc", "desc", "" (empty for default)
-  const [createdAtClickCount, setCreatedAtClickCount] = useState(0); // Track clicks on createdAt column
+  
+  // Debug sort state changes
+  useEffect(() => {
+    console.log("🔄 Category Sort state changed:", { sortBy, sortOrder });
+  }, [sortBy, sortOrder]);
+  
   const [isInitialLoad, setIsInitialLoad] = useState(true); // Prevent duplicate initial calls
   const paginationRef = useRef(pagination);
   const prevFiltersRef = useRef({ searchText, statusFilter });
@@ -110,6 +116,8 @@ const CategoryManagement = () => {
         query.keyword = searchText.trim();
       }
       
+      console.log("🔄 Category Filter change - dispatching API call");
+      console.log("🔄 Category Filter query:", query);
       dispatch(categoryListRequest(query));
       
       // Reset to first page when filtering
@@ -122,12 +130,16 @@ const CategoryManagement = () => {
     }, searchText.trim() ? 500 : 0); // 500ms debounce for search
 
     return () => clearTimeout(timeoutId);
-  }, [searchText, statusFilter, sortBy, sortOrder, dispatch, isInitialLoad]);
+  }, [searchText, statusFilter, dispatch, isInitialLoad, sortBy, sortOrder]); // Added sortBy, sortOrder to dependencies
 
   // Handle sort changes without resetting pagination
   useEffect(() => {
     // Skip if this is initial load (already handled above)
     if (isInitialLoad) return;
+    
+    console.log("🔄 Category Sort change - dispatching API call");
+    console.log("🔄 Category Current sort state:", { sortBy, sortOrder });
+    console.log("🔄 Category Current pagination:", paginationRef.current);
     
     const query = {
       page: paginationRef.current.current, // Keep current page
@@ -144,6 +156,7 @@ const CategoryManagement = () => {
       query.keyword = searchText.trim();
     }
     
+    console.log("🔄 Category Sort query:", query);
     dispatch(categoryListRequest(query));
   }, [sortBy, sortOrder, dispatch, isInitialLoad, statusFilter, searchText]);
 
@@ -214,7 +227,7 @@ const CategoryManagement = () => {
     // Send name, description, status, and image file to backend
     const payload = {
       name: createdCategory.name,
-      description: createdCategory.description || "",
+      description: createdCategory.description, // Now required field
       status: createdCategory.status !== undefined ? createdCategory.status : true
     };
     
@@ -238,7 +251,7 @@ const CategoryManagement = () => {
     
     const payload = {
       name: updatedCategory.name,
-      description: updatedCategory.description || "",
+      description: updatedCategory.description, // Now required field
       status: updatedCategory.status !== undefined ? updatedCategory.status : true
     };
     
@@ -352,31 +365,33 @@ const CategoryManagement = () => {
         ),
       },
     ],
-    [handleOpenDetailModal, handleOpenUpdateModal, sortBy, sortOrder, message]
+    [handleOpenDetailModal, handleOpenUpdateModal, sortBy, sortOrder]
   );
 
   const handleTableChange = (pagination, filters, sorter) => {
-    // Xử lý khi click vào createdAt column (cả khi có field và khi field undefined nhưng đang sort createdat)
-    if ((sorter && sorter.field === 'createdAt') || (sorter && !sorter.field && sortBy === 'createdat')) {
-      const newClickCount = createdAtClickCount + 1;
-      setCreatedAtClickCount(newClickCount);
+    console.log("🔄 Category handleTableChange called:", { pagination, sorter });
+    
+    // Chỉ xử lý sort khi có sorter.field và sorter.order (click vào column header)
+    if (sorter && sorter.field && sorter.order) {
+      console.log("🔄 Category Column header clicked:", sorter.field, sorter.order);
       
-      // Cycle through 3 states: desc → asc → reset to default
-      if (newClickCount % 3 === 1) {
-        // Click 1, 4, 7... → desc (mới nhất)
-        setSortBy("createdat");
-        setSortOrder("desc");
-      } else if (newClickCount % 3 === 2) {
-        // Click 2, 5, 8... → asc (cũ nhất)
-        setSortBy("createdat");
-        setSortOrder("asc");
-      } else {
-        // Click 3, 6, 9... → reset to default (no sort)
-        setSortBy("default");
-        setSortOrder("");
-        
-        // Không dispatch ở đây, để useEffect xử lý
+      // Xử lý khi click vào createdAt column
+      if (sorter.field === 'createdAt') {
+        // Logic đơn giản: dựa vào sorter.order từ Ant Design
+        if (sorter.order === 'descend') {
+          setSortBy("createdat");
+          setSortOrder("desc");
+        } else if (sorter.order === 'ascend') {
+          setSortBy("createdat");
+          setSortOrder("asc");
+        } else {
+          // No sort
+          setSortBy("default");
+          setSortOrder("");
+        }
       }
+    } else {
+      console.log("🔄 Category Pagination change only - no sort handling");
     }
   };
 
@@ -425,6 +440,7 @@ const CategoryManagement = () => {
         </span>
       ),
       onChange: (page, pageSize) => {
+        console.log("🔄 Category Pagination change:", { page, pageSize, sortBy, sortOrder });
         setPagination({ current: page, pageSize });
         const query = {
           page,
@@ -436,6 +452,7 @@ const CategoryManagement = () => {
         if (statusFilter !== "all") query.status = statusFilter;
         if (searchText.trim()) query.keyword = searchText.trim();
         
+        console.log("🔄 Category Pagination query:", query);
         dispatch(categoryListRequest(query));
       },
       onShowSizeChange: (current, size) => {
@@ -536,7 +553,14 @@ const CategoryManagement = () => {
               <Select.Option value="inactive">Đang ẩn</Select.Option>
             </Select>
             <Select
-              value={sortBy === "default" ? "default" : `${sortBy}-${sortOrder}`}
+              value={(() => {
+                if (sortBy === "default") return "default";
+                if (sortBy === "createdat" && sortOrder === "desc") return "newest";
+                if (sortBy === "createdat" && sortOrder === "asc") return "oldest";
+                if (sortBy === "name" && sortOrder === "asc") return "name-asc";
+                if (sortBy === "name" && sortOrder === "desc") return "name-desc";
+                return "default";
+              })()}
               onChange={handleSortChange}
               style={{ width: 180 }}
               size="large"
@@ -572,20 +596,7 @@ const CategoryManagement = () => {
           />
         )}
         
-        {message && (
-          <Alert
-            message={message}
-            type="success"
-            showIcon
-            closable
-            onClose={() => dispatch(categoryClearMessages())}
-            style={{ 
-              marginBottom: 16, 
-              borderColor: "#52c41a", 
-              backgroundColor: "#f6ffed"
-            }}
-          />
-        )}
+        {/* Removed success message alert - using toast notification instead */}
 
         {/* Filter status indicator */}
         {hasActiveFilters && (

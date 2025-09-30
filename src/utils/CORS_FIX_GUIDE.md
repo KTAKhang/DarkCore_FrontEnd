@@ -101,3 +101,8 @@ must not be the wildcard '*' when the request's credentials mode is 'include'.
 - Kiểm tra Authorization header
 - Đảm bảo token được gửi đúng format
 - Kiểm tra backend middleware
+
+
+
+
+

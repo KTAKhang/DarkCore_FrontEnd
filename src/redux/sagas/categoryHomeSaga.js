@@ -11,25 +11,12 @@ import {
     categoryHomeFeaturedFailure,
 } from "../actions/categoryHomeActions";
 
-// API base URL
-const API_BASE_URL = "http://localhost:3000/cataloghome/api";
+import apiClient from "../../utils/axiosConfigNoCredentials";
 
 // Helper function to make API calls
 function* apiCall(url, options = {}) {
-    const response = yield call(fetch, url, {
-        headers: {
-            "Content-Type": "application/json",
-            ...options.headers,
-        },
-        ...options,
-    });
-
-    if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data = yield response.json();
-    return data;
+    const response = yield call(apiClient.get, url, options);
+    return response.data;
 }
 
 // Saga for getting categories list
@@ -46,7 +33,7 @@ function* getCategoriesForHome(action) {
         if (query.sortBy) queryParams.append("sortBy", query.sortBy);
         if (query.sortOrder) queryParams.append("sortOrder", query.sortOrder);
 
-        const url = `${API_BASE_URL}/categoryhome?${queryParams.toString()}`;
+        const url = `/cataloghome/api/categoryhome?${queryParams.toString()}`;
         const result = yield call(apiCall, url);
 
         if (result.status === "OK") {
@@ -63,7 +50,7 @@ function* getCategoriesForHome(action) {
 function* getCategoryByIdForHome(action) {
     try {
         const { id } = action.payload;
-        const url = `${API_BASE_URL}/categoryhome/${id}`;
+        const url = `/cataloghome/api/categoryhome/${id}`;
         const result = yield call(apiCall, url);
 
         if (result.status === "OK") {
@@ -80,7 +67,12 @@ function* getCategoryByIdForHome(action) {
 function* getFeaturedCategories(action) {
     try {
         const { limit } = action.payload;
-        const url = `${API_BASE_URL}/categoryhome/featured?limit=${limit}`;
+        
+        // Build query string properly
+        const queryParams = new URLSearchParams();
+        if (limit) queryParams.append("limit", limit);
+        
+        const url = `/cataloghome/api/categoryhome/featured?${queryParams.toString()}`;
         const result = yield call(apiCall, url);
 
         if (result.status === "OK") {

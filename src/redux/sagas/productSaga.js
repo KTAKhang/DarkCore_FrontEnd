@@ -22,7 +22,6 @@ import {
   productStatsFailure,
 } from "../actions/productActions";
 
-const API_BASE_URL = 'http://localhost:3000';
 
 // Helper function để xử lý lỗi và hiển thị toast
 const handleError = (error) => {
@@ -94,9 +93,9 @@ const apiList = async (query = {}) => {
   }
   
   const queryString = params.toString();
-  const url = queryString ? `${API_BASE_URL}/catalog/api/products?${queryString}` : `${API_BASE_URL}/catalog/api/products`;
+  const url = queryString ? `/catalog/api/products?${queryString}` : `/catalog/api/products`;
   
-  const res = await apiClient.get(url.replace(API_BASE_URL, ''));
+  const res = await apiClient.get(url);
   return res.data;
 };
 
@@ -226,7 +225,14 @@ function* detailWorker(action) {
 
 function* createWorker(action) {
   try {
+    console.log("=== ProductSaga createWorker ===");
+    console.log("action.payload:", action.payload);
+    
     const data = yield call(apiCreate, action.payload);
+    console.log("Backend response data:", data);
+    console.log("data.data:", data.data);
+    console.log("data.data.category:", data.data?.category);
+    
     if (data.status === "OK") {
       yield put(productCreateSuccess(data.data, data.message));
       toast.success(data.message || "Sản phẩm đã được tạo thành công");
