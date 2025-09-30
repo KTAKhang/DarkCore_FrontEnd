@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
-import { User, Mail, Lock, Phone, Home, Key, ArrowLeft, CheckCircle, Send } from 'lucide-react';
+import { User, Mail, Lock, Phone, Home, Key, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import {
     registerSendOTPRequest,
     clearAuthMessages,
     registerConfirmOTPRequest
 } from '../redux/actions/authActions';
-import { toast } from 'react-toastify';
 
 const Register = () => {
     const dispatch = useDispatch();
@@ -23,7 +22,7 @@ const Register = () => {
         confirmOtpError
     } = useSelector(state => state.auth);
 
-    const [step, setStep] = useState(1); // 1: Nhập thông tin, 2: Nhập OTP
+    const [step, setStep] = useState(1);
     const [formData, setFormData] = useState({
         user_name: '',
         email: '',
@@ -34,15 +33,18 @@ const Register = () => {
     });
     const [errors, setErrors] = useState({});
 
+    // 👇 Thêm state hiển thị mật khẩu
+    const [showPassword, setShowPassword] = useState(false);
+
     useEffect(() => {
         dispatch(clearAuthMessages());
         return () => {
             dispatch(clearAuthMessages());
         };
     }, [dispatch]);
+
     useEffect(() => {
         if (confirmRegisterSuccess) {
-
             setTimeout(() => {
                 navigate('/');
             }, 1000);
@@ -51,20 +53,16 @@ const Register = () => {
 
     useEffect(() => {
         if (registerMessage && step === 1) {
-            // toast.success(registerMessage);
             setStep(2);
         }
     }, [registerMessage, step]);
-    console.log('confirmOtpMessage changed', confirmOtpMessage)
 
     useEffect(() => {
         if (confirmOtpMessage) {
-            // toast.success('Đăng ký thành công! Đang chuyển về trang đăng nhập...');
             setTimeout(() => {
                 navigate('/login');
             }, 2000);
         }
-
     }, [confirmOtpMessage, navigate]);
 
     const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -79,7 +77,6 @@ const Register = () => {
 
     const handleSendOTP = (e) => {
         e.preventDefault();
-
         const newErrors = {};
         if (!formData.user_name) newErrors.user_name = 'Vui lòng nhập tên';
         if (!formData.email) newErrors.email = 'Vui lòng nhập email';
@@ -93,13 +90,11 @@ const Register = () => {
             setErrors(newErrors);
             return;
         }
-
         dispatch(registerSendOTPRequest(formData));
     };
 
     const handleConfirmOTP = (e) => {
         e.preventDefault();
-
         const newErrors = {};
         if (!formData.otp) newErrors.otp = 'Vui lòng nhập mã OTP';
         else if (formData.otp.length !== 6) newErrors.otp = 'OTP phải có 6 số';
@@ -108,7 +103,6 @@ const Register = () => {
             setErrors(newErrors);
             return;
         }
-
         dispatch(registerConfirmOTPRequest({ email: formData.email, otp: formData.otp }));
     };
 
@@ -124,7 +118,28 @@ const Register = () => {
             className="min-h-screen w-full flex items-center justify-center relative overflow-hidden px-4"
             style={{ background: 'linear-gradient(135deg, #0D364C 0%, #13C2C2 100%)' }}
         >
-            {/* Card */}
+            {/* Animated Background Elements */}
+            <div className="absolute inset-0 overflow-hidden">
+                <div className="absolute -top-40 -right-40 w-80 h-80 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse" style={{ backgroundColor: '#13C2C2' }}></div>
+                <div className="absolute -bottom-40 -left-40 w-80 h-80 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse animation-delay-2000" style={{ backgroundColor: '#0D364C' }}></div>
+                <div className="absolute top-40 left-40 w-60 h-60 rounded-full mix-blend-multiply filter blur-xl opacity-50 animate-pulse animation-delay-4000" style={{ backgroundColor: '#13C2C2' }}></div>
+            </div>
+
+            {/* Floating Particles */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                {[...Array(20)].map((_, i) => (
+                    <div
+                        key={i}
+                        className="absolute w-2 h-2 bg-white rounded-full opacity-30 animate-float"
+                        style={{
+                            left: `${Math.random() * 100}%`,
+                            top: `${Math.random() * 100}%`,
+                            animationDelay: `${Math.random() * 10}s`,
+                            animationDuration: `${10 + Math.random() * 20}s`
+                        }}
+                    ></div>
+                ))}
+            </div>
             <div className="relative z-10 w-full max-w-2xl p-6 sm:p-8">
                 <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-3xl p-8 shadow-2xl">
 
@@ -157,17 +172,12 @@ const Register = () => {
                         </p>
                     </div>
 
-                    {registerError && (
-                        <p className="text-red-300 text-center mb-4">{registerError}</p>
-                    )}
-                    {confirmOtpError && (
-                        <p className="text-red-300 text-center mb-4">{confirmOtpError}</p>
-                    )}
+                    {registerError && <p className="text-red-300 text-center mb-4">{registerError}</p>}
+                    {confirmOtpError && <p className="text-red-300 text-center mb-4">{confirmOtpError}</p>}
 
                     {/* Step 1 */}
                     {step === 1 && (
                         <form onSubmit={handleSendOTP} className="space-y-4">
-                            {/* User name */}
                             <InputField
                                 icon={<User />}
                                 placeholder="Tên người dùng"
@@ -175,7 +185,6 @@ const Register = () => {
                                 onChange={(e) => handleInputChange('user_name', e.target.value)}
                                 error={errors.user_name}
                             />
-                            {/* Email */}
                             <InputField
                                 icon={<Mail />}
                                 type="email"
@@ -184,16 +193,17 @@ const Register = () => {
                                 onChange={(e) => handleInputChange('email', e.target.value)}
                                 error={errors.email}
                             />
-                            {/* Password */}
+                            {/* Password with Eye toggle */}
                             <InputField
                                 icon={<Lock />}
-                                type="password"
+                                type={showPassword ? "text" : "password"}
                                 placeholder="Mật khẩu"
                                 value={formData.password}
                                 onChange={(e) => handleInputChange('password', e.target.value)}
                                 error={errors.password}
+                                togglePassword={() => setShowPassword(!showPassword)}
+                                showPassword={showPassword}
                             />
-                            {/* Phone */}
                             <InputField
                                 icon={<Phone />}
                                 placeholder="Số điện thoại"
@@ -201,7 +211,6 @@ const Register = () => {
                                 onChange={(e) => handleInputChange('phone', e.target.value)}
                                 error={errors.phone}
                             />
-                            {/* Address */}
                             <InputField
                                 icon={<Home />}
                                 placeholder="Địa chỉ"
@@ -257,12 +266,11 @@ const Register = () => {
                 </div>
             </div>
         </div>
-
     );
 };
 
-// Input field component
-const InputField = ({ icon, type = "text", placeholder, value, onChange, error }) => (
+// InputField chỉnh để hỗ trợ Eye/EyeOff
+const InputField = ({ icon, type = "text", placeholder, value, onChange, error, togglePassword, showPassword }) => (
     <div>
         <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -273,16 +281,45 @@ const InputField = ({ icon, type = "text", placeholder, value, onChange, error }
                 placeholder={placeholder}
                 value={value}
                 onChange={onChange}
-                className={`w-full pl-12 pr-4 py-4 bg-white/5 border rounded-2xl text-white placeholder-gray-400 
+                className={`w-full pl-12 pr-12 py-4 bg-white/5 border rounded-2xl text-white placeholder-gray-400 
                 focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-300 hover:bg-white/10 
                 ${error ? 'border-red-500/50' : 'border-white/20'}`}
             />
+            {togglePassword && (
+                <button
+                    type="button"
+                    onClick={togglePassword}
+                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-white"
+                >
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </button>
+            )}
         </div>
         {error && <p className="mt-2 text-sm text-red-300">{error}</p>}
     </div>
 );
 
-// Submit button component
+<style>{`
+                @keyframes float {
+                    0%, 100% { transform: translateY(0px) translateX(0px); }
+                    25% { transform: translateY(-20px) translateX(10px); }
+                    50% { transform: translateY(-10px) translateX(-10px); }
+                    75% { transform: translateY(-30px) translateX(5px); }
+                }
+                
+                .animate-float {
+                    animation: float linear infinite;
+                }
+                
+                .animation-delay-2000 {
+                    animation-delay: 2s;
+                }
+                
+                .animation-delay-4000 {
+                    animation-delay: 4s;
+                }
+            `}</style>
+
 const SubmitButton = ({ loading, text, loadingText }) => (
     <button
         type="submit"

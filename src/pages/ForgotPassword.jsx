@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, Key, ArrowLeft, CheckCircle, Send } from 'lucide-react';
+import { Mail, Lock, Key, ArrowLeft, CheckCircle, Send, Eye, EyeOff } from 'lucide-react';
 import { forgotPasswordRequest, resetPasswordRequest, clearAuthMessages } from '../redux/actions/authActions';
 import { toast } from 'react-toastify';
 
 const ForgotPassword = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
+    const [showNewPassword, setShowNewPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
 
     const {
         forgotPasswordLoading,
@@ -47,7 +50,7 @@ const ForgotPassword = () => {
         if (resetPasswordMessage) {
             setTimeout(() => {
                 navigate('/login');
-            }, 2000);
+            }, 1000);
         }
     }, [resetPasswordMessage, navigate]);
 
@@ -57,7 +60,7 @@ const ForgotPassword = () => {
     };
 
     const validatePassword = (password) => {
-        return password.length !== 8;
+        return password.length >= 8;
     };
 
     const handleInputChange = (field, value) => {
@@ -287,55 +290,59 @@ const ForgotPassword = () => {
                                 )}
                             </div>
 
-                            {/* New Password */}
-                            <div className="group">
-                                <label className="block text-sm font-medium text-gray-300 mb-2">
-                                    Mật khẩu mới
-                                </label>
-                                <div className="relative">
-                                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                        <Lock className="h-5 w-5 text-gray-400 transition-colors duration-200" />
-                                    </div>
-                                    <input
-                                        type="password"
-                                        value={formData.newPassword}
-                                        onChange={(e) => handleInputChange('newPassword', e.target.value)}
-                                        className={`w-full pl-12 pr-4 py-4 bg-white/5 border rounded-2xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-300 hover:bg-white/10 ${errors.newPassword ? 'border-red-500/50' : 'border-white/20'
-                                            }`}
-                                        style={{ '--tw-ring-color': '#13C2C2', '--tw-ring-opacity': '0.5' }}
-                                        placeholder="Nhập mật khẩu mới"
-                                        disabled={resetPasswordLoading}
-                                    />
+                            <div className="relative">
+                                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                    <Lock className="h-5 w-5 text-gray-400 transition-colors duration-200" />
                                 </div>
-                                {errors.newPassword && (
-                                    <p className="mt-2 text-sm text-red-300">{errors.newPassword}</p>
-                                )}
+                                <input
+                                    type={showNewPassword ? "text" : "password"}
+                                    value={formData.newPassword}
+                                    onChange={(e) => handleInputChange('newPassword', e.target.value)}
+                                    className={`w-full pl-12 pr-12 py-4 bg-white/5 border rounded-2xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-300 hover:bg-white/10 ${errors.newPassword ? 'border-red-500/50' : 'border-white/20'}`}
+                                    style={{ '--tw-ring-color': '#13C2C2', '--tw-ring-opacity': '0.5' }}
+                                    placeholder="Nhập mật khẩu mới"
+                                    disabled={resetPasswordLoading}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowNewPassword(!showNewPassword)}
+                                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 transition-colors duration-200 hover:text-white"
+                                    disabled={resetPasswordLoading}
+                                >
+                                    {showNewPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                                </button>
                             </div>
+                            {errors.newPassword && (
+                                <p className="mt-2 text-sm text-red-300">{errors.newPassword}</p>
+                            )}
 
-                            {/* Confirm Password */}
-                            <div className="group">
-                                <label className="block text-sm font-medium text-gray-300 mb-2">
-                                    Xác nhận mật khẩu
-                                </label>
-                                <div className="relative">
-                                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                        <Lock className="h-5 w-5 text-gray-400 transition-colors duration-200" />
-                                    </div>
-                                    <input
-                                        type="password"
-                                        value={formData.confirmPassword}
-                                        onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
-                                        className={`w-full pl-12 pr-4 py-4 bg-white/5 border rounded-2xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-300 hover:bg-white/10 ${errors.confirmPassword ? 'border-red-500/50' : 'border-white/20'
-                                            }`}
-                                        style={{ '--tw-ring-color': '#13C2C2', '--tw-ring-opacity': '0.5' }}
-                                        placeholder="Xác nhận mật khẩu mới"
-                                        disabled={resetPasswordLoading}
-                                    />
+
+                            <div className="relative">
+                                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                    <Lock className="h-5 w-5 text-gray-400 transition-colors duration-200" />
                                 </div>
-                                {errors.confirmPassword && (
-                                    <p className="mt-2 text-sm text-red-300">{errors.confirmPassword}</p>
-                                )}
+                                <input
+                                    type={showConfirmPassword ? "text" : "password"}
+                                    value={formData.confirmPassword}
+                                    onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
+                                    className={`w-full pl-12 pr-12 py-4 bg-white/5 border rounded-2xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-300 hover:bg-white/10 ${errors.confirmPassword ? 'border-red-500/50' : 'border-white/20'}`}
+                                    style={{ '--tw-ring-color': '#13C2C2', '--tw-ring-opacity': '0.5' }}
+                                    placeholder="Xác nhận mật khẩu mới"
+                                    disabled={resetPasswordLoading}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 transition-colors duration-200 hover:text-white"
+                                    disabled={resetPasswordLoading}
+                                >
+                                    {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                                </button>
                             </div>
+                            {errors.confirmPassword && (
+                                <p className="mt-2 text-sm text-red-300">{errors.confirmPassword}</p>
+                            )}
+
 
                             {/* Action Buttons */}
                             <div className="space-y-4">

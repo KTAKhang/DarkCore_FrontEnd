@@ -12,6 +12,7 @@ import {
 
 const initialState = {
     customers: [],
+    stats: {}, // thêm cái này
     selectedCustomer: null,
     loading: false,
     error: null,
