@@ -6,10 +6,11 @@ import HomePage from "../pages/HomePage";
 import CartPage from "../pages/CartPage";
 import AdminLayout from "../layout/AdminLayout";
 import AdminPage from "../pages/AdminPage";
+import RepairPage from "../pages/RepairPage";
 import CategoryManagement from "../pages/Categorymanagement/CategoryManagement";
 import ProductManagement from "../pages/Productmanagement/ProductManagement";
 import StaffManagement from "../pages/Staffmanagement/StaffManagement";
-
+import CustomerManagement from "../pages/CustomerManagement/CustomerManagement";
 // Removed standalone staff pages; create/detail handled via modals in StaffManagement
 
 
@@ -21,6 +22,7 @@ import WishlistPage from "../pages/CustomerVIew/WishlistPage";
 import ProfileManagement from "../pages/ProfileManagement/ProfileManagerment";
 import UpdatePassword from "../pages/ProfileManagement/UpdatePassword";
 import PrivateRoute from "../components/PrivateRouter";
+import CustomerLayout from "../layout/CustomerLayout";
 
 
 
@@ -55,6 +57,21 @@ export const routes = [
 
   // Khu vực quản trị
   {
+    path: "/customer",
+    element: (
+      <PrivateRoute requiredRole="customer">
+        <CustomerLayout />
+      </PrivateRoute>
+    ),
+    children: [
+      { path: "repair", element: <RepairPage /> },
+      { path: "profile", element: <ProfileManagement /> },
+      { path: "change-password", element: <UpdatePassword /> },
+    ],
+  },
+
+  // Khu vực quản trị
+  {
     path: "/admin",
     element: (
       <PrivateRoute requiredRole="admin">
@@ -66,11 +83,9 @@ export const routes = [
       { path: "category", element: <CategoryManagement /> },
       { path: "product", element: <ProductManagement /> },
       { path: "staff", element: <StaffManagement /> },
-
-     
+      { path: "customer", element: <CustomerManagement /> },
       { path: "profile", element: <ProfileManagement /> },
       { path: "change-password", element: <UpdatePassword /> },
-
     ],
   },
 

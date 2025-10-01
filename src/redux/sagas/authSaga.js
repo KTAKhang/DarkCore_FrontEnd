@@ -33,12 +33,11 @@ const apiLogout = async () => {
     const response = await axios.post(
         `${API_BASE_URL}/auth/logout`,
         {},
-        { withCredentials: true } // QUAN TRỌNG: để gửi cookie refreshToken
+
+        { withCredentials: true }
     );
-    // console.log('📡 AuthSaga apiLogout');
-    // const response = await apiClient.post('/auth/logout', {});
-    // console.log('📡 AuthSaga apiLogout - Response:', response.data);
-    // return response.data;
+    return response.data;
+
 };
 
 function* handleLogout() {

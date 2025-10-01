@@ -26,6 +26,7 @@ const initialState = {
     changePasswordLoading: false,
     changePasswordError: null,
     changePasswordMessage: null,
+    changePasswordSuccess: false,
 
     getProfileLoading: false,
     getProfileError: null,
@@ -53,11 +54,11 @@ const profileReducer = (state = initialState, action) => {
 
         // ===== CHANGE PASSWORD =====
         case CHANGE_PASSWORD_REQUEST:
-            return { ...state, changePasswordLoading: true, changePasswordError: null, changePasswordMessage: null };
+            return { ...state, changePasswordLoading: true, changePasswordError: null, changePasswordMessage: null, changePasswordSuccess: false };
         case CHANGE_PASSWORD_SUCCESS:
-            return { ...state, changePasswordLoading: false, changePasswordMessage: action.payload };
+            return { ...state, changePasswordLoading: false, changePasswordMessage: action.payload, changePasswordSuccess: true };
         case CHANGE_PASSWORD_FAILURE:
-            return { ...state, changePasswordLoading: false, changePasswordError: action.payload };
+            return { ...state, changePasswordLoading: false, changePasswordError: action.payload, changePasswordSuccess: false };
 
         // ===== GET PROFILE =====
         case GET_PROFILE_REQUEST:
@@ -75,7 +76,8 @@ const profileReducer = (state = initialState, action) => {
                 updateError: null,
                 changePasswordMessage: null,
                 changePasswordError: null,
-                updateSuccess: false
+                updateSuccess: false,
+                changePasswordSuccess: false
             };
 
         default:
