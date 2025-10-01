@@ -83,7 +83,7 @@ const ProductManagement = () => {
   useEffect(() => {
     dispatch(productListRequest({ page: 1, limit: 5, sortBy: "default", sortOrder: "" }));
     dispatch(productStatsRequest());
-    dispatch(categoryListRequest({})); // Load categories for filters
+    dispatch(categoryListRequest({ page: 1, limit: 100, status: "active" })); // Load all active categories for filters
     setIsInitialLoad(false);
   }, [dispatch]);
 
@@ -619,7 +619,7 @@ const ProductManagement = () => {
               suffixIcon={<FilterOutlined style={{ color: "#13C2C2" }} />}
             >
               <Select.Option value="all">Tất cả danh mục</Select.Option>
-              {(categoryItems || []).filter(cat => cat.status).map((cat) => (
+              {(categoryItems || []).filter(cat => cat.status === true).map((cat) => (
                 <Select.Option key={cat._id} value={cat._id}>{cat.name}</Select.Option>
               ))}
             </Select>
@@ -713,10 +713,10 @@ const ProductManagement = () => {
         </Spin>
       </Card>
 
-      <CreateProduct visible={isCreateModalVisible} onClose={() => setIsCreateModalVisible(false)} onSuccess={handleCreateSuccess} categories={(categoryItems || []).filter((c) => c.status)} />
+      <CreateProduct visible={isCreateModalVisible} onClose={() => setIsCreateModalVisible(false)} onSuccess={handleCreateSuccess} categories={(categoryItems || []).filter((c) => c.status === true)} />
 
       {selectedProduct && (
-        <UpdateProduct visible={isUpdateModalVisible} productData={selectedProduct} onClose={() => { setIsUpdateModalVisible(false); setSelectedProduct(null); }} onSuccess={handleUpdateSuccess} categories={categoryItems || []} />
+        <UpdateProduct visible={isUpdateModalVisible} productData={selectedProduct} onClose={() => { setIsUpdateModalVisible(false); setSelectedProduct(null); }} onSuccess={handleUpdateSuccess} categories={(categoryItems || []).filter((c) => c.status === true)} />
       )}
 
       {selectedProduct && (

@@ -61,7 +61,6 @@ const Header = ({ searchTerm, setSearchTerm, cartItems }) => {
                         <Link to="/contact" className="text-gray-700 hover:text-blue-600">
                             Liên hệ
                         </Link>
-
                     </nav>
 
                     {/* Search + Cart + User */}
