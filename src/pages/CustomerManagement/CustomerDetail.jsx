@@ -66,7 +66,7 @@ export default function CustomerDetail() {
             <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 {/* Profile Card */}
                 <div className="bg-white rounded-2xl shadow-lg overflow-hidden mb-6">
-                    <div className="bg-gradient-to-r from-blue-500 to-blue-600 h-32"></div>
+                    <div className="bg-gradient-to-r from-[#0D364C] via-[#13C2C2] to-[#0D364C] h-32"></div>
                     <div className="px-8 pb-8">
                         <div className="flex flex-col sm:flex-row items-center sm:items-end -mt-16 sm:-mt-12">
                             <div className="flex-shrink-0 mb-4 sm:mb-0">
