@@ -5,7 +5,7 @@ import productSaga from "./productSaga";
 import staffSaga from "./staffSaga";
 import categoryHomeSaga from "./categoryHomeSaga";
 import productHomeSaga from "./productHomeSaga";
-
+import cartSaga from "./cartSaga"; // Import cartSaga
 export default function* rootSaga() {
   yield all([
     authSaga(),
@@ -14,5 +14,6 @@ export default function* rootSaga() {
     staffSaga(),
     categoryHomeSaga(),
     productHomeSaga(),
+    cartSaga(), // Thêm cartSaga vào đây
   ]);
 }
