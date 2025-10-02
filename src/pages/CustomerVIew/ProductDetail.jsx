@@ -1,28 +1,54 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
+import { toast } from 'react-toastify';
 import PropTypes from 'prop-types';
 import Header from '../../components/Header/Header';
 import Footer from '../../components/Footer/Footer';
 import { productHomeDetailRequest, productHomeClearMessages } from '../../redux/actions/productHomeActions';
-
+import { cartAddRequest, cartClearMessage } from '../../redux/actions/cartActions';
 
 const ProductDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const dispatch = useDispatch();
 
-    // Redux state
-    const {
-        detail: { item: product, loading, error },
-    } = useSelector(state => state.productHome);
-
+    // DEBUG: Log state trước
+    const productHomeState = useSelector(state => state.productHome);
+    console.log('🔴 productHomeState:', productHomeState);
+    
+    // Redux state - FIXED
+    const { detail } = useSelector(state => state.productHome || {});
+    const product = detail?.item;
+    const loading = detail?.loading || false;
+    const error = detail?.error || null;
+    
+    const { cart, loading: cartLoading, error: cartError } = useSelector((state) => state.cart || {});
+    
+    console.log('🔴 Debug state:', { product, loading, error, detail });
+    
     // Local state
     const [searchTerm, setSearchTerm] = useState('');
-    const [cartItems, setCartItems] = useState(3);
     const [wishlist, setWishlist] = useState([]);
     const [selectedImage, setSelectedImage] = useState(0);
     const [quantity, setQuantity] = useState(1);
+    
+    // FIXED: Kiểm tra product tồn tại trước khi lấy id
+    const productId = product?._id || product?.id || id;
+    const isInStock = product?.stockQuantity > 0;
+
+    // Log for debugging
+    useEffect(() => {
+        console.log('Cart state:', { cart, cartLoading, cartError });
+    }, [cart, cartLoading, cartError]);
+
+    // Handle cart errors
+    useEffect(() => {
+        if (cartError) {
+            toast.error(cartError);
+            dispatch(cartClearMessage());
+        }
+    }, [cartError, dispatch]);
 
     useEffect(() => {
         if (id) {
@@ -52,9 +78,17 @@ const ProductDetail = () => {
         );
     };
 
-    const addToCart = (productId, qty) => {
-        setCartItems(prev => prev + qty);
-        // Add cart logic here
+    const addToCart = (productId) => {
+        console.log("🔴 BEFORE DISPATCH:", productId);
+        const token = localStorage.getItem('token');
+        if (!token) {
+            toast.error('Vui lòng đăng nhập để thêm vào giỏ hàng');
+            navigate('/login');
+            return;
+        }
+        console.log('Adding to cart:', productId);
+        dispatch(cartAddRequest(productId, quantity));
+        console.log("🟢 AFTER DISPATCH");
     };
 
     const StarRating = ({ rating }) => {
@@ -73,49 +107,58 @@ const ProductDetail = () => {
         rating: PropTypes.number
     };
 
-    // Loading state
+    // Loading state - FIXED
     if (loading) {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                <div className="text-center">
-                    <div className="text-6xl mb-4">⏳</div>
-                    <p className="text-gray-600">Đang tải sản phẩm...</p>
+            <div className="min-h-screen bg-gray-50">
+                <Header searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
+                <div className="flex items-center justify-center min-h-[50vh]">
+                    <div className="text-center">
+                        <div className="text-6xl mb-4">⏳</div>
+                        <p className="text-gray-600">Đang tải sản phẩm...</p>
+                    </div>
                 </div>
             </div>
         );
     }
 
-    // Error state
-    if (error && !product) {
+    // Error state - FIXED
+    if (error) {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                <div className="text-center">
-                    <div className="text-6xl mb-4">❌</div>
-                    <p className="text-gray-600 mb-4">{error}</p>
-                    <button
-                        onClick={() => navigate('/products')}
-                        className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-                    >
-                        Quay lại danh sách sản phẩm
-                    </button>
+            <div className="min-h-screen bg-gray-50">
+                <Header searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
+                <div className="flex items-center justify-center min-h-[50vh]">
+                    <div className="text-center">
+                        <div className="text-6xl mb-4">❌</div>
+                        <p className="text-gray-600 mb-4">{error}</p>
+                        <button
+                            onClick={() => navigate('/products')}
+                            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                        >
+                            Quay lại danh sách sản phẩm
+                        </button>
+                    </div>
                 </div>
             </div>
         );
     }
 
-    // No product found
+    // No product found - FIXED
     if (!product) {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                <div className="text-center">
-                    <div className="text-6xl mb-4">📦</div>
-                    <p className="text-gray-600 mb-4">Không tìm thấy sản phẩm</p>
-                    <button
-                        onClick={() => navigate('/products')}
-                        className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-                    >
-                        Quay lại danh sách sản phẩm
-                    </button>
+            <div className="min-h-screen bg-gray-50">
+                <Header searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
+                <div className="flex items-center justify-center min-h-[50vh]">
+                    <div className="text-center">
+                        <div className="text-6xl mb-4">📦</div>
+                        <p className="text-gray-600 mb-4">Không tìm thấy sản phẩm</p>
+                        <button
+                            onClick={() => navigate('/products')}
+                            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                        >
+                            Quay lại danh sách sản phẩm
+                        </button>
+                    </div>
                 </div>
             </div>
         );
@@ -124,7 +167,7 @@ const ProductDetail = () => {
     return (
         <div className="min-h-screen bg-gray-50">
             {/* Header */}
-            <Header searchTerm={searchTerm} setSearchTerm={setSearchTerm} cartItems={cartItems} />
+            <Header searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
 
             {/* Main Content */}
             <main className="container mx-auto px-4 py-8">
@@ -274,28 +317,28 @@ const ProductDetail = () => {
                                     </div>
                                 </div>
                                 <button
-                                    onClick={() => toggleWishlist(product.id)}
-                                    className={`flex items-center space-x-2 px-4 py-2 rounded-lg border transition-colors ${wishlist.includes(product.id)
+                                    onClick={() => toggleWishlist(productId)}
+                                    className={`flex items-center space-x-2 px-4 py-2 rounded-lg border transition-colors ${wishlist.includes(productId)
                                         ? 'bg-red-50 border-red-200 text-red-600'
                                         : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
                                         }`}
                                 >
                                     <span className="text-lg">
-                                        {wishlist.includes(product.id) ? '❤️' : '🤍'}
+                                        {wishlist.includes(productId) ? '❤️' : '🤍'}
                                     </span>
                                     <span className="text-sm">
-                                        {wishlist.includes(product.id) ? 'Đã yêu thích' : 'Yêu thích'}
+                                        {wishlist.includes(productId) ? 'Đã yêu thích' : 'Yêu thích'}
                                     </span>
                                 </button>
                             </div>
 
                             <div className="flex space-x-4">
                                 <button
-                                    onClick={() => addToCart(product.id, quantity)}
-                                    disabled={!product.stockQuantity || product.stockQuantity <= 0 || !product.status}
-                                    className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"
+                                    onClick={() => addToCart(productId)}
+                                    disabled={!isInStock || cartLoading}
+                                    className={`flex-1 py-3 px-6 rounded-lg text-sm font-medium transition-colors ${isInStock && !cartLoading ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-400 text-gray-200 cursor-not-allowed'}`}
                                 >
-                                    {product.stockQuantity > 0 && product.status ? 'Thêm vào giỏ hàng' : 'Hết hàng'}
+                                    {isInStock ? (cartLoading ? 'Đang thêm...' : 'Thêm giỏ hàng') : 'Hết hàng'}
                                 </button>
                                 <button className="flex-1 border border-blue-600 text-blue-600 py-3 px-6 rounded-lg hover:bg-blue-50 transition-colors font-medium">
                                     Mua ngay
@@ -426,7 +469,6 @@ const ProductDetail = () => {
                                 </ul>
                             </div>
                         )}
-
                     </div>
                 </div>
             </main>

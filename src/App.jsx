@@ -9,7 +9,18 @@ export default function App() {
     <AuthProvider>
       <WishlistProvider>
         <AllRoutes />
-        <ToastContainer />
+        <ToastContainer
+          position="top-right"
+          autoClose={500} // ⏰ THÊM DÒNG NÀY - 3000ms = 3 giây
+          hideProgressBar={false}
+          newestOnTop={false}
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme="light"
+        />
       </WishlistProvider>
     </AuthProvider>
   );

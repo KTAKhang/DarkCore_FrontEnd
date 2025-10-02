@@ -1,16 +1,28 @@
-
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { logoutRequest } from "../../redux/actions/authActions";
 import { LogOut, Settings, User } from "lucide-react";
 import PropTypes from "prop-types";
 
-const Header = ({ searchTerm, setSearchTerm, cartItems }) => {
+const Header = ({ searchTerm, setSearchTerm }) => {
     const navigate = useNavigate();
     const dispatch = useDispatch();
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+    // Lấy cart state từ Redux store
+    const { cart } = useSelector((state) => state.cart || {});
+
+    // DEBUG
+    console.log('🛒 Header cart data:', cart);
+    console.log('🛒 Cart items:', cart?.items);
+
+    // SỬA: Hiển thị số sản phẩm KHÁC NHAU (số lượng items trong array)
+    // Thay vì tổng quantity
+    const cartItems = cart?.items?.length || 0;
+
+    console.log('🛒 Number of distinct products:', cartItems);
+    console.log('🛒 Backend sum:', cart?.sum); // Cái này cũng là số sản phẩm khác nhau
 
     // User từ localStorage
     const storedUser = JSON.parse(localStorage.getItem("user") || "null");
@@ -20,6 +32,7 @@ const Header = ({ searchTerm, setSearchTerm, cartItems }) => {
         ? storedUser.avatar
         : "https://images.unsplash.com/photo-1574158622682-e40e69881006?w=60&h=60&fit=crop&crop=face";
     const displayEmail = storedUser?.email || "user@email.com";
+
     const handleLogout = () => {
         if (window.confirm("Bạn có chắc chắn muốn đăng xuất?")) {
             dispatch(logoutRequest());
@@ -30,10 +43,12 @@ const Header = ({ searchTerm, setSearchTerm, cartItems }) => {
         }
     };
 
+    const toggleDropdown = () => {
+        setIsDropdownOpen(!isDropdownOpen);
+    };
 
     return (
         <header className="sticky top-0 bg-white shadow-sm border-b border-gray-100 z-50">
-
             <div className="container mx-auto px-4">
                 <div className="flex items-center justify-between h-16">
                     {/* Logo */}
@@ -65,7 +80,6 @@ const Header = ({ searchTerm, setSearchTerm, cartItems }) => {
 
                     {/* Search + Cart + User */}
                     <div className="flex items-center space-x-4">
-
                         {/* Search */}
                         <div className="relative w-64 transition-all duration-300">
                             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
@@ -78,7 +92,6 @@ const Header = ({ searchTerm, setSearchTerm, cartItems }) => {
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
-
                         </div>
 
                         {storedUser ? (
@@ -91,22 +104,25 @@ const Header = ({ searchTerm, setSearchTerm, cartItems }) => {
                                 >
                                     <span className="text-lg">❤️</span>
                                 </Link>
-                                {/* Cart */}
+
+                                {/* Cart - GIỜ TỰ ĐỘNG LẤY TỪ REDUX */}
                                 <Link
                                     to="/cart"
                                     className="relative w-10 h-10 flex items-center justify-center text-gray-600 hover:text-blue-600"
                                     style={{ color: "#13C2C2" }}
                                 >
                                     <span className="text-lg">🛒</span>
-                                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
-                                        {cartItems}
-                                    </span>
+                                    {cartItems > 0 && (
+                                        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
+                                            {cartItems}
+                                        </span>
+                                    )}
                                 </Link>
 
                                 {/* Avatar + Dropdown */}
                                 <div className="relative">
                                     <button
-                                        onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                                        onClick={toggleDropdown}
                                         className="w-10 h-10 flex items-center justify-center"
                                     >
                                         <img
@@ -126,7 +142,7 @@ const Header = ({ searchTerm, setSearchTerm, cartItems }) => {
                                                 className="backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl overflow-hidden animate-in slide-in-from-top-2 duration-200"
                                                 style={{ background: 'rgba(255, 255, 255, 0.95)' }}
                                             >
-                                                {/* User info header - now shows actual user data */}
+                                                {/* User info header */}
                                                 <div className="p-4 border-b border-gray-200/50" style={{ background: 'linear-gradient(135deg, #135cc2ff, #0D364C)' }}>
                                                     <div className="flex items-center space-x-3">
                                                         <img
@@ -136,12 +152,10 @@ const Header = ({ searchTerm, setSearchTerm, cartItems }) => {
                                                             onError={(e) => {
                                                                 e.currentTarget.src = "https://images.unsplash.com/photo-1574158622682-e40e69881006?w=100&h=100&fit=crop&crop=face";
                                                             }}
-
                                                         />
                                                         <div>
                                                             <p className="font-semibold text-white">{displayName}</p>
                                                             <p className="text-sm text-white/80">{displayEmail}</p>
-
                                                         </div>
                                                     </div>
                                                 </div>
@@ -149,7 +163,10 @@ const Header = ({ searchTerm, setSearchTerm, cartItems }) => {
                                                 {/* Menu items */}
                                                 <div className="py-2">
                                                     <button
-                                                        onClick={() => { navigate("/customer/profile"); toggleDropdown(); }}
+                                                        onClick={() => {
+                                                            navigate("/customer/profile");
+                                                            setIsDropdownOpen(false);
+                                                        }}
                                                         className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-gray-50 transition-all duration-200 hover:translate-x-1"
                                                     >
                                                         <User className="w-5 h-5" style={{ color: '#135cc2ff' }} />
@@ -157,7 +174,10 @@ const Header = ({ searchTerm, setSearchTerm, cartItems }) => {
                                                     </button>
 
                                                     <button
-                                                        onClick={() => { navigate("/customer/change-password"); toggleDropdown(); }}
+                                                        onClick={() => {
+                                                            navigate("/customer/change-password");
+                                                            setIsDropdownOpen(false);
+                                                        }}
                                                         className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-gray-50 transition-all duration-200 hover:translate-x-1"
                                                     >
                                                         <Settings className="w-5 h-5" style={{ color: '#135cc2ff' }} />
@@ -166,7 +186,7 @@ const Header = ({ searchTerm, setSearchTerm, cartItems }) => {
 
                                                     <div className="border-t border-gray-200/50 mt-2 pt-2">
                                                         <button
-                                                            onClick={() => { console.log("clicked"); handleLogout(); }}
+                                                            onClick={handleLogout}
                                                             className="w-full flex items-center space-x-3 px-4 py-3 text-red-600 hover:bg-red-50 transition-all duration-200 hover:translate-x-1"
                                                         >
                                                             <LogOut className="w-5 h-5" />
@@ -205,7 +225,7 @@ const Header = ({ searchTerm, setSearchTerm, cartItems }) => {
 Header.propTypes = {
     searchTerm: PropTypes.string,
     setSearchTerm: PropTypes.func,
-    cartItems: PropTypes.number,
+    // ĐÃ XÓA cartItems khỏi props
 };
 
 export default Header;
