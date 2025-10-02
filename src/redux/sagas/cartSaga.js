@@ -151,7 +151,7 @@ function* addCartSaga(action) {
     const msg = error.message || "Thêm vào giỏ hàng thất bại";
     console.error("addCartSaga error:", msg, error);
     yield put(cartAddFailure(msg));
-    toast.error(msg);
+    // toast.error(msg);
   }
 }
 

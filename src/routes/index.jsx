@@ -36,10 +36,7 @@ export const routes = [
     path: "/login",
     element: <LoginPage />,
   },
-  {
-    path: "/cart",
-    element: <CartPage />,
-  },
+
 
   // Trang sản phẩm khách hàng
   {
@@ -67,6 +64,10 @@ export const routes = [
       { path: "repair", element: <RepairPage /> },
       { path: "profile", element: <ProfileManagement /> },
       { path: "change-password", element: <UpdatePassword /> },
+      {
+        path: "cart",
+        element: <CartPage />,
+      },
     ],
   },
 

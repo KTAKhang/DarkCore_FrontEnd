@@ -16,23 +16,23 @@ const ProductDetail = () => {
     // DEBUG: Log state trước
     const productHomeState = useSelector(state => state.productHome);
     console.log('🔴 productHomeState:', productHomeState);
-    
+
     // Redux state - FIXED
     const { detail } = useSelector(state => state.productHome || {});
     const product = detail?.item;
     const loading = detail?.loading || false;
     const error = detail?.error || null;
-    
+
     const { cart, loading: cartLoading, error: cartError } = useSelector((state) => state.cart || {});
-    
+
     console.log('🔴 Debug state:', { product, loading, error, detail });
-    
+
     // Local state
     const [searchTerm, setSearchTerm] = useState('');
     const [wishlist, setWishlist] = useState([]);
     const [selectedImage, setSelectedImage] = useState(0);
     const [quantity, setQuantity] = useState(1);
-    
+
     // FIXED: Kiểm tra product tồn tại trước khi lấy id
     const productId = product?._id || product?.id || id;
     const isInStock = product?.stockQuantity > 0;

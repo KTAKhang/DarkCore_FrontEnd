@@ -107,7 +107,7 @@ const Header = ({ searchTerm, setSearchTerm }) => {
 
                                 {/* Cart - GIỜ TỰ ĐỘNG LẤY TỪ REDUX */}
                                 <Link
-                                    to="/cart"
+                                    to="/customer/cart"
                                     className="relative w-10 h-10 flex items-center justify-center text-gray-600 hover:text-blue-600"
                                     style={{ color: "#13C2C2" }}
                                 >
