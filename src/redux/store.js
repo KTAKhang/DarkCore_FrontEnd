@@ -9,6 +9,7 @@ import categoryHomeReducer from "./reducers/categoryHomeReducer";
 import productHomeReducer from "./reducers/productHomeReducer";
 import profileReducer from "./reducers/profileReducer";
 import customerReducer from "./reducers/customerReducer";
+import cartReducer from "./reducers/cartReducer";
 
 import rootSaga from "./sagas/rootSaga";
 const rootReducer = combineReducers({
@@ -20,6 +21,7 @@ const rootReducer = combineReducers({
   productHome: productHomeReducer,
   profile: profileReducer,
   customer: customerReducer,
+  cart: cartReducer,
 });
 
 const sagaMiddleware = createSagaMiddleware();
