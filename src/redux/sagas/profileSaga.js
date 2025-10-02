@@ -33,7 +33,7 @@ const apiCall = async (method, url, data = null, isForm = false) => {
     } catch (error) {
         // Nếu access token hết hạn → gọi refresh
         if (error.response?.status === 401) {
-            console.log("401")
+            console.log("401");
             try {
                 const refreshRes = await axios.post(
                     `${API_BASE_URL}/auth/refresh-token`,
@@ -62,9 +62,19 @@ const apiCall = async (method, url, data = null, isForm = false) => {
                 window.location.href = "/login";
             }
         }
+
+        // ✅ Nếu tài khoản bị block (403)
+        if (error.response?.status === 403) {
+            alert("Tài khoản của bạn đã bị khóa bởi admin.");
+            localStorage.removeItem("token");
+            localStorage.removeItem("user");
+            window.location.href = "/login";
+        }
+
         throw error;
     }
 };
+
 
 // ===== SAGAS =====
 function* updateProfileSaga(action) {

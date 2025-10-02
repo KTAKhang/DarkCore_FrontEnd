@@ -17,7 +17,9 @@ export default function* rootSaga() {
       staffSaga(),
       categoryHomeSaga(),
       productHomeSaga(),
-      cartSaga(), // ⚠️ NẾU CÓ LỖI Ở ĐÂY, SẼ DỪNG LẠI
+      cartSaga(),
+      profileSaga(),
+      customerSaga(),
     ]);
   } catch (error) {
     console.error("🔴 rootSaga ERROR:", error);
