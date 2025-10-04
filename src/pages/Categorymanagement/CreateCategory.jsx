@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import { Form, Input, Button, Card, Switch, Upload, Modal, Typography, Space, Divider, message } from "antd";
 import { PlusOutlined, CameraOutlined } from "@ant-design/icons";
@@ -18,124 +18,114 @@ const CreateCategory = ({ visible, onClose, onSuccess }) => {
   const [form] = Form.useForm();
   const [previewImage, setPreviewImage] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
-  const [switchValue, setSwitchValue] = useState(true);
   const [imageFile, setImageFile] = useState(null);
 
   useEffect(() => {
     if (visible) {
       form.setFieldsValue({ status: true });
-      setSwitchValue(true);
     } else {
       form.resetFields();
-      setSwitchValue(true);
       setImageFile(null);
       setPreviewImage("");
     }
   }, [visible, form]);
 
   const handleFinish = async (values) => {
+    // Check if image is selected
     if (!imageFile) {
       message.error("Vui lòng chọn hình ảnh cho category!");
       return;
     }
 
-    // Validate required fields
-    const trimmedName = values.name?.trim();
-    const trimmedDescription = values.description?.trim();
-    
-    // Check for empty required fields
-    if (!trimmedName) {
-      message.error("Vui lòng nhập tên category!");
-      return;
-    }
-    if (!trimmedDescription) {
-      message.error("Vui lòng nhập mô tả category!");
-      return;
-    }
-
+    // Create category payload with trimmed values
     const newCategory = {
       _id: undefined,
-      name: trimmedName,
-      description: trimmedDescription,
-      imageFile: imageFile, // Send file object instead of base64
+      name: values.name?.trim(),
+      description: values.description?.trim(),
+      imageFile: imageFile,
       status: values.status !== undefined ? values.status : true,
       createdAt: new Date().toISOString(),
     };
 
-    onSuccess && onSuccess(newCategory);
+    // Call success callback
+    onSuccess?.(newCategory);
   };
 
   const handlePreview = async (file) => {
-    const src = file.url || (file.originFileObj ? await getBase64(file.originFileObj) : "");
-    setPreviewImage(src);
+    let imageUrl = file.url;
+    
+    if (!imageUrl && file.originFileObj) {
+      imageUrl = await getBase64(file.originFileObj);
+    }
+    
+    setPreviewImage(imageUrl);
     setModalVisible(true);
   };
 
   const handleSwitchChange = (checked) => {
-    setSwitchValue(checked);
     form.setFieldsValue({ status: checked });
   };
 
   const beforeUpload = (file) => {
-    const isImage = file.type.startsWith("image/");
-    if (!isImage) {
+    // Check file type
+    if (!file.type.startsWith("image/")) {
       message.error("Chỉ được phép tải lên file hình ảnh!");
       return Upload.LIST_IGNORE;
     }
-    const isLt2M = file.size / 1024 / 1024 < 2;
-    if (!isLt2M) {
+    
+    // Check file size (2MB limit)
+    if (file.size / 1024 / 1024 >= 2) {
       message.error("Kích thước file phải nhỏ hơn 2MB!");
       return Upload.LIST_IGNORE;
     }
+    
     setImageFile(file);
     return false;
   };
 
-  const customStyles = useMemo(
-    () => ({
-      card: { borderRadius: 8, border: "none", boxShadow: "none" },
-      primaryButton: {
-        backgroundColor: "#13C2C2",
-        borderColor: "#13C2C2",
-        height: 44,
-        borderRadius: 8,
-        fontWeight: 600,
-        fontSize: 16,
-      },
-      title: { color: "#0D364C", marginBottom: 24, fontWeight: 700 },
-      label: { color: "#0D364C", fontWeight: 600, fontSize: 14 },
-      input: { borderRadius: 8, height: 40, borderColor: "#d9d9d9" },
-      divider: { borderColor: "#13C2C2", opacity: 0.3 },
-    }),
-    []
-  );
+  // Simple inline styles - no need for useMemo
+  const styles = {
+    card: { borderRadius: 8, border: "none", boxShadow: "none" },
+    primaryButton: {
+      backgroundColor: "#13C2C2",
+      borderColor: "#13C2C2",
+      height: 44,
+      borderRadius: 8,
+      fontWeight: 600,
+      fontSize: 16,
+    },
+    title: { color: "#0D364C", marginBottom: 24, fontWeight: 700 },
+    label: { color: "#0D364C", fontWeight: 600, fontSize: 14 },
+    input: { borderRadius: 8, height: 40, borderColor: "#d9d9d9" },
+    divider: { borderColor: "#13C2C2", opacity: 0.3 },
+  };
 
   return (
     <>
       <Modal open={visible} title={null} onCancel={onClose} footer={null} destroyOnClose width={500} styles={{ body: { padding: 0 }, header: { display: "none" } }}>
-        <Card style={customStyles.card}>
+        <Card style={styles.card}>
           <div style={{ padding: "8px 0" }}>
             <Space direction="vertical" size="large" style={{ width: "100%" }}>
               <div style={{ textAlign: "center" }}>
                 <div style={{ width: 60, height: 60, backgroundColor: "#13C2C2", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
                   <PlusOutlined style={{ fontSize: 24, color: "white" }} />
                 </div>
-                <Title level={3} style={customStyles.title}>Tạo Category Mới</Title>
+                <Title level={3} style={styles.title}>Tạo Category Mới</Title>
                 <Text type="secondary" style={{ fontSize: 14 }}>Thêm category mới vào hệ thống của bạn</Text>
               </div>
 
-              <Divider style={customStyles.divider} />
+              <Divider style={styles.divider} />
 
               <Form form={form} layout="vertical" onFinish={handleFinish} initialValues={{ status: true }} size="large">
-                <Form.Item label={<span style={customStyles.label}>Tên Category</span>} name="name" rules={[{ required: true, message: "Vui lòng nhập tên category!" }]}>
-                  <Input placeholder="Nhập tên category" style={customStyles.input} />
+                <Form.Item label={<span style={styles.label}>Tên Category</span>} name="name" rules={[{ required: true, message: "Vui lòng nhập tên category!" }]}>
+                  <Input placeholder="Nhập tên category" style={styles.input} />
                 </Form.Item>
 
-                <Form.Item label={<span style={customStyles.label}>Mô tả</span>} name="description" rules={[{ required: true, message: "Vui lòng nhập mô tả category!" }]}>
+                <Form.Item label={<span style={styles.label}>Mô tả</span>} name="description" rules={[{ required: true, message: "Vui lòng nhập mô tả category!" }]}>
                   <Input.TextArea rows={3} placeholder="Nhập mô tả category" style={{ borderRadius: 8 }} maxLength={200} showCount />
                 </Form.Item>
 
-                <Form.Item label={<span style={customStyles.label}>Hình ảnh</span>} name="image" rules={[{ required: true, message: "Vui lòng chọn hình ảnh cho category!" }]}>
+                <Form.Item label={<span style={styles.label}>Hình ảnh</span>} name="image" rules={[{ required: true, message: "Vui lòng chọn hình ảnh cho category!" }]}>
                   <Upload listType="picture-card" maxCount={1} beforeUpload={beforeUpload} onPreview={handlePreview} accept="image/*">
                     <div style={{ padding: "20px 0" }}>
                       <CameraOutlined style={{ color: "#13C2C2", fontSize: 24 }} />
@@ -145,19 +135,19 @@ const CreateCategory = ({ visible, onClose, onSuccess }) => {
                   </Upload>
                 </Form.Item>
 
-                <Form.Item label={<span style={customStyles.label}>Trạng thái hiển thị</span>} name="status" valuePropName="checked">
+                <Form.Item label={<span style={styles.label}>Trạng thái hiển thị</span>} name="status" valuePropName="checked">
                   <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                     <Switch checkedChildren="Hiển thị" unCheckedChildren="Ẩn" onChange={handleSwitchChange} defaultChecked />
-                    <Text style={{ color: "#666", fontSize: 14 }}>{switchValue ? "Category sẽ được hiển thị công khai" : "Category sẽ được ẩn"}</Text>
+                    <Text style={{ color: "#666", fontSize: 14 }}>Category sẽ được hiển thị công khai</Text>
                   </div>
                 </Form.Item>
 
-                <Divider style={customStyles.divider} />
+                <Divider style={styles.divider} />
 
                 <Form.Item style={{ marginBottom: 0 }}>
                   <Space style={{ width: "100%", justifyContent: "space-between" }}>
                     <Button onClick={onClose} size="large" style={{ height: 44, borderRadius: 8, fontWeight: 500, minWidth: 120, borderColor: "#d9d9d9", color: "#666" }}>Hủy bỏ</Button>
-                    <Button type="primary" htmlType="submit" icon={<PlusOutlined />} size="large" style={{ ...customStyles.primaryButton, minWidth: 140 }}>Tạo Category</Button>
+                    <Button type="primary" htmlType="submit" icon={<PlusOutlined />} size="large" style={{ ...styles.primaryButton, minWidth: 140 }}>Tạo Category</Button>
                   </Space>
                 </Form.Item>
               </Form>

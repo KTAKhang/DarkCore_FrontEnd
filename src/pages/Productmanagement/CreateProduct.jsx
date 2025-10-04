@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import { Form, Input, Button, Card, Upload, Modal, InputNumber, Select, Typography, Space, Divider, message, Switch } from "antd";
 import { PlusOutlined, CameraOutlined, AppstoreOutlined, ShoppingOutlined, DollarOutlined, InfoCircleOutlined } from "@ant-design/icons";
@@ -20,169 +20,146 @@ const CreateProduct = ({ visible, onClose, onSuccess, categories = [] }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [fileList, setFileList] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [switchValue, setSwitchValue] = useState(true);
 
   useEffect(() => {
     if (visible) {
       form.setFieldsValue({ status: true });
-      setSwitchValue(true);
     } else {
       form.resetFields();
-      setSwitchValue(true);
       setFileList([]);
       setPreviewImage("");
     }
   }, [visible, form]);
 
+  // Filter active categories
   const activeCategories = categories.filter((c) => c.status !== false);
+
+  // Helper function to reset form
+  const resetForm = () => {
+    form.resetFields();
+    setFileList([]);
+    setPreviewImage("");
+    setModalVisible(false);
+  };
 
   const handleFinish = async (values) => {
     if (isSubmitting) return;
-    try {
-      setIsSubmitting(true);
-      if (!fileList.length) {
-        message.error("Vui lòng chọn hình ảnh cho sản phẩm!");
-        setIsSubmitting(false);
-        return;
-      }
-
-      const images = fileList
-        .map((f) => f?.originFileObj || f)
-        .filter((f) => f instanceof File);
-
-      console.log("=== CreateProduct Form Values ===");
-      console.log("values.short_desc:", values.short_desc);
-      console.log("values.detail_desc:", values.detail_desc);
-      
-      // Validate required fields
-      const trimmedName = values.name?.trim();
-      const trimmedShortDesc = values.short_desc?.trim();
-      const trimmedDetailDesc = values.detail_desc?.trim();
-      const trimmedBrand = values.brand?.trim();
-      
-      // Check for empty required fields
-      if (!trimmedName) {
-        message.error("Vui lòng nhập tên sản phẩm!");
-        setIsSubmitting(false);
-        return;
-      }
-      if (!trimmedShortDesc) {
-        message.error("Vui lòng nhập mô tả ngắn!");
-        setIsSubmitting(false);
-        return;
-      }
-      if (!trimmedDetailDesc) {
-        message.error("Vui lòng nhập mô tả chi tiết!");
-        setIsSubmitting(false);
-        return;
-      }
-      if (!trimmedBrand) {
-        message.error("Vui lòng nhập thương hiệu!");
-        setIsSubmitting(false);
-        return;
-      }
-      
-      const payload = {
-        _id: undefined,
-        name: trimmedName,
-        category_id: values.category_id,
-        price: values.price,
-        short_desc: trimmedShortDesc,
-        detail_desc: trimmedDetailDesc,
-        brand: trimmedBrand,
-        quantity: values.quantity,
-        status: values.status !== undefined ? values.status : true,
-        images,
-      };
-
-      console.log("=== CreateProduct Payload ===");
-      console.log("payload.short_desc:", payload.short_desc);
-      console.log("payload.detail_desc:", payload.detail_desc);
-      console.log("Full payload:", payload);
-
-      onSuccess && onSuccess(payload);
+    
+    setIsSubmitting(true);
+    
+    // Check if image is selected
+    if (!fileList.length) {
+      message.error("Vui lòng chọn hình ảnh cho sản phẩm!");
       setIsSubmitting(false);
-      form.resetFields();
-      setFileList([]);
-      setPreviewImage("");
-      setModalVisible(false);
-    } catch {
-      message.error("Có lỗi xảy ra khi tạo sản phẩm");
-      setIsSubmitting(false);
+      return;
     }
+
+    // Get images from file list
+    const images = fileList
+      .map((f) => f?.originFileObj || f)
+      .filter((f) => f instanceof File);
+
+    // Create payload with trimmed values
+    const payload = {
+      _id: undefined,
+      name: values.name?.trim(),
+      category_id: values.category_id,
+      price: values.price,
+      short_desc: values.short_desc?.trim(),
+      detail_desc: values.detail_desc?.trim(),
+      brand: values.brand?.trim(),
+      quantity: values.quantity,
+      status: values.status !== undefined ? values.status : true,
+      images,
+    };
+
+    // Call success callback
+    onSuccess?.(payload);
+    
+    // Reset form and states
+    setIsSubmitting(false);
+    resetForm();
   };
 
   const handlePreview = async (file) => {
-    if (!file.url && !file.preview) {
-      file.preview = await getBase64(file.originFileObj);
+    let imageUrl = file.url || file.preview;
+    
+    if (!imageUrl && file.originFileObj) {
+      imageUrl = await getBase64(file.originFileObj);
     }
-    setPreviewImage(file.url || file.preview || "");
+    
+    setPreviewImage(imageUrl);
     setModalVisible(true);
   };
 
-  const customStyles = useMemo(
-    () => ({
-      card: { borderRadius: 8, border: "none", boxShadow: "none" },
-      primaryButton: { backgroundColor: "#13C2C2", borderColor: "#13C2C2", height: 44, borderRadius: 8, fontWeight: 600, fontSize: 16 },
-      title: { color: "#0D364C", marginBottom: 24, fontWeight: 700 },
-      label: { color: "#0D364C", fontWeight: 600, fontSize: 14 },
-      input: { borderRadius: 8, height: 40, borderColor: "#d9d9d9" },
-      divider: { borderColor: "#13C2C2", opacity: 0.3 },
-    }),
-    []
-  );
+  // Simple inline styles - no need for useMemo
+  const styles = {
+    card: { borderRadius: 8, border: "none", boxShadow: "none" },
+    primaryButton: { backgroundColor: "#13C2C2", borderColor: "#13C2C2", height: 44, borderRadius: 8, fontWeight: 600, fontSize: 16 },
+    title: { color: "#0D364C", marginBottom: 24, fontWeight: 700 },
+    label: { color: "#0D364C", fontWeight: 600, fontSize: 14 },
+    input: { borderRadius: 8, height: 40, borderColor: "#d9d9d9" },
+    divider: { borderColor: "#13C2C2", opacity: 0.3 },
+  };
 
   return (
     <>
       <Modal open={visible} title={null} onCancel={onClose} footer={null} destroyOnClose width={600} styles={{ body: { padding: 0 }, header: { display: "none" } }}>
-        <Card style={customStyles.card}>
+        <Card style={styles.card}>
           <div style={{ padding: "8px 0" }}>
             <Space direction="vertical" size="large" style={{ width: "100%" }}>
               <div style={{ textAlign: "center" }}>
                 <div style={{ width: 60, height: 60, backgroundColor: "#13C2C2", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
                   <PlusOutlined style={{ fontSize: 24, color: "white" }} />
                 </div>
-                <Title level={3} style={customStyles.title}>Tạo Sản phẩm Mới</Title>
+                <Title level={3} style={styles.title}>Tạo Sản phẩm Mới</Title>
                 <Text type="secondary" style={{ fontSize: 14 }}>Thêm sản phẩm mới vào hệ thống của bạn</Text>
               </div>
 
-              <Divider style={customStyles.divider} />
+              <Divider style={styles.divider} />
 
               <Form form={form} layout="vertical" onFinish={handleFinish} initialValues={{ quantity: 1, price: 1000, status: true }} size="large">
-                <Form.Item label={<Space><AppstoreOutlined style={{ color: "#13C2C2" }} /><span style={customStyles.label}>Danh mục sản phẩm</span></Space>} name="category_id" rules={[{ required: true, message: "Vui lòng chọn danh mục sản phẩm!" }]}>
-                  <Select placeholder="Chọn danh mục sản phẩm" style={customStyles.input}>
+                <Form.Item label={<Space><AppstoreOutlined style={{ color: "#13C2C2" }} /><span style={styles.label}>Danh mục sản phẩm</span></Space>} name="category_id" rules={[{ required: true, message: "Vui lòng chọn danh mục sản phẩm!" }]}>
+                  <Select placeholder="Chọn danh mục sản phẩm" style={styles.input}>
                     {activeCategories.map((cat) => (
                       <Select.Option key={cat._id} value={cat._id}>{cat.name}</Select.Option>
                     ))}
                   </Select>
                 </Form.Item>
 
-                <Form.Item label={<Space><ShoppingOutlined style={{ color: "#13C2C2" }} /><span style={customStyles.label}>Tên sản phẩm</span></Space>} name="name" rules={[{ required: true, message: "Vui lòng nhập tên sản phẩm!" }]}>
-                  <Input placeholder="Nhập tên sản phẩm" style={customStyles.input} maxLength={200} showCount />
+                <Form.Item label={<Space><ShoppingOutlined style={{ color: "#13C2C2" }} /><span style={styles.label}>Tên sản phẩm</span></Space>} name="name" rules={[{ required: true, message: "Vui lòng nhập tên sản phẩm!" }]}>
+                  <Input placeholder="Nhập tên sản phẩm" style={styles.input} maxLength={200} showCount />
                 </Form.Item>
 
-                <Form.Item label={<Space><DollarOutlined style={{ color: "#13C2C2" }} /><span style={customStyles.label}>Giá sản phẩm</span></Space>} name="price" rules={[{ required: true, message: "Vui lòng nhập giá sản phẩm!" }]}>
-                  <InputNumber min={0} max={999999999} style={{ width: "100%", ...customStyles.input }} placeholder="Nhập giá sản phẩm" formatter={(v) => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")} parser={(v) => v.replace(/\$\s?|(,*)/g, "")} />
+                <Form.Item label={<Space><DollarOutlined style={{ color: "#13C2C2" }} /><span style={styles.label}>Giá sản phẩm</span></Space>} name="price" rules={[{ required: true, message: "Vui lòng nhập giá sản phẩm!" }]}>
+                  <InputNumber min={0} max={999999999} style={{ width: "100%", ...styles.input }} placeholder="Nhập giá sản phẩm" formatter={(v) => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")} parser={(v) => v.replace(/\$\s?|(,*)/g, "")} />
                 </Form.Item>
 
-                <Form.Item label={<Space><ShoppingOutlined style={{ color: "#13C2C2" }} /><span style={customStyles.label}>Số lượng</span></Space>} name="quantity" rules={[{ required: true, message: "Vui lòng nhập số lượng!" }]}>
-                  <InputNumber min={0} max={999999} style={{ width: "100%", ...customStyles.input }} placeholder="Nhập số lượng" precision={0} />
+                <Form.Item label={<Space><ShoppingOutlined style={{ color: "#13C2C2" }} /><span style={styles.label}>Số lượng</span></Space>} name="quantity" rules={[{ required: true, message: "Vui lòng nhập số lượng!" }]}>
+                  <InputNumber min={0} max={999999} style={{ width: "100%", ...styles.input }} placeholder="Nhập số lượng" precision={0} />
                 </Form.Item>
 
-                <Form.Item label={<Space><ShoppingOutlined style={{ color: "#13C2C2" }} /><span style={customStyles.label}>Thương hiệu</span></Space>} name="brand" rules={[{ required: true, message: "Vui lòng nhập thương hiệu!" }]}>
-                  <Input placeholder="Nhập thương hiệu" style={customStyles.input} maxLength={50} showCount />
+                <Form.Item label={<Space><ShoppingOutlined style={{ color: "#13C2C2" }} /><span style={styles.label}>Thương hiệu</span></Space>} name="brand" rules={[{ required: true, message: "Vui lòng nhập thương hiệu!" }]}>
+                  <Input placeholder="Nhập thương hiệu" style={styles.input} maxLength={50} showCount />
                 </Form.Item>
 
-                <Form.Item label={<Space><InfoCircleOutlined style={{ color: "#13C2C2" }} /><span style={customStyles.label}>Mô tả ngắn</span></Space>} name="short_desc" rules={[{ required: true, message: "Vui lòng nhập mô tả ngắn!" }]}>
+                <Form.Item label={<Space><InfoCircleOutlined style={{ color: "#13C2C2" }} /><span style={styles.label}>Mô tả ngắn</span></Space>} name="short_desc" rules={[{ required: true, message: "Vui lòng nhập mô tả ngắn!" }]}>
                   <Input.TextArea rows={2} placeholder="Nhập mô tả ngắn" style={{ borderRadius: 8 }} showCount maxLength={200} />
                 </Form.Item>
                 
-                <Form.Item label={<Space><InfoCircleOutlined style={{ color: "#13C2C2" }} /><span style={customStyles.label}>Mô tả chi tiết</span></Space>} name="detail_desc" rules={[{ required: true, message: "Vui lòng nhập mô tả chi tiết!" }]}>
+                <Form.Item label={<Space><InfoCircleOutlined style={{ color: "#13C2C2" }} /><span style={styles.label}>Mô tả chi tiết</span></Space>} name="detail_desc" rules={[{ required: true, message: "Vui lòng nhập mô tả chi tiết!" }]}>
                   <Input.TextArea rows={4} placeholder="Nhập mô tả chi tiết" style={{ borderRadius: 8 }} showCount maxLength={1000} />
                 </Form.Item>
 
-                <Form.Item label={<span style={customStyles.label}>Hình ảnh sản phẩm</span>} name="image" valuePropName="fileList" getValueFromEvent={(e) => (Array.isArray(e) ? e : e?.fileList)} rules={[{ required: true, message: "Vui lòng chọn hình ảnh cho sản phẩm!" }]}>
-                  <Upload listType="picture-card" maxCount={1} beforeUpload={() => false} onPreview={handlePreview} onChange={({ fileList: newFileList }) => setFileList(newFileList)} fileList={fileList}>
+                <Form.Item label={<span style={styles.label}>Hình ảnh sản phẩm</span>} rules={[{ required: true, message: "Vui lòng chọn hình ảnh cho sản phẩm!" }]}>
+                  <Upload 
+                    listType="picture-card" 
+                    maxCount={1} 
+                    beforeUpload={() => false} 
+                    onPreview={handlePreview} 
+                    onChange={({ fileList: newFileList }) => setFileList(newFileList)} 
+                    fileList={fileList}
+                  >
                     {fileList.length < 1 && (
                       <div style={{ padding: "20px 0" }}>
                         <CameraOutlined style={{ color: "#13C2C2", fontSize: 24 }} />
@@ -193,19 +170,19 @@ const CreateProduct = ({ visible, onClose, onSuccess, categories = [] }) => {
                   </Upload>
                 </Form.Item>
 
-                <Form.Item label={<span style={customStyles.label}>Trạng thái hiển thị</span>} name="status" valuePropName="checked">
+                <Form.Item label={<span style={styles.label}>Trạng thái hiển thị</span>} name="status" valuePropName="checked">
                   <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                    <Switch checkedChildren="Hiển thị" unCheckedChildren="Ẩn" onChange={(checked) => { setSwitchValue(checked); form.setFieldsValue({ status: checked }); }} defaultChecked />
-                    <Text style={{ color: "#666", fontSize: 14 }}>{switchValue ? "Sản phẩm sẽ được hiển thị công khai" : "Sản phẩm sẽ được ẩn"}</Text>
+                    <Switch checkedChildren="Hiển thị" unCheckedChildren="Ẩn" defaultChecked />
+                    <Text style={{ color: "#666", fontSize: 14 }}>Sản phẩm sẽ được hiển thị công khai</Text>
                   </div>
                 </Form.Item>
 
-                <Divider style={customStyles.divider} />
+                <Divider style={styles.divider} />
 
                 <Form.Item style={{ marginBottom: 0 }}>
                   <Space style={{ width: "100%", justifyContent: "space-between" }}>
                     <Button onClick={onClose} size="large" disabled={isSubmitting} style={{ height: 44, borderRadius: 8, fontWeight: 500, minWidth: 120, borderColor: "#d9d9d9", color: "#666" }}>Hủy bỏ</Button>
-                    <Button type="primary" htmlType="submit" loading={isSubmitting} icon={<PlusOutlined />} size="large" disabled={isSubmitting} style={{ ...customStyles.primaryButton, minWidth: 140 }}>
+                    <Button type="primary" htmlType="submit" loading={isSubmitting} icon={<PlusOutlined />} size="large" disabled={isSubmitting} style={{ ...styles.primaryButton, minWidth: 140 }}>
                       {isSubmitting ? "Đang tạo..." : "Tạo Sản phẩm"}
                     </Button>
                   </Space>
