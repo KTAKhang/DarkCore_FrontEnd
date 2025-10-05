@@ -139,7 +139,7 @@ const Navbar = () => {
 
               {/* Dropdown Menu */}
               {isDropdownOpen && (
-                <div className="absolute right-0 top-full mt-3 w-64 z-[9999]">
+                <div className="absolute right-0 top-full mt-3 w-96 z-[9999]">
                   <div
                     className="backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl overflow-hidden animate-in slide-in-from-top-2 duration-200"
                     style={{ background: 'rgba(255, 255, 255, 0.95)' }}

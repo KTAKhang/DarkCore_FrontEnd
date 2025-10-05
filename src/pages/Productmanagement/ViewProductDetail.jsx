@@ -10,36 +10,52 @@ const ViewProductDetail = ({ visible, onClose, productData }) => {
   const formatDateTime = (dateString) => {
     if (!dateString) return "N/A";
     const date = new Date(dateString);
-    const dateStr = date.toLocaleDateString("vi-VN");
-    const timeStr = date.toLocaleTimeString("vi-VN", { hour: '2-digit', minute: '2-digit' });
-    return `${dateStr} lúc ${timeStr}`;
+    return `${date.toLocaleDateString("vi-VN")} lúc ${date.toLocaleTimeString("vi-VN", { hour: '2-digit', minute: '2-digit' })}`;
+  };
+
+  // Helper function to create description items
+  const createItem = (key, label, children) => ({ key, label, children, span: 2 });
+
+  // Simple styles object
+  const styles = {
+    imageContainer: { marginBottom: 16 },
+    image: { borderRadius: 8 },
+    createdAt: { color: "#0D364C" },
+    updatedAt: { color: "#13C2C2" }
+  };
+
+  // Helper function to render product image
+  const renderProductImage = () => {
+    if (!productData.image) return null;
+    return (
+      <div style={styles.imageContainer}>
+        <Image src={productData.image} alt={productData.name} width={200} style={styles.image} />
+      </div>
+    );
   };
 
   const items = [
-    { key: "name", label: "Tên sản phẩm", children: <Text strong>{productData.name}</Text>, span: 2 },
-    { key: "id", label: "ID", children: <Text code>{productData._id}</Text>, span: 2 },
-    { key: "category", label: "Danh mục", children: <Text>{productData.categoryDetail?.name || productData.category?.name || "N/A"}</Text>, span: 2 },
-    { key: "price", label: "Giá", children: <Text>{(productData.price || 0).toLocaleString("vi-VN")}đ</Text>, span: 2 },
-    { key: "brand", label: "Thương hiệu", children: <Text>{productData.brand || "Không có"}</Text>, span: 2 },
-    {
-      key: "status",
-      label: "Trạng thái",
-      children: <Tag color={productData.status ? "#52c41a" : "#ff4d4f"} icon={productData.status ? <CheckCircleOutlined /> : <StopOutlined />}>{productData.status ? "Hiển thị" : "Ẩn"}</Tag>,
-      span: 2,
-    },
-    { key: "createdAt", label: "Ngày tạo", children: <Text style={{ color: "#0D364C" }}>{formatDateTime(productData.createdAt)}</Text>, span: 2 },
-    { key: "updatedAt", label: "Cập nhật gần nhất", children: <Text style={{ color: "#13C2C2" }}>{formatDateTime(productData.updatedAt)}</Text>, span: 2 },
-    { key: "short_desc", label: "Mô tả ngắn", children: <Text>{productData.short_desc || productData.description || ""}</Text>, span: 2 },
-    { key: "detail_desc", label: "Mô tả chi tiết", children: <Text>{productData.detail_desc || productData.warrantyDetails || ""}</Text>, span: 2 },
+    createItem("name", "Tên sản phẩm", <Text strong>{productData.name}</Text>),
+    createItem("id", "ID", <Text code>{productData._id}</Text>),
+    createItem("category", "Danh mục", <Text>{productData.categoryDetail?.name || productData.category?.name || "N/A"}</Text>),
+    createItem("price", "Giá", <Text>{(productData.price || 0).toLocaleString("vi-VN")}đ</Text>),
+    createItem("brand", "Thương hiệu", <Text>{productData.brand || "Không có"}</Text>),
+    createItem(
+      "status", 
+      "Trạng thái", 
+      <Tag color={productData.status ? "#52c41a" : "#ff4d4f"} icon={productData.status ? <CheckCircleOutlined /> : <StopOutlined />}>
+        {productData.status ? "Hiển thị" : "Ẩn"}
+      </Tag>
+    ),
+    createItem("createdAt", "Ngày tạo", <Text style={styles.createdAt}>{formatDateTime(productData.createdAt)}</Text>),
+    createItem("updatedAt", "Cập nhật gần nhất", <Text style={styles.updatedAt}>{formatDateTime(productData.updatedAt)}</Text>),
+    createItem("short_desc", "Mô tả ngắn", <Text>{productData.short_desc || productData.description || ""}</Text>),
+    createItem("detail_desc", "Mô tả chi tiết", <Text>{productData.detail_desc || productData.warrantyDetails || ""}</Text>),
   ];
 
   return (
     <Modal open={visible} onCancel={onClose} footer={null} title="Chi tiết Sản phẩm" width={700}>
-      {productData.image && (
-        <div style={{ marginBottom: 16 }}>
-          <Image src={productData.image} alt={productData.name} width={200} style={{ borderRadius: 8 }} />
-        </div>
-      )}
+      {renderProductImage()}
       <Descriptions bordered column={2} items={items} />
     </Modal>
   );

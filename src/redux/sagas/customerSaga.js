@@ -30,8 +30,9 @@ const apiCall = async (method, url, data = null, isForm = false) => {
         });
         return res.data;
     } catch (error) {
+        // Nếu access token hết hạn → gọi refresh
         if (error.response?.status === 401) {
-            console.log("401 → thử refresh token");
+            console.log("401");
             try {
                 const refreshRes = await axios.post(
                     `${API_BASE_URL}/auth/refresh-token`,
@@ -41,6 +42,7 @@ const apiCall = async (method, url, data = null, isForm = false) => {
                 const newToken = refreshRes.data?.token?.access_token;
                 if (newToken) {
                     localStorage.setItem("token", newToken);
+                    // thử gọi lại request với token mới
                     const retryRes = await axios({
                         method,
                         url: `${API_BASE_URL}${url}`,
@@ -59,6 +61,15 @@ const apiCall = async (method, url, data = null, isForm = false) => {
                 window.location.href = "/login";
             }
         }
+
+        // ✅ Nếu tài khoản bị block (403)
+        if (error.response?.status === 403) {
+            alert("Tài khoản của bạn đã bị khóa bởi admin.");
+            localStorage.removeItem("token");
+            localStorage.removeItem("user");
+            window.location.href = "/login";
+        }
+
         throw error;
     }
 };
