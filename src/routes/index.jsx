@@ -11,6 +11,7 @@ import CategoryManagement from "../pages/Categorymanagement/CategoryManagement";
 import ProductManagement from "../pages/Productmanagement/ProductManagement";
 import StaffManagement from "../pages/Staffmanagement/StaffManagement";
 import CustomerManagement from "../pages/CustomerManagement/CustomerManagement";
+import NewsManagement from "../pages/NewsManagement/NewsManagement";
 // Removed standalone staff pages; create/detail handled via modals in StaffManagement
 
 
@@ -87,6 +88,7 @@ export const routes = [
       { path: "customer", element: <CustomerManagement /> },
       { path: "profile", element: <ProfileManagement /> },
       { path: "change-password", element: <UpdatePassword /> },
+      { path: "news", element: <NewsManagement /> },
     ],
   },
 
