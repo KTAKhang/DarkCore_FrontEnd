@@ -16,50 +16,51 @@ import {
 const initialState = {
   list: [],
   pagination: { page: 1, limit: 10, total: 0 },
-  detail: null,
   loading: false,
   error: null,
-  createLoading: false,
-  createError: null,
-  updateLoading: false,
-  updateError: null,
+  detail: null,
+  params: { page: 1, limit: 10 }, 
 };
 
 export default function staffReducer(state = initialState, action) {
   switch (action.type) {
     case STAFF_LIST_REQUEST:
-      return { ...state, loading: true, error: null };
-    case STAFF_LIST_SUCCESS: {
-      const payload = action.payload || {};
-      const list = Array.isArray(payload) ? payload : (payload.data || payload.items || []);
-      const pagination = Array.isArray(payload)
-        ? { page: 1, limit: list.length, total: list.length }
-        : (payload.pagination || state.pagination);
-      return { ...state, loading: false, list, pagination };
-    }
+      return {
+        ...state,
+        loading: true,
+        error: null,
+        params: action.payload || state.params, 
+      };
+    case STAFF_LIST_SUCCESS:
+      return {
+        ...state,
+        loading: false,
+        list: action.payload.data,
+        pagination: action.payload.pagination,
+      };
     case STAFF_LIST_FAILURE:
-      return { ...state, loading: false, error: action.payload };
+      return {
+        ...state,
+        loading: false,
+        error: action.payload,
+      };
 
     case STAFF_CREATE_REQUEST:
-      return { ...state, createLoading: true, createError: null };
-    case STAFF_CREATE_SUCCESS:
-      return { ...state, createLoading: false };
-    case STAFF_CREATE_FAILURE:
-      return { ...state, createLoading: false, createError: action.payload };
-
     case STAFF_UPDATE_REQUEST:
-      return { ...state, updateLoading: true, updateError: null };
-    case STAFF_UPDATE_SUCCESS:
-      return { ...state, updateLoading: false };
-    case STAFF_UPDATE_FAILURE:
-      return { ...state, updateLoading: false, updateError: action.payload };
-
     case STAFF_DETAIL_REQUEST:
-      return { ...state, detail: null, loading: true, error: null };
-    case STAFF_DETAIL_SUCCESS:
-      return { ...state, detail: action.payload, loading: false, error: null };
+      return { ...state, loading: true, error: null };
+
+    case STAFF_CREATE_SUCCESS:
+    case STAFF_UPDATE_SUCCESS:
+      return { ...state, loading: false };
+
+    case STAFF_CREATE_FAILURE:
+    case STAFF_UPDATE_FAILURE:
     case STAFF_DETAIL_FAILURE:
-      return { ...state, detail: null, loading: false, error: action.payload };
+      return { ...state, loading: false, error: action.payload };
+
+    case STAFF_DETAIL_SUCCESS:
+      return { ...state, loading: false, detail: action.payload };
 
     default:
       return state;

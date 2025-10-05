@@ -8,6 +8,8 @@ import staffReducer from "./reducers/staffReducer";
 import categoryHomeReducer from "./reducers/categoryHomeReducer";
 import productHomeReducer from "./reducers/productHomeReducer";
 import profileReducer from "./reducers/profileReducer";
+import repairServiceReducer from "./reducers/repairServiceReducer";
+import repairRequestReducer from "./reducers/repairRequestReducer";
 
 import rootSaga from "./sagas/rootSaga";
 const rootReducer = combineReducers({
@@ -18,6 +20,8 @@ const rootReducer = combineReducers({
   categoryHome: categoryHomeReducer,
   productHome: productHomeReducer,
   profile: profileReducer,
+  repairService: repairServiceReducer,
+  repairRequest: repairRequestReducer,
 });
 
 const sagaMiddleware = createSagaMiddleware();

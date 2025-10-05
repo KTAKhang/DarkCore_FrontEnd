@@ -1,4 +1,4 @@
-import { takeLatest, call, put } from "redux-saga/effects";
+import { takeLatest, call, put, select } from "redux-saga/effects";
 import axios from "axios";
 import { toast } from "react-toastify";
 import {
@@ -16,7 +16,6 @@ import {
   STAFF_DETAIL_FAILURE,
 } from "../actions/staffActions";
 
-// Use API Gateway base and attach JWT
 const API_BASE_URL = "http://localhost:3000";
 const getAuthHeaders = () => {
   const token = localStorage.getItem("token");
@@ -25,11 +24,10 @@ const getAuthHeaders = () => {
   return headers;
 };
 
-// 📌 Lấy danh sách staff
+//Lấy danh sách staff
 function* fetchStaffList(action) {
   try {
     const params = action.payload || {};
-    // Map UI params to backend params
     const queryParams = {
       page: params.page || 1,
       limit: params.limit || 10,
@@ -47,26 +45,34 @@ function* fetchStaffList(action) {
     }
 
     let request;
-    // If keyword present (search supports paging/sort now)
     if (queryParams.keyword && !queryParams.role && !queryParams.status) {
-      request = axios.get(`${API_BASE_URL}/staff/search`, { params: queryParams, headers: getAuthHeaders() });
+      request = axios.get(`${API_BASE_URL}/staff/search`, {
+        params: queryParams,
+        headers: getAuthHeaders(),
+      });
     } else if ((queryParams.role || queryParams.status) && !queryParams.keyword) {
-      // Filters without keyword with paging/sort
       const { role, status, page, limit, sortBy, sortOrder } = queryParams;
-      request = axios.get(`${API_BASE_URL}/staff/filter`, { params: { role, status, page, limit, sortBy, sortOrder }, headers: getAuthHeaders() });
+      request = axios.get(`${API_BASE_URL}/staff/filter`, {
+        params: { role, status, page, limit, sortBy, sortOrder },
+        headers: getAuthHeaders(),
+      });
     } else {
-      // Default to paginated list with optional sort
-      request = axios.get(`${API_BASE_URL}/staff`, { params: queryParams, headers: getAuthHeaders() });
+      request = axios.get(`${API_BASE_URL}/staff`, {
+        params: queryParams,
+        headers: getAuthHeaders(),
+      });
     }
 
     const res = yield call(() => request);
-
-    // Normalize response: staff service returns { status, data, pagination } for list
     let payload = res.data;
+
     if (payload && payload.data && payload.pagination) {
-      // already normalized
+      // OK rồi
     } else if (Array.isArray(payload)) {
-      payload = { data: payload, pagination: { page: 1, limit: payload.length, total: payload.length } };
+      payload = {
+        data: payload,
+        pagination: { page: 1, limit: payload.length, total: payload.length },
+      };
     }
 
     yield put({ type: STAFF_LIST_SUCCESS, payload });
@@ -82,15 +88,18 @@ function* fetchStaffList(action) {
 // 📌 Tạo staff
 function* createStaff(action) {
   try {
-    console.log("📌 [Saga] Create staff, data:", action.payload);
-
-    // Backend create route is POST /staff (but router defines /staff POST under base "/")
-    // Our gateway mounts staff service at /staff, but router has POST /staff
-    yield call(() => axios.post(`${API_BASE_URL}/staff/staff`, action.payload, { headers: getAuthHeaders() }));
+    yield call(() =>
+      axios.post(`${API_BASE_URL}/staff/staff`, action.payload, {
+        headers: getAuthHeaders(),
+      })
+    );
 
     yield put({ type: STAFF_CREATE_SUCCESS });
     toast.success("Tạo nhân viên thành công");
-    yield put({ type: STAFF_LIST_REQUEST });
+
+    // ✅ reload list với params hiện tại
+    const currentParams = yield select((state) => state.staff.params);
+    yield put({ type: STAFF_LIST_REQUEST, payload: currentParams });
   } catch (err) {
     console.error("❌ [Saga] Create staff error:", err);
     yield put({
@@ -104,14 +113,18 @@ function* createStaff(action) {
 function* updateStaff(action) {
   try {
     const { id, data } = action.payload;
-    console.log("📌 [Saga] Update staff:", id, data);
-
-    // Update status endpoint
-    yield call(() => axios.put(`${API_BASE_URL}/staff/status/${id}`, data, { headers: getAuthHeaders() }));
+    yield call(() =>
+      axios.put(`${API_BASE_URL}/staff/status/${id}`, data, {
+        headers: getAuthHeaders(),
+      })
+    );
 
     yield put({ type: STAFF_UPDATE_SUCCESS });
     toast.success("Cập nhật trạng thái nhân viên thành công");
-    yield put({ type: STAFF_LIST_REQUEST });
+
+    // ✅ reload list với params hiện tại
+    const currentParams = yield select((state) => state.staff.params);
+    yield put({ type: STAFF_LIST_REQUEST, payload: currentParams });
   } catch (err) {
     console.error("❌ [Saga] Update staff error:", err);
     const message = err.response?.data?.message || err.message;
@@ -123,14 +136,11 @@ function* updateStaff(action) {
 // 📌 Lấy chi tiết staff
 function* fetchStaffDetail(action) {
   try {
-    console.log("📌 [Saga] Fetch staff detail id:", action.payload);
-
     const res = yield call(() =>
-      axios.get(`${API_BASE_URL}/staff/${action.payload}`, { headers: getAuthHeaders() })
+      axios.get(`${API_BASE_URL}/staff/${action.payload}`, {
+        headers: getAuthHeaders(),
+      })
     );
-
-    console.log("📌 [Saga] Staff detail response:", res.data);
-
     yield put({ type: STAFF_DETAIL_SUCCESS, payload: res.data });
   } catch (err) {
     console.error("❌ [Saga] Fetch staff detail error:", err);

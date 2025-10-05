@@ -9,6 +9,20 @@ import AdminPage from "../pages/AdminPage";
 import CategoryManagement from "../pages/Categorymanagement/CategoryManagement";
 import ProductManagement from "../pages/Productmanagement/ProductManagement";
 import StaffManagement from "../pages/Staffmanagement/StaffManagement";
+import RepairLandingPage from "../pages/Repair/RepairLandingPage";
+import RepairRequestPage from "../pages/Repair/RepairRequestPage";
+import RepairHistoryPage from "../pages/Repair/RepairHistoryPage";
+import RepairAdminHub from "../pages/Repair/Admin/RepairAdminHub";
+import RepairAdminRequests from "../pages/Repair/Admin/RepairAdminRequests";
+import RepairAdminServices from "../pages/Repair/Admin/RepairAdminServices";
+import RepairAdminRequestDetail from "../pages/Repair/Admin/RepairAdminRequestDetail";
+
+// Repair Staff imports
+import RepairStaffLayout from "../layout/RepairStaffLayout";
+import RepairStaffDashboard from "../pages/Repair/Staff/RepairStaffDashboard";
+import RepairStaffJobs from "../pages/Repair/Staff/RepairStaffJobs";
+import RepairStaffJobDetail from "../pages/Repair/Staff/RepairStaffJobDetail";
+import RepairStaffServices from "../pages/Repair/Staff/RepairStaffServices";
 
 // Removed standalone staff pages; create/detail handled via modals in StaffManagement
 
@@ -29,6 +43,26 @@ export const routes = [
   {
     path: "/",
     element: <HomePage />,
+  },
+  {
+    path: "/repair",
+    element: <RepairLandingPage />,
+  },
+  {
+    path: "/repair/history",
+    element: (
+      <PrivateRoute>
+        <RepairHistoryPage />
+      </PrivateRoute>
+    ),
+  },
+  {
+    path: "/repair/create",
+    element: (
+      <PrivateRoute requiredRole="customer">
+        <RepairRequestPage />
+      </PrivateRoute>
+    ),
   },
   {
     path: "/login",
@@ -63,6 +97,10 @@ export const routes = [
     ),
     children: [
       { index: true, element: <AdminPage /> },
+      { path: "repair", element: <RepairAdminHub /> },
+      { path: "repair/requests", element: <RepairAdminRequests /> },
+      { path: "repair/requests/:id", element: <RepairAdminRequestDetail /> },
+      { path: "repair/services", element: <RepairAdminServices /> },
       { path: "category", element: <CategoryManagement /> },
       { path: "product", element: <ProductManagement /> },
       { path: "staff", element: <StaffManagement /> },
@@ -71,6 +109,22 @@ export const routes = [
       { path: "profile", element: <ProfileManagement /> },
       { path: "change-password", element: <UpdatePassword /> },
 
+    ],
+  },
+
+  // Khu vực Repair Staff
+  {
+    path: "/staff",
+    element: (
+      <PrivateRoute requiredRole="repair-staff">
+        <RepairStaffLayout />
+      </PrivateRoute>
+    ),
+    children: [
+      { index: true, element: <RepairStaffDashboard /> },
+      { path: "jobs", element: <RepairStaffJobs /> },
+      { path: "jobs/:id", element: <RepairStaffJobDetail /> },
+      { path: "services", element: <RepairStaffServices /> },
     ],
   },
 

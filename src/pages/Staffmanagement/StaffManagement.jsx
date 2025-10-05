@@ -21,7 +21,7 @@ import {
   Alert,
   Tooltip,
 } from "antd";
-import { 
+import {
   EditOutlined,
   PlusOutlined,
   EyeOutlined,
@@ -41,7 +41,7 @@ const StaffManagement = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { list = [], loading, pagination: pageMeta = { page: 1, limit: 10, total: 0 } } = useSelector((state) => state.staff || {});
-  
+
   const [searchText, setSearchText] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [roleFilter, setRoleFilter] = useState("all");
@@ -56,8 +56,8 @@ const StaffManagement = () => {
   // Load staff with current filters
   const loadStaff = useCallback((query = {}) => {
     const payload = {
-      page: query.page ?? pageMeta.page ?? 1,
-      limit: query.limit ?? pageMeta.limit ?? 10,
+      page: query.page ?? 1,
+      limit: query.limit ?? 10,
       sortBy: query.sortBy ?? sortBy,
       sortOrder: query.sortOrder ?? sortOrder,
     };
@@ -65,8 +65,7 @@ const StaffManagement = () => {
     if (query.role) payload.role = query.role;
     if (query.keyword) payload.keyword = query.keyword;
     dispatch(staffListRequest(payload));
-  }, [dispatch, pageMeta.page, pageMeta.limit, sortBy, sortOrder]);
-
+  }, [dispatch, sortBy, sortOrder]);
   useEffect(() => {
     // Initial load
     loadStaff({ page: 1, limit: 10, sortBy: "createdAt", sortOrder: "desc" });
@@ -77,22 +76,22 @@ const StaffManagement = () => {
     const timeoutId = setTimeout(() => {
       const query = {};
       let hasFilters = false;
-      
+
       if (statusFilter !== "all") {
         query.status = statusFilter;
         hasFilters = true;
       }
-      
+
       if (roleFilter !== "all") {
         query.role = roleFilter;
         hasFilters = true;
       }
-      
+
       if (searchText.trim()) {
         query.keyword = searchText.trim();
         hasFilters = true;
       }
-      
+
       loadStaff({ ...query, page: 1 });
     }, searchText.trim() ? 500 : 0);
 
@@ -110,7 +109,7 @@ const StaffManagement = () => {
 
   // Check if any filters are active
   const hasActiveFilters = searchText.trim() || statusFilter !== "all" || roleFilter !== "all";
-  
+
   // Create filter summary text
   const getFilterSummary = () => {
     const filters = [];
@@ -177,7 +176,7 @@ const StaffManagement = () => {
               size={50}
               src={record.avatar || ""}
               icon={<UserOutlined />}
-              style={{ 
+              style={{
                 backgroundColor: record.avatar ? "transparent" : "#13C2C2",
                 border: record.avatar ? "1px solid #d9d9d9" : "none"
               }}
@@ -212,7 +211,7 @@ const StaffManagement = () => {
         render: (value) => {
           if (!value) return <span style={{ color: "#999" }}>N/A</span>;
           const d = new Date(value);
-          const formatted = `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth()+1).toString().padStart(2, '0')}/${d.getFullYear()} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+          const formatted = `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
           return <span style={{ color: "#0D364C" }}>{formatted}</span>;
         }
       },
@@ -268,11 +267,11 @@ const StaffManagement = () => {
         render: (_, record) => (
           <Space size="small">
             <Tooltip title="Xem chi tiết">
-              <Button 
-                type="text" 
-                icon={<EyeOutlined />} 
-                onClick={() => handleViewDetail(record)} 
-                style={{ color: "#13C2C2" }} 
+              <Button
+                type="text"
+                icon={<EyeOutlined />}
+                onClick={() => handleViewDetail(record)}
+                style={{ color: "#13C2C2" }}
               />
             </Tooltip>
             <Tooltip title={isActive(record.status) ? "Vô hiệu hóa" : "Kích hoạt"}>
@@ -341,31 +340,31 @@ const StaffManagement = () => {
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
         <Col xs={24} sm={8}>
           <Card style={{ borderRadius: 12, border: "1px solid #13C2C230" }}>
-            <Statistic 
-              title={<span style={{ color: "#0D364C" }}>Tổng nhân viên</span>} 
-              value={displayStats.total} 
-              prefix={<UserOutlined style={{ color: "#13C2C2" }} />} 
-              valueStyle={{ color: "#13C2C2", fontWeight: "bold" }} 
+            <Statistic
+              title={<span style={{ color: "#0D364C" }}>Tổng nhân viên</span>}
+              value={displayStats.total}
+              prefix={<UserOutlined style={{ color: "#13C2C2" }} />}
+              valueStyle={{ color: "#13C2C2", fontWeight: "bold" }}
             />
           </Card>
         </Col>
         <Col xs={24} sm={8}>
           <Card style={{ borderRadius: 12, border: "1px solid #13C2C230" }}>
-            <Statistic 
-              title={<span style={{ color: "#0D364C" }}>Đang hoạt động</span>} 
-              value={displayStats.active} 
-              prefix={<CheckCircleOutlined style={{ color: "#52c41a" }} />} 
-              valueStyle={{ color: "#52c41a", fontWeight: "bold" }} 
+            <Statistic
+              title={<span style={{ color: "#0D364C" }}>Đang hoạt động</span>}
+              value={displayStats.active}
+              prefix={<CheckCircleOutlined style={{ color: "#52c41a" }} />}
+              valueStyle={{ color: "#52c41a", fontWeight: "bold" }}
             />
           </Card>
         </Col>
         <Col xs={24} sm={8}>
           <Card style={{ borderRadius: 12, border: "1px solid #13C2C230" }}>
-            <Statistic 
-              title={<span style={{ color: "#0D364C" }}>Ngừng hoạt động</span>} 
-              value={displayStats.inactive} 
-              prefix={<StopOutlined style={{ color: "#ff4d4f" }} />} 
-              valueStyle={{ color: "#ff4d4f", fontWeight: "bold" }} 
+            <Statistic
+              title={<span style={{ color: "#0D364C" }}>Ngừng hoạt động</span>}
+              value={displayStats.inactive}
+              prefix={<StopOutlined style={{ color: "#ff4d4f" }} />}
+              valueStyle={{ color: "#ff4d4f", fontWeight: "bold" }}
             />
           </Card>
         </Col>
@@ -447,18 +446,18 @@ const StaffManagement = () => {
             </Select>
           </Space>
           <Space>
-            <Button 
-              onClick={handleRefresh} 
-              icon={<ReloadOutlined />} 
-              loading={loadingRefresh} 
+            <Button
+              onClick={handleRefresh}
+              icon={<ReloadOutlined />}
+              loading={loadingRefresh}
               style={{ borderColor: "#13C2C2", color: "#13C2C2" }}
             >
               Làm mới
             </Button>
-            <Button 
-              type="primary" 
-              icon={<PlusOutlined />} 
-              onClick={handleCreate} 
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={handleCreate}
               style={{ backgroundColor: "#0D364C", borderColor: "#0D364C" }}
             >
               Thêm Nhân viên
@@ -473,16 +472,16 @@ const StaffManagement = () => {
             type="info"
             showIcon
             closable={false}
-            style={{ 
-              marginBottom: 16, 
-              borderColor: "#13C2C2", 
+            style={{
+              marginBottom: 16,
+              borderColor: "#13C2C2",
               backgroundColor: "#f0fdff",
               border: "1px solid #13C2C220"
             }}
             action={
-              <Button 
-                size="small" 
-                type="link" 
+              <Button
+                size="small"
+                type="link"
                 onClick={() => {
                   setSearchText("");
                   setStatusFilter("all");
@@ -526,39 +525,39 @@ const StaffManagement = () => {
               setIsCreateOpen(false);
               setTimeout(() => handleRefresh(), 600);
             }}>
-              <Row gutter={[16,16]}>
+              <Row gutter={[16, 16]}>
                 <Col span={12}>
-                  <Form.Item name="user_name" label="Họ tên" rules={[{ required: true }, { min: 3 }]}>
+                  <Form.Item name="user_name" label="Họ tên" rules={[{ required: true, message: "Vui lòng nhập họ tên" }, { min: 3, message: "Họ tên phải có ít nhất 3 ký tự" }]}>
                     <Input placeholder="Nhập họ tên" />
                   </Form.Item>
                 </Col>
                 <Col span={12}>
-                  <Form.Item name="email" label="Email" rules={[{ required: true }, { type: "email" }]}>
+                  <Form.Item name="email" label="Email" rules={[{ required: true, message: "Vui lòng nhập email" }, { type: "email", message: "Email không hợp lệ" }]}>
                     <Input placeholder="Nhập email" />
                   </Form.Item>
                 </Col>
                 <Col span={12}>
-                  <Form.Item name="password" label="Mật khẩu" rules={[{ required: true }, { min: 6 }]}>
+                  <Form.Item name="password" label="Mật khẩu" rules={[{ required: true, message: "Vui lòng nhập mật khẩu" }, { min: 6, message: "Mật khẩu phải có ít nhất 6 ký tự" }]}>
                     <Input.Password placeholder="Mật khẩu" />
                   </Form.Item>
                 </Col>
                 <Col span={12}>
-                  <Form.Item name="confirmPassword" label="Xác nhận mật khẩu" dependencies={["password"]} rules={[{ required: true }, ({ getFieldValue }) => ({ validator(_, value) { if (!value || getFieldValue("password") === value) return Promise.resolve(); return Promise.reject(new Error("Mật khẩu xác nhận không khớp!")); } })]}>
+                  <Form.Item name="confirmPassword" label="Xác nhận mật khẩu" dependencies={["password"]} rules={[{ required: true, message: "Vui lòng xác nhận mật khẩu" }, ({ getFieldValue }) => ({ validator(_, value) { if (!value || getFieldValue("password") === value) return Promise.resolve(); return Promise.reject(new Error("Mật khẩu xác nhận không khớp!")); } })]}>
                     <Input.Password placeholder="Nhập lại mật khẩu" />
                   </Form.Item>
                 </Col>
                 <Col span={12}>
-                  <Form.Item name="phone" label="Số điện thoại" rules={[{ required: true }, { pattern: /^[0-9]{10,11}$/ }]}>
+                  <Form.Item name="phone" label="Số điện thoại" rules={[{ required: true, message: "Vui lòng nhập số điện thoại" }, { pattern: /^[0-9]{10}$/, message: "Số điện thoại phải có đúng 10 chữ số" }]}>
                     <Input placeholder="Số điện thoại" />
                   </Form.Item>
                 </Col>
                 <Col span={12}>
-                  <Form.Item name="address" label="Địa chỉ" rules={[{ required: true }, { min: 10 }]}>
+                  <Form.Item name="address" label="Địa chỉ" rules={[{ required: true, message: "Vui lòng nhập địa chỉ" }, { min: 10, message: "Địa chỉ phải có ít nhất 10 ký tự" }]}>
                     <Input placeholder="Địa chỉ" />
                   </Form.Item>
                 </Col>
                 <Col span={24}>
-                  <Form.Item name="role" label="Vai trò" rules={[{ required: true }]}> 
+                  <Form.Item name="role" label="Vai trò" rules={[{ required: true, message: "Vui lòng chọn vai trò" }]}>
                     <Select placeholder="Chọn vai trò">
                       <Select.Option value="sales-staff">Nhân viên bán hàng</Select.Option>
                       <Select.Option value="repair-staff">Nhân viên sửa chữa</Select.Option>
@@ -593,7 +592,7 @@ const StaffManagement = () => {
                     <div>{selectedStaff.email}</div>
                   </div>
                 </Space>
-                <Row gutter={[16,16]}>
+                <Row gutter={[16, 16]}>
                   <Col span={12}>📞 {selectedStaff.phone || "N/A"}</Col>
                   <Col span={12}>📍 {selectedStaff.address || "N/A"}</Col>
                   <Col span={12}>Vai trò: {selectedStaff.role_name}</Col>
