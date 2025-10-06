@@ -22,7 +22,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useSidebar } from '../../contexts/SidebarContext';
 import PropTypes from 'prop-types';
 
-const Sidebar = ({ isFinance, isAdmin, isApprover, isClaimer }) => {
+const Sidebar = ({ isFinance = false, isAdmin = false, isApprover = false, isClaimer = false }) => {
   const [isClaimsOpen, setIsClaimsOpen] = useState(false);
   const [isWarehouseOpen, setIsWarehouseOpen] = useState(false);
   const location = useLocation();
@@ -432,14 +432,6 @@ Sidebar.propTypes = {
   isAdmin: PropTypes.bool,
   isApprover: PropTypes.bool,
   isClaimer: PropTypes.bool,
-};
-
-Sidebar.defaultProps = {
-  isFinance: false,
-  isAdmin: false,
-  isApprover: false,
-  isClaimer: false,
-  isOpen: true
 };
 
 export default Sidebar;

@@ -8,7 +8,11 @@ import productHomeSaga from "./productHomeSaga";
 import profileSaga from "./profileSaga";
 import customerSaga from "./customerSaga";
 import cartSaga from "./cartSaga";
+
+import orderSaga from "./orderSaga";
+
 import newsSaga from "./newsSaga";
+
 export default function* rootSaga() {
   try {
     yield all([
@@ -22,6 +26,7 @@ export default function* rootSaga() {
       newsSaga(),
       profileSaga(),
       customerSaga(),
+      orderSaga(),
     ]);
   } catch (error) {
     console.error("🔴 rootSaga ERROR:", error);
