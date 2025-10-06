@@ -12,6 +12,7 @@ import ProductManagement from "../pages/Productmanagement/ProductManagement";
 import StaffManagement from "../pages/Staffmanagement/StaffManagement";
 import CustomerDetail from "../pages/CustomerManagement/CustomerDetail";
 import CustomerManagement from "../pages/CustomerManagement/CustomerManagement";
+import OrderManagement from "../pages/OrderManagement/OrderManagement";
 // Removed standalone staff pages; create/detail handled via modals in StaffManagement
 
 
@@ -87,6 +88,7 @@ export const routes = [
       { path: "staff", element: <StaffManagement /> },
       { path: "customer", element: <CustomerManagement /> },
       { path: "customer/:id", element: <CustomerDetail /> },
+      { path: "order", element: <OrderManagement /> },
       { path: "profile", element: <ProfileManagement /> },
       { path: "change-password", element: <UpdatePassword /> },
     ],
