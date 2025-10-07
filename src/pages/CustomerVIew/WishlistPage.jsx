@@ -4,34 +4,30 @@ import { useDispatch, useSelector } from 'react-redux';
 import PropTypes from 'prop-types';
 import Header from '../../components/Header/Header';
 import Footer from '../../components/Footer/Footer';
-// import { useWishlist } from '../../contexts/WishlistContext'; // Not used anymore - using API backend
 import {
-    productHomeFavoritesRequest,
-    productHomeToggleFavoriteRequest,
-    productHomeClearMessages
-} from '../../redux/actions/productHomeActions';
+    favoriteListRequest,
+    favoriteToggleRequest,
+    favoriteClearMessages
+} from '../../redux/actions/favoriteActions';
 
 const WishlistPage = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
-    // useWishlist(); // Not used in this component anymore - using API backend
 
-    // Redux state with safe destructuring
-    const productHomeState = useSelector(state => state?.productHome) || {};
+    // Redux state - using new favorite reducer
+    const favoriteState = useSelector(state => state?.favorite) || {};
 
     let favorites, favoritesLoading, favoritesError, favoritesPagination;
     let toggleFavoriteLoading, toggleFavoriteError;
 
     try {
-        const favoritesData = productHomeState?.favorites || {};
-        favorites = favoritesData.items || [];
-        favoritesLoading = favoritesData.loading || false;
-        favoritesError = favoritesData.error || null;
-        favoritesPagination = favoritesData.pagination || null;
+        favorites = favoriteState.items || [];
+        favoritesLoading = favoriteState.loading || false;
+        favoritesError = favoriteState.error || null;
+        favoritesPagination = favoriteState.pagination || null;
         
-        const toggleData = productHomeState?.toggleFavorite || {};
-        toggleFavoriteLoading = toggleData.loading || false;
-        toggleFavoriteError = toggleData.error || null;
+        toggleFavoriteLoading = favoriteState.toggleLoading || false;
+        toggleFavoriteError = favoriteState.toggleError || null;
         
     } catch (error) {
         console.error('❌ Error destructuring Redux state:', error);
@@ -66,7 +62,7 @@ const WishlistPage = () => {
     };
 
     const handleToggleFavorite = (productId) => {
-        dispatch(productHomeToggleFavoriteRequest(productId));
+        dispatch(favoriteToggleRequest(productId));
         setShouldReloadFavorites(true);
     };
 
@@ -130,7 +126,7 @@ const WishlistPage = () => {
 
     // Load favorites from API on component mount
     useEffect(() => {
-        dispatch(productHomeFavoritesRequest({
+        dispatch(favoriteListRequest({
             page: currentPage,
             limit: pageSize
         }));
@@ -170,7 +166,7 @@ const WishlistPage = () => {
                 break;
         }
 
-        dispatch(productHomeFavoritesRequest(query));
+        dispatch(favoriteListRequest(query));
     }, [dispatch, currentPage, pageSize, searchTerm, sortBy]);
 
     // Reset currentPage về 1 khi filter thay đổi (with debounce)
@@ -223,7 +219,7 @@ const WishlistPage = () => {
                     break;
             }
 
-            dispatch(productHomeFavoritesRequest(query));
+            dispatch(favoriteListRequest(query));
             setShouldReloadFavorites(false);
         }
     }, [shouldReloadFavorites, toggleFavoriteLoading, toggleFavoriteError, dispatch, currentPage, pageSize, searchTerm, sortBy]);
@@ -231,7 +227,7 @@ const WishlistPage = () => {
     // Clear errors when component unmounts
     useEffect(() => {
         return () => {
-            dispatch(productHomeClearMessages());
+            dispatch(favoriteClearMessages());
         };
     }, [dispatch]);
 
@@ -284,8 +280,8 @@ const WishlistPage = () => {
                         disabled={toggleFavoriteLoading}
                         className="absolute bottom-3 right-3 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        <span className={`text-lg ${product.favorite ? 'text-red-500' : 'text-gray-600'}`}>
-                            {product.favorite ? '❤️' : '🤍'}
+                        <span className={`text-lg text-red-500`}>
+                            ❤️
                         </span>
                     </button>
                     {!isInStock && (
@@ -448,9 +444,7 @@ const WishlistPage = () => {
                                 onClick={() => {
                                     // Clear all favorites by calling toggle for each product
                                     favorites.forEach(product => {
-                                        if (product.favorite) {
-                                            dispatch(productHomeToggleFavoriteRequest(product._id));
-                                        }
+                                        dispatch(favoriteToggleRequest(product._id));
                                     });
                                 }}
                                 className="bg-red-100 text-red-600 px-4 py-2 rounded-lg hover:bg-red-200 transition-colors text-sm font-medium"
@@ -522,7 +516,7 @@ const WishlistPage = () => {
                         <p className="text-gray-600 mb-6">{favoritesError}</p>
                         <button
                             onClick={() => {
-                                dispatch(productHomeFavoritesRequest({
+                                dispatch(favoriteListRequest({
                                     page: currentPage,
                                     limit: pageSize
                                 }));

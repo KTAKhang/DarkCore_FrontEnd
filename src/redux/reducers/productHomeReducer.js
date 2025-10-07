@@ -14,12 +14,6 @@ import {
     PRODUCT_HOME_BRANDS_REQUEST,
     PRODUCT_HOME_BRANDS_SUCCESS,
     PRODUCT_HOME_BRANDS_FAILURE,
-    PRODUCT_HOME_FAVORITES_REQUEST,
-    PRODUCT_HOME_FAVORITES_SUCCESS,
-    PRODUCT_HOME_FAVORITES_FAILURE,
-    PRODUCT_HOME_TOGGLE_FAVORITE_REQUEST,
-    PRODUCT_HOME_TOGGLE_FAVORITE_SUCCESS,
-    PRODUCT_HOME_TOGGLE_FAVORITE_FAILURE,
     PRODUCT_HOME_CLEAR_MESSAGES,
 } from "../actions/productHomeActions";
 
@@ -66,24 +60,6 @@ const initialState = {
     // Brands state
     brands: {
         items: [],
-        loading: false,
-        error: null,
-    },
-
-    // Favorites state
-    favorites: {
-        items: [],
-        pagination: {
-            page: 1,
-            limit: 8,
-            total: 0,
-        },
-        loading: false,
-        error: null,
-    },
-
-    // Toggle favorite state
-    toggleFavorite: {
         loading: false,
         error: null,
     },
@@ -273,109 +249,6 @@ const productHomeReducer = (state = initialState, action) => {
                 error: action.payload,
             };
 
-        // Favorites actions
-        case PRODUCT_HOME_FAVORITES_REQUEST:
-            return {
-                ...state,
-                favorites: {
-                    ...state.favorites,
-                    loading: true,
-                    error: null,
-                },
-                error: null,
-            };
-
-        case PRODUCT_HOME_FAVORITES_SUCCESS:
-            return {
-                ...state,
-                favorites: {
-                    ...state.favorites,
-                    items: action.payload.items,
-                    pagination: action.payload.pagination,
-                    loading: false,
-                    error: null,
-                },
-                error: null,
-            };
-
-        case PRODUCT_HOME_FAVORITES_FAILURE:
-            return {
-                ...state,
-                favorites: {
-                    ...state.favorites,
-                    loading: false,
-                    error: action.payload,
-                },
-                error: action.payload,
-            };
-
-        // Toggle favorite actions
-        case PRODUCT_HOME_TOGGLE_FAVORITE_REQUEST:
-            return {
-                ...state,
-                toggleFavorite: {
-                    ...state.toggleFavorite,
-                    loading: true,
-                    error: null,
-                },
-                error: null,
-            };
-
-        case PRODUCT_HOME_TOGGLE_FAVORITE_SUCCESS:
-            const updatedProduct = action.payload;
-            
-            // Helper function to update product in array
-            const updateProductInArray = (products) => {
-                return products.map(product => 
-                    product._id === updatedProduct._id 
-                        ? { ...product, favorite: updatedProduct.favorite }
-                        : product
-                );
-            };
-            
-            return {
-                ...state,
-                toggleFavorite: {
-                    ...state.toggleFavorite,
-                    loading: false,
-                    error: null,
-                },
-                // Update featured products
-                featured: {
-                    ...state.featured,
-                    items: updateProductInArray(state.featured.items),
-                },
-                // Update list products
-                list: {
-                    ...state.list,
-                    items: updateProductInArray(state.list.items),
-                },
-                // Update products by category
-                byCategory: {
-                    ...state.byCategory,
-                    items: updateProductInArray(state.byCategory.items),
-                },
-                // Update favorites list
-                favorites: {
-                    ...state.favorites,
-                    items: updatedProduct.favorite 
-                        ? [...state.favorites.items, updatedProduct]
-                        : state.favorites.items.filter(item => item._id !== updatedProduct._id),
-                },
-                error: null,
-            };
-
-        case PRODUCT_HOME_TOGGLE_FAVORITE_FAILURE:
-            return {
-                ...state,
-                toggleFavorite: {
-                    ...state.toggleFavorite,
-                    loading: false,
-                    error: action.payload,
-                },
-                error: action.payload,
-            };
-
         // Clear messages
         case PRODUCT_HOME_CLEAR_MESSAGES:
             return {
@@ -400,14 +273,6 @@ const productHomeReducer = (state = initialState, action) => {
                 },
                 brands: {
                     ...state.brands,
-                    error: null,
-                },
-                favorites: {
-                    ...state.favorites,
-                    error: null,
-                },
-                toggleFavorite: {
-                    ...state.toggleFavorite,
                     error: null,
                 },
             };

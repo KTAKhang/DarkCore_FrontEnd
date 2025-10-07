@@ -11,6 +11,7 @@ import profileReducer from "./reducers/profileReducer";
 import customerReducer from "./reducers/customerReducer";
 import cartReducer from "./reducers/cartReducer";
 import orderReducer from "./reducers/orderReducer";
+import favoriteReducer from "./reducers/favoriteReducer";
 
 import rootSaga from "./sagas/rootSaga";
 const rootReducer = combineReducers({
@@ -24,6 +25,7 @@ const rootReducer = combineReducers({
   customer: customerReducer,
   cart: cartReducer,
   order: orderReducer,
+  favorite: favoriteReducer,
 });
 
 const sagaMiddleware = createSagaMiddleware();

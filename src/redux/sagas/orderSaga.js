@@ -20,19 +20,19 @@ import {
 
 // API call functions
 function* fetchOrdersApi(params) {
-  const response = yield call(apiClient.get, "/api/orders", {
+  const response = yield call(apiClient.get, "/order/orders", {
     params,
   });
   return response.data;
 }
 
 function* fetchOrderDetailApi(id) {
-  const response = yield call(apiClient.get, `/api/orders/${id}`);
+  const response = yield call(apiClient.get, `/order/orders/${id}`);
   return response.data;
 }
 
 function* updateOrderStatusApi(id, payload) {
-  const response = yield call(apiClient.put, `/api/orders/${id}/status`, payload);
+  const response = yield call(apiClient.put, `/order/orders/${id}/status`, payload);
   return response.data;
 }
 
@@ -121,7 +121,7 @@ function* fetchOrderStatsSaga() {
     console.log("🚀 fetchOrderStatsSaga called");
     console.log("🔄 Calling stats API...");
     
-    const response = yield call(apiClient.get, "/api/orders/stats");
+    const response = yield call(apiClient.get, "/order/orders/stats");
     console.log("✅ API stats response:", response);
     
     if (response.data.status === "OK") {
@@ -143,7 +143,7 @@ function* fetchOrderStatusesSaga() {
     console.log("🚀 fetchOrderStatusesSaga called");
     console.log("🔄 Calling order statuses API...");
     
-    const response = yield call(apiClient.get, "/api/order-statuses");
+    const response = yield call(apiClient.get, "/order/order-statuses");
     console.log("✅ API order statuses response:", response);
     
     if (response.data.status === "OK") {

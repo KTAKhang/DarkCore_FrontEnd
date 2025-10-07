@@ -7,6 +7,11 @@ import Header from '../../components/Header/Header';
 import Footer from '../../components/Footer/Footer';
 import { productHomeDetailRequest, productHomeClearMessages } from '../../redux/actions/productHomeActions';
 import { cartAddRequest, cartClearMessage } from '../../redux/actions/cartActions';
+import {
+    favoriteToggleRequest,
+    favoriteCheckRequest,
+    favoriteClearMessages
+} from '../../redux/actions/favoriteActions';
 
 const ProductDetail = () => {
     const { id } = useParams();
@@ -24,12 +29,16 @@ const ProductDetail = () => {
     const error = detail?.error || null;
 
     const { cart, loading: cartLoading, error: cartError } = useSelector((state) => state.cart || {});
+    
+    // Favorite state from Redux
+    const favoriteState = useSelector(state => state?.favorite) || {};
+    const isFavorite = favoriteState.favoriteStatus?.[id] || false;
+    const toggleFavoriteLoading = favoriteState.toggleLoading || false;
 
-    console.log('🔴 Debug state:', { product, loading, error, detail });
+    console.log('🔴 Debug state:', { product, loading, error, detail, isFavorite });
 
     // Local state
     const [searchTerm, setSearchTerm] = useState('');
-    const [wishlist, setWishlist] = useState([]);
     const [selectedImage, setSelectedImage] = useState(0);
     const [quantity, setQuantity] = useState(1);
 
@@ -54,8 +63,15 @@ const ProductDetail = () => {
         if (id) {
             // Clear previous messages
             dispatch(productHomeClearMessages());
+            dispatch(favoriteClearMessages());
             // Fetch product detail from API
             dispatch(productHomeDetailRequest(id));
+            
+            // Check favorite status if user is logged in
+            const token = localStorage.getItem('token');
+            if (token) {
+                dispatch(favoriteCheckRequest(id));
+            }
         }
     }, [id, dispatch]);
 
@@ -71,11 +87,13 @@ const ProductDetail = () => {
     };
 
     const toggleWishlist = (productId) => {
-        setWishlist(prev =>
-            prev.includes(productId)
-                ? prev.filter(id => id !== productId)
-                : [...prev, productId]
-        );
+        const token = localStorage.getItem('token');
+        if (!token) {
+            toast.error('Vui lòng đăng nhập để thêm vào yêu thích');
+            navigate('/login');
+            return;
+        }
+        dispatch(favoriteToggleRequest(productId));
     };
 
     const addToCart = (productId) => {
@@ -318,16 +336,17 @@ const ProductDetail = () => {
                                 </div>
                                 <button
                                     onClick={() => toggleWishlist(productId)}
-                                    className={`flex items-center space-x-2 px-4 py-2 rounded-lg border transition-colors ${wishlist.includes(productId)
+                                    disabled={toggleFavoriteLoading}
+                                    className={`flex items-center space-x-2 px-4 py-2 rounded-lg border transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${isFavorite
                                         ? 'bg-red-50 border-red-200 text-red-600'
                                         : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
                                         }`}
                                 >
                                     <span className="text-lg">
-                                        {wishlist.includes(productId) ? '❤️' : '🤍'}
+                                        {isFavorite ? '❤️' : '🤍'}
                                     </span>
                                     <span className="text-sm">
-                                        {wishlist.includes(productId) ? 'Đã yêu thích' : 'Yêu thích'}
+                                        {isFavorite ? 'Đã yêu thích' : 'Yêu thích'}
                                     </span>
                                 </button>
                             </div>

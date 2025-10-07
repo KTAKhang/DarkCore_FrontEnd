@@ -14,6 +14,11 @@ import {
   productHomeClearMessages,
 } from '../redux/actions/productHomeActions';
 import { cartAddRequest, cartClearMessage } from '../redux/actions/cartActions';
+import {
+  favoriteToggleRequest,
+  favoriteCheckMultipleRequest,
+  favoriteClearMessages
+} from '../redux/actions/favoriteActions';
 
 // Service data
 const services = [
@@ -67,9 +72,11 @@ const HomePage = () => {
   const { cart, loading: cartLoading, error: cartError } = useSelector((state) => state.cart || {});
   const categoryHomeState = useSelector((state) => state?.categoryHome) || {};
   const productHomeState = useSelector((state) => state?.productHome) || {};
+  const favoriteState = useSelector(state => state?.favorite) || {};
 
   let categories, categoriesLoading, categoriesError;
   let featuredProducts, featuredLoading, featuredError;
+  let favoriteProductIds, toggleFavoriteLoading;
 
   try {
     const categoryData = categoryHomeState?.list || {};
@@ -81,6 +88,10 @@ const HomePage = () => {
     featuredProducts = featuredData.items || [];
     featuredLoading = featuredData.loading || false;
     featuredError = featuredData.error || null;
+
+    // Favorite state
+    favoriteProductIds = favoriteState.favoriteProductIds || [];
+    toggleFavoriteLoading = favoriteState.toggleLoading || false;
   } catch (error) {
     console.error('❌ Error destructuring Redux state:', error);
     categories = [];
@@ -89,11 +100,12 @@ const HomePage = () => {
     featuredProducts = [];
     featuredLoading = false;
     featuredError = 'Destructuring error';
+    favoriteProductIds = [];
+    toggleFavoriteLoading = false;
   }
 
   // Local state
   const [searchTerm, setSearchTerm] = useState('');
-  const [wishlist, setWishlist] = useState([]);
 
   // Log for debugging
   useEffect(() => {
@@ -114,9 +126,13 @@ const HomePage = () => {
   };
 
   const toggleWishlist = (productId) => {
-    setWishlist((prev) =>
-      prev.includes(productId) ? prev.filter((id) => id !== productId) : [...prev, productId]
-    );
+    const token = localStorage.getItem('token');
+    if (!token) {
+      toast.error('Vui lòng đăng nhập để thêm vào yêu thích');
+      navigate('/login');
+      return;
+    }
+    dispatch(favoriteToggleRequest(productId));
   };
 
   const addToCart = (productId) => {
@@ -138,11 +154,21 @@ const HomePage = () => {
     dispatch(productHomeFeaturedRequest({ limit: 4 }));
   }, [dispatch]);
 
+  // Check favorite status for featured products
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token && featuredProducts && featuredProducts.length > 0) {
+      const productIds = featuredProducts.map(p => p._id);
+      dispatch(favoriteCheckMultipleRequest(productIds));
+    }
+  }, [featuredProducts, dispatch]);
+
   // Clear messages
   useEffect(() => {
     return () => {
       dispatch(categoryHomeClearMessages());
       dispatch(productHomeClearMessages());
+      dispatch(favoriteClearMessages());
     };
   }, [dispatch]);
 
@@ -324,10 +350,11 @@ const HomePage = () => {
             ))}
           <button
             onClick={() => toggleWishlist(productId)}
-            className="absolute bottom-3 right-3 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-red-50 transition-colors"
+            disabled={toggleFavoriteLoading}
+            className="absolute bottom-3 right-3 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <span className={`text-lg ${wishlist.includes(productId) ? 'text-red-500' : 'text-gray-600'}`}>
-              {wishlist.includes(productId) ? '❤️' : '🤍'}
+            <span className={`text-lg ${favoriteProductIds.includes(productId) ? 'text-red-500' : 'text-gray-600'}`}>
+              {favoriteProductIds.includes(productId) ? '❤️' : '🤍'}
             </span>
           </button>
           {!isInStock && (
