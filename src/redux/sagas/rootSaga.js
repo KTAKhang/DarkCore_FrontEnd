@@ -11,6 +11,9 @@ import cartSaga from "./cartSaga";
 
 import orderSaga from "./orderSaga";
 
+import favoriteSaga from "./favoriteSaga";
+
+
 import newsSaga from "./newsSaga";
 
 export default function* rootSaga() {
@@ -27,6 +30,7 @@ export default function* rootSaga() {
       profileSaga(),
       customerSaga(),
       orderSaga(),
+      favoriteSaga(),
     ]);
   } catch (error) {
     console.error("🔴 rootSaga ERROR:", error);

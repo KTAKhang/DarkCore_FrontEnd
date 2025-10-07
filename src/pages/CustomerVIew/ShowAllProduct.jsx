@@ -13,9 +13,12 @@ import {
 import {
     productHomeListRequest,
     productHomeBrandsRequest,
-    productHomeToggleFavoriteRequest,
     productHomeClearMessages
 } from '../../redux/actions/productHomeActions';
+import {
+    favoriteToggleRequest,
+    favoriteCheckMultipleRequest
+} from '../../redux/actions/favoriteActions';
 import { cartAddRequest, cartClearMessage } from '../../redux/actions/cartActions';
 
 
@@ -32,13 +35,14 @@ const ShowAllProduct = () => {
     // Redux state with safe destructuring
     const categoryHomeState = useSelector(state => state?.categoryHome) || {};
     const productHomeState = useSelector(state => state?.productHome) || {};
+    const favoriteState = useSelector(state => state?.favorite) || {};
     const { cart, loading: cartLoading, error: cartError } = useSelector((state) => state.cart || {});
+    
     let categories, categoriesLoading, categoriesError;
-    let featuredProducts, featuredLoading, featuredError;
-
     let products, productsLoading, productsError, productsPagination;
     let brandsFromDB, brandsLoading, brandsError;
     let toggleFavoriteLoading, toggleFavoriteError;
+    let favoriteProductIds;
 
     try {
         const categoryData = categoryHomeState?.list || {};
@@ -57,9 +61,10 @@ const ShowAllProduct = () => {
         brandsLoading = brandsData.loading || false;
         brandsError = brandsData.error || null;
 
-        const toggleData = productHomeState?.toggleFavorite || {};
-        toggleFavoriteLoading = toggleData.loading || false;
-        toggleFavoriteError = toggleData.error || null;
+        // Use favorite state from favorite reducer
+        toggleFavoriteLoading = favoriteState.toggleLoading || false;
+        toggleFavoriteError = favoriteState.toggleError || null;
+        favoriteProductIds = favoriteState.favoriteProductIds || [];
 
     } catch (error) {
         console.error('❌ Error destructuring Redux state:', error);
@@ -75,6 +80,7 @@ const ShowAllProduct = () => {
         brandsError = 'Destructuring error';
         toggleFavoriteLoading = false;
         toggleFavoriteError = null;
+        favoriteProductIds = [];
     }
 
     // Local state
@@ -82,11 +88,9 @@ const ShowAllProduct = () => {
     const [selectedCategory, setSelectedCategory] = useState('all');
     const [selectedBrand, setSelectedBrand] = useState('all');
     // Log for debugging
-    // Log for debugging
     useEffect(() => {
         console.log('Cart state:', { cart, cartLoading, cartError });
-        console.log('Featured products:', featuredProducts);
-    }, [cart, cartLoading, cartError, featuredProducts]);
+    }, [cart, cartLoading, cartError]);
 
     // Handle cart errors
     useEffect(() => {
@@ -136,7 +140,13 @@ const ShowAllProduct = () => {
     };
 
     const handleToggleFavorite = (productId) => {
-        dispatch(productHomeToggleFavoriteRequest(productId));
+        const token = localStorage.getItem('token');
+        if (!token) {
+            toast.error('Vui lòng đăng nhập để thêm vào yêu thích');
+            navigate('/login');
+            return;
+        }
+        dispatch(favoriteToggleRequest(productId));
         setShouldReloadFavorites(true);
     };
 
@@ -152,6 +162,15 @@ const ShowAllProduct = () => {
         dispatch(productHomeBrandsRequest());
         setIsInitialLoad(false);
     }, [dispatch, currentPage, pageSize]);
+
+    // Check favorite status for displayed products
+    useEffect(() => {
+        const token = localStorage.getItem('token');
+        if (token && products && products.length > 0) {
+            const productIds = products.map(p => p._id);
+            dispatch(favoriteCheckMultipleRequest(productIds));
+        }
+    }, [products, dispatch]);
 
     // Reset selectedBrand khi brands data thay đổi (nếu selectedBrand không còn hợp lệ)
     useEffect(() => {
@@ -352,10 +371,11 @@ const ShowAllProduct = () => {
                     )}
                     <button
                         onClick={() => handleToggleFavorite(product._id)}
-                        className="absolute bottom-3 right-3 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-red-50 transition-colors"
+                        disabled={toggleFavoriteLoading}
+                        className="absolute bottom-3 right-3 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        <span className={`text-lg ${product.favorite ? 'text-red-500' : 'text-gray-600'}`}>
-                            {product.favorite ? '❤️' : '🤍'}
+                        <span className={`text-lg ${favoriteProductIds.includes(product._id) ? 'text-red-500' : 'text-gray-600'}`}>
+                            {favoriteProductIds.includes(product._id) ? '❤️' : '🤍'}
                         </span>
                     </button>
                     {!isInStock && (

@@ -12,6 +12,7 @@ import customerReducer from "./reducers/customerReducer";
 import cartReducer from "./reducers/cartReducer";
 
 import orderReducer from "./reducers/orderReducer";
+import favoriteReducer from "./reducers/favoriteReducer";
 
 import newsReducer from "./reducers/newsReducer";
 
@@ -29,7 +30,10 @@ const rootReducer = combineReducers({
 
   order: orderReducer,
 
+  favorite: favoriteReducer,
+
   news: newsReducer,
+
 
 });
 
