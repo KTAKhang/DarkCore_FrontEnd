@@ -91,6 +91,12 @@ const Sidebar = ({ isFinance = false, isAdmin = false, isApprover = false, isCla
       icon: <ProfileOutlined />,
       color: "#FF9F43"
     },
+    {
+      title: "Quản Lý News",
+      path: "/admin/news",
+      icon: <HomeOutlined />,
+      color: "#FF9F43"
+    },
   ];
 
 

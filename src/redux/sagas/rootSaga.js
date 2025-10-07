@@ -8,8 +8,13 @@ import productHomeSaga from "./productHomeSaga";
 import profileSaga from "./profileSaga";
 import customerSaga from "./customerSaga";
 import cartSaga from "./cartSaga";
+
 import orderSaga from "./orderSaga";
+
 import favoriteSaga from "./favoriteSaga";
+
+
+import newsSaga from "./newsSaga";
 
 export default function* rootSaga() {
   try {
@@ -21,6 +26,7 @@ export default function* rootSaga() {
       categoryHomeSaga(),
       productHomeSaga(),
       cartSaga(),
+      newsSaga(),
       profileSaga(),
       customerSaga(),
       orderSaga(),

@@ -10,8 +10,11 @@ import productHomeReducer from "./reducers/productHomeReducer";
 import profileReducer from "./reducers/profileReducer";
 import customerReducer from "./reducers/customerReducer";
 import cartReducer from "./reducers/cartReducer";
+
 import orderReducer from "./reducers/orderReducer";
 import favoriteReducer from "./reducers/favoriteReducer";
+
+import newsReducer from "./reducers/newsReducer";
 
 import rootSaga from "./sagas/rootSaga";
 const rootReducer = combineReducers({
@@ -24,8 +27,14 @@ const rootReducer = combineReducers({
   profile: profileReducer,
   customer: customerReducer,
   cart: cartReducer,
+
   order: orderReducer,
+
   favorite: favoriteReducer,
+
+  news: newsReducer,
+
+
 });
 
 const sagaMiddleware = createSagaMiddleware();
