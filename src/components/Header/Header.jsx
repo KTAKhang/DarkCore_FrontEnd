@@ -72,6 +72,9 @@ const Header = ({ searchTerm, setSearchTerm }) => {
                         <Link to="/repair" className="text-gray-700 hover:text-blue-600">
                             Sửa chữa
                         </Link>
+                        <Link to="/news" className="text-gray-700 hover:text-blue-600">
+                            Tin Tức
+                        </Link>
                         <Link to="/about" className="text-gray-700 hover:text-blue-600">
                             Về chúng tôi
                         </Link>

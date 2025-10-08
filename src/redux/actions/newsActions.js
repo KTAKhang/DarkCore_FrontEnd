@@ -9,10 +9,6 @@ export const NEWS_GET_REQUEST = "NEWS_GET_REQUEST";
 export const NEWS_GET_SUCCESS = "NEWS_GET_SUCCESS";
 export const NEWS_GET_FAILURE = "NEWS_GET_FAILURE";
 
-export const NEWS_GET_SLUG_REQUEST = "NEWS_GET_SLUG_REQUEST";
-export const NEWS_GET_SLUG_SUCCESS = "NEWS_GET_SLUG_SUCCESS";
-export const NEWS_GET_SLUG_FAILURE = "NEWS_GET_SLUG_FAILURE";
-
 export const NEWS_CREATE_REQUEST = "NEWS_CREATE_REQUEST";
 export const NEWS_CREATE_SUCCESS = "NEWS_CREATE_SUCCESS";
 export const NEWS_CREATE_FAILURE = "NEWS_CREATE_FAILURE";
@@ -24,6 +20,11 @@ export const NEWS_UPDATE_FAILURE = "NEWS_UPDATE_FAILURE";
 export const NEWS_DELETE_REQUEST = "NEWS_DELETE_REQUEST";
 export const NEWS_DELETE_SUCCESS = "NEWS_DELETE_SUCCESS";
 export const NEWS_DELETE_FAILURE = "NEWS_DELETE_FAILURE";
+
+// THÊM: Action Types cho stats
+export const NEWS_STATS_REQUEST = "NEWS_STATS_REQUEST";
+export const NEWS_STATS_SUCCESS = "NEWS_STATS_SUCCESS";
+export const NEWS_STATS_FAILURE = "NEWS_STATS_FAILURE";
 
 // ======================
 // Action Creators
@@ -51,19 +52,6 @@ export const newsGetSuccess = (news) => ({
 });
 export const newsGetFailure = (error) => ({
   type: NEWS_GET_FAILURE,
-  payload: error,
-});
-
-export const newsGetSlugRequest = (slug) => ({
-  type: NEWS_GET_SLUG_REQUEST,
-  payload: slug,
-});
-export const newsGetSlugSuccess = (news) => ({
-  type: NEWS_GET_SLUG_SUCCESS,
-  payload: news,
-});
-export const newsGetSlugFailure = (error) => ({
-  type: NEWS_GET_SLUG_FAILURE,
   payload: error,
 });
 
@@ -103,5 +91,19 @@ export const newsDeleteSuccess = (news) => ({
 });
 export const newsDeleteFailure = (error) => ({
   type: NEWS_DELETE_FAILURE,
+  payload: error,
+});
+
+// THÊM: Action Creator cho stats
+export const newsStatsRequest = (params = {}) => ({
+  type: NEWS_STATS_REQUEST,
+  payload: params, // Empty params để fetch tổng stats (không filter)
+});
+export const newsStatsSuccess = (stats) => ({
+  type: NEWS_STATS_SUCCESS,
+  payload: stats,
+});
+export const newsStatsFailure = (error) => ({
+  type: NEWS_STATS_FAILURE,
   payload: error,
 });
