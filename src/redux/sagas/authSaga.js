@@ -25,6 +25,7 @@ import {
     resetPasswordFailure
 } from "../actions/authActions";
 import axios from "axios";
+// import apiClient from "../../utils/axiosConfigNoCredentials";
 
 const API_BASE_URL = 'http://localhost:3000';
 
@@ -32,9 +33,11 @@ const apiLogout = async () => {
     const response = await axios.post(
         `${API_BASE_URL}/auth/logout`,
         {},
-        { withCredentials: true } // QUAN TRỌNG: để gửi cookie refreshToken
+
+        { withCredentials: true }
     );
     return response.data;
+
 };
 
 function* handleLogout() {

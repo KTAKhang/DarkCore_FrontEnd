@@ -33,6 +33,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem('user', JSON.stringify(userData));
     if (authToken) {
       localStorage.setItem('token', authToken);
+      console.log('🔑 Token stored:', authToken ? `${authToken.substring(0, 20)}...` : 'null');
     }
     console.log('✅ User logged in:', userData?.user_name || userData?.email);
   };

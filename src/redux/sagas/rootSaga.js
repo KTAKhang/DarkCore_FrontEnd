@@ -6,19 +6,35 @@ import staffSaga from "./staffSaga";
 import categoryHomeSaga from "./categoryHomeSaga";
 import productHomeSaga from "./productHomeSaga";
 import profileSaga from "./profileSaga";
+
+import customerSaga from "./customerSaga";
+import cartSaga from "./cartSaga";
+import orderSaga from "./orderSaga";
+import favoriteSaga from "./favoriteSaga";
+import newsSaga from "./newsSaga";
 import repairServiceSaga from "./repairServiceSaga";
 import repairRequestSaga from "./repairRequestSaga";
 
 export default function* rootSaga() {
-  yield all([
-    authSaga(),
-    categorySaga(),
-    productSaga(),
-    staffSaga(),
-    categoryHomeSaga(),
-    productHomeSaga(),
-    profileSaga(),
-    repairServiceSaga(),
-    repairRequestSaga(),
-  ]);
+  try {
+    yield all([
+      authSaga(),
+      categorySaga(),
+      productSaga(),
+      staffSaga(),
+      categoryHomeSaga(),
+      productHomeSaga(),
+      cartSaga(),
+      newsSaga(),
+      profileSaga(),
+      customerSaga(),
+      orderSaga(),
+      favoriteSaga(),
+      repairServiceSaga(),
+      repairRequestSaga(),
+    ]);
+  } catch (error) {
+    console.error("🔴 rootSaga ERROR:", error);
+  }
+
 }

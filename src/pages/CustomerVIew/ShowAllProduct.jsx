@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import PropTypes from 'prop-types';
 import Header from '../../components/Header/Header';
 import Footer from '../../components/Footer/Footer';
+import { toast } from 'react-toastify';
 // import { useWishlist } from '../../contexts/WishlistContext'; // Not used anymore
 import {
     categoryHomeListRequest,
@@ -12,9 +13,14 @@ import {
 import {
     productHomeListRequest,
     productHomeBrandsRequest,
-    productHomeToggleFavoriteRequest,
     productHomeClearMessages
 } from '../../redux/actions/productHomeActions';
+import {
+    favoriteToggleRequest,
+    favoriteCheckMultipleRequest
+} from '../../redux/actions/favoriteActions';
+import { cartAddRequest, cartClearMessage } from '../../redux/actions/cartActions';
+
 
 
 // Brands data
@@ -29,33 +35,37 @@ const ShowAllProduct = () => {
     // Redux state with safe destructuring
     const categoryHomeState = useSelector(state => state?.categoryHome) || {};
     const productHomeState = useSelector(state => state?.productHome) || {};
-
+    const favoriteState = useSelector(state => state?.favorite) || {};
+    const { cart, loading: cartLoading, error: cartError } = useSelector((state) => state.cart || {});
+    
     let categories, categoriesLoading, categoriesError;
     let products, productsLoading, productsError, productsPagination;
     let brandsFromDB, brandsLoading, brandsError;
     let toggleFavoriteLoading, toggleFavoriteError;
+    let favoriteProductIds;
 
     try {
         const categoryData = categoryHomeState?.list || {};
         categories = categoryData.items || [];
         categoriesLoading = categoryData.loading || false;
         categoriesError = categoryData.error || null;
-        
+
         const productData = productHomeState?.list || {};
         products = productData.items || [];
         productsLoading = productData.loading || false;
         productsError = productData.error || null;
         productsPagination = productData.pagination || null;
-        
+
         const brandsData = productHomeState?.brands || {};
         brandsFromDB = brandsData.items || [];
         brandsLoading = brandsData.loading || false;
         brandsError = brandsData.error || null;
-        
-        const toggleData = productHomeState?.toggleFavorite || {};
-        toggleFavoriteLoading = toggleData.loading || false;
-        toggleFavoriteError = toggleData.error || null;
-        
+
+        // Use favorite state from favorite reducer
+        toggleFavoriteLoading = favoriteState.toggleLoading || false;
+        toggleFavoriteError = favoriteState.toggleError || null;
+        favoriteProductIds = favoriteState.favoriteProductIds || [];
+
     } catch (error) {
         console.error('❌ Error destructuring Redux state:', error);
         categories = [];
@@ -70,13 +80,25 @@ const ShowAllProduct = () => {
         brandsError = 'Destructuring error';
         toggleFavoriteLoading = false;
         toggleFavoriteError = null;
+        favoriteProductIds = [];
     }
 
     // Local state
     const [searchTerm, setSearchTerm] = useState('');
-    const [cartItems, setCartItems] = useState(3);
     const [selectedCategory, setSelectedCategory] = useState('all');
     const [selectedBrand, setSelectedBrand] = useState('all');
+    // Log for debugging
+    useEffect(() => {
+        console.log('Cart state:', { cart, cartLoading, cartError });
+    }, [cart, cartLoading, cartError]);
+
+    // Handle cart errors
+    useEffect(() => {
+        if (cartError) {
+            // toast.error(cartError);
+            dispatch(cartClearMessage()); // Xóa lỗi sau khi hiển thị
+        }
+    }, [cartError, dispatch]);
 
     // Track selectedBrand changes
     useEffect(() => {
@@ -87,23 +109,44 @@ const ShowAllProduct = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize] = useState(8);
     const [shouldReloadFavorites, setShouldReloadFavorites] = useState(false);
+    const [isInitialLoad, setIsInitialLoad] = useState(true); // Prevent duplicate initial calls
+
+    // Debug sort state changes
+    useEffect(() => {
+        console.log("🔄 ShowAllProduct Sort state changed:", { sortBy });
+    }, [sortBy]);
 
     const formatPrice = (price) => {
         return new Intl.NumberFormat('vi-VN').format(price) + '₫';
     };
 
 
-    const addToCart = () => {
-        setCartItems(prev => prev + 1);
-        // Add cart logic here
+    const addToCart = (productId) => {
+        console.log("🔴 BEFORE DISPATCH:", productId);
+        const token = localStorage.getItem('token');
+        if (!token) {
+            toast.error('Vui lòng đăng nhập để thêm vào giỏ hàng');
+            navigate('/login');
+            return;
+        }
+        console.log('Adding to cart:', productId);
+        dispatch(cartAddRequest(productId, 1)); // Sửa payload để khớp với cartActions
+        console.log("🟢 AFTER DISPATCH");
     };
+
 
     const handleProductClick = (productId) => {
         navigate(`/product/${productId}`);
     };
 
     const handleToggleFavorite = (productId) => {
-        dispatch(productHomeToggleFavoriteRequest(productId));
+        const token = localStorage.getItem('token');
+        if (!token) {
+            toast.error('Vui lòng đăng nhập để thêm vào yêu thích');
+            navigate('/login');
+            return;
+        }
+        dispatch(favoriteToggleRequest(productId));
         setShouldReloadFavorites(true);
     };
 
@@ -117,7 +160,17 @@ const ShowAllProduct = () => {
 
         // Gọi API brands để lấy danh sách thương hiệu
         dispatch(productHomeBrandsRequest());
+        setIsInitialLoad(false);
     }, [dispatch, currentPage, pageSize]);
+
+    // Check favorite status for displayed products
+    useEffect(() => {
+        const token = localStorage.getItem('token');
+        if (token && products && products.length > 0) {
+            const productIds = products.map(p => p._id);
+            dispatch(favoriteCheckMultipleRequest(productIds));
+        }
+    }, [products, dispatch]);
 
     // Reset selectedBrand khi brands data thay đổi (nếu selectedBrand không còn hợp lệ)
     useEffect(() => {
@@ -131,6 +184,9 @@ const ShowAllProduct = () => {
 
     // Reset currentPage về 1 khi filter thay đổi (with debounce)
     useEffect(() => {
+        // Skip if this is initial load
+        if (isInitialLoad) return;
+
         const timeoutId = setTimeout(() => {
             if (currentPage !== 1) {
                 setCurrentPage(1);
@@ -138,7 +194,8 @@ const ShowAllProduct = () => {
         }, 100); // Small debounce to prevent rapid state updates
 
         return () => clearTimeout(timeoutId);
-    }, [searchTerm, selectedCategory, selectedBrand, sortBy, currentPage]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [searchTerm, selectedCategory, selectedBrand, isInitialLoad]);
 
     // Track data changes
     useEffect(() => {
@@ -169,7 +226,7 @@ const ShowAllProduct = () => {
             description: 'Đây là sản phẩm mẫu khi không có kết nối backend'
         },
         {
-            _id: 'sample-2', 
+            _id: 'sample-2',
             name: 'Sản phẩm mẫu 2',
             price: 2000000,
             stockQuantity: 5,
@@ -189,7 +246,7 @@ const ShowAllProduct = () => {
         if (brandsError || !brandsFromDB || !Array.isArray(brandsFromDB)) {
             return brands; // Use fallback brands data
         }
-        
+
         return [
             { id: "all", name: "Tất cả thương hiệu" },
             ...brandsFromDB.map(brand => ({
@@ -217,6 +274,12 @@ const ShowAllProduct = () => {
 
     // Load products with filters
     useEffect(() => {
+        // Skip if this is initial load
+        if (isInitialLoad) return;
+
+        console.log('🔄 ShowAllProduct Filter/Sort change - dispatching API call');
+        console.log('🔄 ShowAllProduct Current state:', { searchTerm, selectedCategory, selectedBrand, sortBy, currentPage });
+
         const query = {
             page: currentPage,
             limit: pageSize
@@ -256,20 +319,21 @@ const ShowAllProduct = () => {
                 query.sortBy = 'price';
                 query.sortOrder = 'desc';
                 break;
-            case 'rating':
-                query.sortBy = 'rating';
-                query.sortOrder = 'desc';
-                break;
             case 'newest':
                 query.sortBy = 'createdat';
                 query.sortOrder = 'desc';
+                break;
+            case 'oldest':
+                query.sortBy = 'createdat';
+                query.sortOrder = 'asc';
                 break;
             default:
                 break;
         }
 
+        console.log('🔄 ShowAllProduct Filter/Sort query:', query);
         dispatch(productHomeListRequest(query));
-    }, [dispatch, currentPage, pageSize, searchTerm, selectedCategory, selectedBrand, sortBy, categories, categoriesError]);
+    }, [dispatch, currentPage, pageSize, searchTerm, selectedCategory, selectedBrand, sortBy, categories, categoriesError, isInitialLoad]);
 
     // Early return if Redux state is not properly initialized
     if (!categoryHomeState || !productHomeState || Object.keys(categoryHomeState).length === 0 || Object.keys(productHomeState).length === 0) {
@@ -287,7 +351,8 @@ const ShowAllProduct = () => {
     const ProductCard = ({ product }) => {
         const isInStock = product.stockQuantity > 0;
         const mainImage = product.images && product.images.length > 0 ? product.images[0] : '/placeholder-product.jpg';
-
+        const productId = product._id;
+        console.log('ProductCard:', { productId, isInStock, cartLoading });
         return (
             <div className="group bg-white rounded-xl border border-gray-100 hover:border-blue-200 hover:shadow-lg transition-all duration-300 overflow-hidden">
                 <div className="relative">
@@ -306,10 +371,11 @@ const ShowAllProduct = () => {
                     )}
                     <button
                         onClick={() => handleToggleFavorite(product._id)}
-                        className="absolute bottom-3 right-3 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-red-50 transition-colors"
+                        disabled={toggleFavoriteLoading}
+                        className="absolute bottom-3 right-3 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        <span className={`text-lg ${product.favorite ? 'text-red-500' : 'text-gray-600'}`}>
-                            {product.favorite ? '❤️' : '🤍'}
+                        <span className={`text-lg ${favoriteProductIds.includes(product._id) ? 'text-red-500' : 'text-gray-600'}`}>
+                            {favoriteProductIds.includes(product._id) ? '❤️' : '🤍'}
                         </span>
                     </button>
                     {!isInStock && (
@@ -326,7 +392,10 @@ const ShowAllProduct = () => {
                     </h3>
                     {(product.description || product.short_desc) && (
                         <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-                            {product.description || product.short_desc}
+                            {(product.description || product.short_desc).length > 50
+                                ? (product.description || product.short_desc).substring(0, 50) + '...'
+                                : (product.description || product.short_desc)
+                            }
                         </p>
                     )}
                     {product.brand && (
@@ -345,11 +414,13 @@ const ShowAllProduct = () => {
                     </div>
                     <div className="flex gap-2">
                         <button
-                            onClick={addToCart}
-                            disabled={!isInStock}
-                            className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"
+                            onClick={() => {
+                                addToCart(productId)
+                            }}
+                            disabled={!isInStock || cartLoading}
+                            className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${isInStock && !cartLoading ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-400 text-gray-200 cursor-not-allowed'}`}
                         >
-                            {isInStock ? 'Thêm giỏ hàng' : 'Hết hàng'}
+                            {isInStock ? (cartLoading ? 'Đang thêm...' : 'Thêm giỏ hàng') : 'Hết hàng'}
                         </button>
                         <button
                             onClick={() => handleProductClick(product._id)}
@@ -382,7 +453,7 @@ const ShowAllProduct = () => {
     return (
         <div className="min-h-screen bg-gray-50">
             {/* Header */}
-            <Header searchTerm={searchTerm} setSearchTerm={setSearchTerm} cartItems={cartItems} />
+            <Header searchTerm={searchTerm} setSearchTerm={setSearchTerm} cartItems={cart?.sum || 0} />
 
             {/* Main Content */}
             <main className="container mx-auto px-4 py-8">
@@ -427,8 +498,8 @@ const ShowAllProduct = () => {
                                 <option value="default">Mặc định</option>
                                 <option value="price-low">Giá thấp đến cao</option>
                                 <option value="price-high">Giá cao đến thấp</option>
-                                <option value="rating">Đánh giá cao</option>
                                 <option value="newest">Mới nhất</option>
+                                <option value="oldest">Cũ nhất</option>
                             </select>
                         </div>
 
@@ -472,7 +543,7 @@ const ShowAllProduct = () => {
                                                 <span>⚠️</span>
                                                 <span>Sử dụng dữ liệu mẫu (Backend chưa sẵn sàng)</span>
                                             </div>
-                                            {displayCategories.map(category => (
+                                            {displayCategories.filter(category => category.status !== false).map(category => (
                                                 <button
                                                     key={category._id}
                                                     onClick={() => setSelectedCategory(category._id)}
@@ -487,7 +558,7 @@ const ShowAllProduct = () => {
                                             ))}
                                         </div>
                                     ) : (
-                                        displayCategories && Array.isArray(displayCategories) ? displayCategories.map(category => (
+                                        displayCategories && Array.isArray(displayCategories) ? displayCategories.filter(category => category.status !== false).map(category => (
                                             <button
                                                 key={category._id}
                                                 onClick={() => setSelectedCategory(category._id)}
@@ -590,11 +661,119 @@ const ShowAllProduct = () => {
                         </button>
                     </div>
                 ) : displayProducts.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                        {displayProducts.map(product => (
-                            <ProductCard key={product._id} product={product} />
-                        ))}
-                    </div>
+                    <>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                            {displayProducts.map(product => (
+                                <ProductCard key={product._id} product={product} />
+                            ))}
+                        </div>
+
+                        {/* Pagination */}
+                        {productsPagination && productsPagination.total > pageSize && (
+                            <div className="mt-8 flex items-center justify-center">
+                                <div className="flex items-center space-x-2">
+                                    {/* Previous Button */}
+                                    <button
+                                        onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                                        disabled={currentPage === 1 || productsLoading}
+                                        className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        {productsLoading ? '⏳' : 'Trước'}
+                                    </button>
+
+                                    {/* Page Numbers */}
+                                    {(() => {
+                                        const totalPages = Math.ceil(productsPagination.total / pageSize);
+                                        const maxVisiblePages = 5;
+                                        let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+                                        let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+                                        if (endPage - startPage + 1 < maxVisiblePages) {
+                                            startPage = Math.max(1, endPage - maxVisiblePages + 1);
+                                        }
+
+                                        const pages = [];
+
+                                        // First page
+                                        if (startPage > 1) {
+                                            pages.push(
+                                                <button
+                                                    key={1}
+                                                    onClick={() => setCurrentPage(1)}
+                                                    className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700"
+                                                >
+                                                    1
+                                                </button>
+                                            );
+                                            if (startPage > 2) {
+                                                pages.push(
+                                                    <span key="ellipsis1" className="px-3 py-2 text-sm text-gray-500">
+                                                        ...
+                                                    </span>
+                                                );
+                                            }
+                                        }
+
+                                        // Page numbers
+                                        for (let i = startPage; i <= endPage; i++) {
+                                            pages.push(
+                                                <button
+                                                    key={i}
+                                                    onClick={() => setCurrentPage(i)}
+                                                    disabled={productsLoading}
+                                                    className={`px-3 py-2 text-sm font-medium rounded-lg ${i === currentPage
+                                                        ? 'bg-blue-600 text-white border border-blue-600'
+                                                        : 'text-gray-500 bg-white border border-gray-300 hover:bg-gray-50 hover:text-gray-700'
+                                                        } disabled:opacity-50 disabled:cursor-not-allowed`}
+                                                >
+                                                    {i}
+                                                </button>
+                                            );
+                                        }
+
+                                        // Last page
+                                        if (endPage < totalPages) {
+                                            if (endPage < totalPages - 1) {
+                                                pages.push(
+                                                    <span key="ellipsis2" className="px-3 py-2 text-sm text-gray-500">
+                                                        ...
+                                                    </span>
+                                                );
+                                            }
+                                            pages.push(
+                                                <button
+                                                    key={totalPages}
+                                                    onClick={() => setCurrentPage(totalPages)}
+                                                    className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700"
+                                                >
+                                                    {totalPages}
+                                                </button>
+                                            );
+                                        }
+
+                                        return pages;
+                                    })()}
+
+                                    {/* Next Button */}
+                                    <button
+                                        onClick={() => setCurrentPage(prev => {
+                                            const totalPages = Math.ceil(productsPagination.total / pageSize);
+                                            return Math.min(totalPages, prev + 1);
+                                        })}
+                                        disabled={currentPage >= Math.ceil(productsPagination.total / pageSize) || productsLoading}
+                                        className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        {productsLoading ? '⏳' : 'Sau'}
+                                    </button>
+                                </div>
+
+                                {/* Page Info */}
+                                <div className="ml-6 text-sm text-gray-600">
+                                    Trang {currentPage} / {Math.ceil(productsPagination.total / pageSize)}
+                                </div>
+                            </div>
+                        )}
+                    </>
                 ) : (
                     <div className="text-center py-12">
                         <div className="text-6xl mb-4">🔍</div>

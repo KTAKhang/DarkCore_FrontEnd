@@ -6,9 +6,15 @@ import HomePage from "../pages/HomePage";
 import CartPage from "../pages/CartPage";
 import AdminLayout from "../layout/AdminLayout";
 import AdminPage from "../pages/AdminPage";
+import RepairPage from "../pages/RepairPage";
 import CategoryManagement from "../pages/Categorymanagement/CategoryManagement";
 import ProductManagement from "../pages/Productmanagement/ProductManagement";
 import StaffManagement from "../pages/Staffmanagement/StaffManagement";
+import CustomerDetail from "../pages/CustomerManagement/CustomerDetail";
+import CustomerManagement from "../pages/CustomerManagement/CustomerManagement";
+import OrderManagement from "../pages/OrderManagement/OrderManagement";
+import NewsManagement from "../pages/NewsManagement/NewsManagement";
+//Repair customer client
 import RepairLandingPage from "../pages/Repair/RepairLandingPage";
 import RepairRequestPage from "../pages/Repair/RepairRequestPage";
 import RepairHistoryPage from "../pages/Repair/RepairHistoryPage";
@@ -25,16 +31,13 @@ import RepairStaffJobDetail from "../pages/Repair/Staff/RepairStaffJobDetail";
 import RepairStaffServices from "../pages/Repair/Staff/RepairStaffServices";
 
 // Removed standalone staff pages; create/detail handled via modals in StaffManagement
-
-
 import ShowAllProduct from "../pages/CustomerVIew/ShowAllProduct";
 import ProductDetail from "../pages/CustomerVIew/ProductDetail";
-
 import WishlistPage from "../pages/CustomerVIew/WishlistPage";
-
 import ProfileManagement from "../pages/ProfileManagement/ProfileManagerment";
 import UpdatePassword from "../pages/ProfileManagement/UpdatePassword";
 import PrivateRoute from "../components/PrivateRouter";
+import CustomerLayout from "../layout/CustomerLayout";
 
 
 
@@ -68,10 +71,7 @@ export const routes = [
     path: "/login",
     element: <LoginPage />,
   },
-  {
-    path: "/cart",
-    element: <CartPage />,
-  },
+
 
   // Trang sản phẩm khách hàng
   {
@@ -85,6 +85,25 @@ export const routes = [
   {
     path: "/wishlist",
     element: <WishlistPage />,
+  },
+
+  // Khu vực quản trị
+  {
+    path: "/customer",
+    element: (
+      <PrivateRoute requiredRole="customer">
+        <CustomerLayout />
+      </PrivateRoute>
+    ),
+    children: [
+      { path: "repair", element: <RepairPage /> },
+      { path: "profile", element: <ProfileManagement /> },
+      { path: "change-password", element: <UpdatePassword /> },
+      {
+        path: "cart",
+        element: <CartPage />,
+      },
+    ],
   },
 
   // Khu vực quản trị
@@ -104,11 +123,12 @@ export const routes = [
       { path: "category", element: <CategoryManagement /> },
       { path: "product", element: <ProductManagement /> },
       { path: "staff", element: <StaffManagement /> },
-
-     
+      { path: "customer", element: <CustomerManagement /> },
+      { path: "customer/:id", element: <CustomerDetail /> },
+      { path: "order", element: <OrderManagement /> },
       { path: "profile", element: <ProfileManagement /> },
       { path: "change-password", element: <UpdatePassword /> },
-
+      { path: "news", element: <NewsManagement /> },
     ],
   },
 

@@ -12,7 +12,6 @@ import {
   PhoneOutlined,
   HomeOutlined
 } from '@ant-design/icons';
-import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
@@ -80,7 +79,7 @@ const ProfileManager = () => {
   const getRoleDisplayName = (roleName) => {
     const roleMap = {
       'admin': 'Quản trị viên',
-      'user': 'Người dùng',
+      'customer': 'Khách hàng',
       'moderator': 'Điều hành viên'
     };
     return roleMap[roleName] || roleName;
@@ -96,7 +95,7 @@ const ProfileManager = () => {
       setAvatarFile(file);
       const url = URL.createObjectURL(file);
       setAvatarUrl(url);
-      message.success('Tải ảnh đại diện thành công!');
+
     }
   };
 
@@ -116,6 +115,7 @@ const ProfileManager = () => {
         message.error('Kích thước ảnh phải nhỏ hơn 2MB!');
         return false;
       }
+      message.success('Tải ảnh đại diện thành công!');
       return true;
     },
     onChange: handleAvatarChange,
@@ -210,9 +210,8 @@ const ProfileManager = () => {
         <div className="p-8">
           <div className="max-w-7xl mx-auto space-y-8">
             {/* Header Section */}
-            <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
+            <div
+
               className="text-center mb-12 relative"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-[#13C2C2]/10 via-[#0D364C]/10 to-[#13C2C2]/10 blur-3xl -z-10"></div>
@@ -220,7 +219,7 @@ const ProfileManager = () => {
                 Thông tin cá nhân
               </h1>
               <p className="text-gray-500 mt-2">Quản lý thông tin và cài đặt cá nhân của bạn</p>
-            </motion.div>
+            </div>
 
             <Row gutter={[24, 24]} className="items-start">
               {/* Left Column - Personal Info */}
@@ -260,10 +259,8 @@ const ProfileManager = () => {
                           />
                         )}
                         {/* Role Badge with animation */}
-                        <motion.div
-                          initial={{ y: 10, opacity: 0 }}
-                          animate={{ y: 0, opacity: 1 }}
-                          transition={{ delay: 0.2 }}
+                        <div
+
                           className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 z-20"
                         >
                           <div
@@ -271,20 +268,18 @@ const ProfileManager = () => {
                           >
                             {getRoleDisplayName(user.role_name)}
                           </div>
-                        </motion.div>
+                        </div>
                       </div>
                       {/* User Info with animation */}
-                      <motion.div
-                        initial={{ y: 20, opacity: 0 }}
-                        animate={{ y: 0, opacity: 1 }}
-                        transition={{ delay: 0.3 }}
+                      <div
+
                         className="mt-12 space-y-3"
                       >
                         <h2 className="text-3xl font-bold bg-gradient-to-r from-[#0D364C] via-[#13C2C2] to-[#0D364C] bg-clip-text text-transparent">
                           {user.user_name}
                         </h2>
                         <p className="text-gray-500 font-medium">{user.email}</p>
-                      </motion.div>
+                      </div>
                       {/* Nút chỉnh sửa */}
                       {!editMode && (
                         <Button
@@ -302,10 +297,8 @@ const ProfileManager = () => {
 
               {/* Right Column - User Details hoặc Form chỉnh sửa */}
               <Col xs={24} md={16}>
-                <motion.div
-                  initial={{ x: 20, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  transition={{ delay: 0.5 }}
+                <div
+
                 >
                   {!editMode ? (
                     <Card
@@ -330,7 +323,7 @@ const ProfileManager = () => {
                           { label: "Ngày tạo", value: formatDate(user.createdAt), icon: <UserOutlined className="text-[#0D364C]" /> },
                           { label: "Cập nhật lần cuối", value: formatDate(user.updatedAt), icon: <UserOutlined className="text-[#13C2C2]" /> },
                         ].map((item, index) => (
-                          <motion.div
+                          <div
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.1 * index }}
@@ -349,7 +342,7 @@ const ProfileManager = () => {
                                 </p>
                               </div>
                             </div>
-                          </motion.div>
+                          </div>
                         ))}
                       </div>
                     </Card>
@@ -448,7 +441,7 @@ const ProfileManager = () => {
 
                     </Card>
                   )}
-                </motion.div>
+                </div>
               </Col>
             </Row>
           </div>

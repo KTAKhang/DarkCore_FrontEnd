@@ -1,5 +1,5 @@
 import { call, put, takeLatest } from "redux-saga/effects";
-import axios from "axios";
+import apiClient from "../../utils/axiosConfigNoCredentials";
 import { toast } from "react-toastify";
 import {
   PRODUCT_LIST_REQUEST,
@@ -22,15 +22,27 @@ import {
   productStatsFailure,
 } from "../actions/productActions";
 
-const API_BASE_URL = 'http://localhost:3000';
 
-function getAuthHeaders(isFormData = false) {
-  const token = localStorage.getItem("token");
-  const headers = { accept: "application/json" };
-  if (token) headers.Authorization = `Bearer ${token}`;
-  if (!isFormData) headers["Content-Type"] = "application/json";
-  return headers;
-}
+// Helper function để xử lý lỗi và hiển thị toast
+const handleError = (error) => {
+  console.log('🔍 ProductSaga handleError:', error.response?.status, error.response?.data);
+  
+  const errorMessage = error.response?.data?.message || error.message;
+  
+  // Không hiển thị toast cho 401 vì axios interceptor đã xử lý
+  if (error.response?.status === 401) {
+    console.log('🚫 401 error handled by axios interceptor');
+    return errorMessage;
+  } else if (error.response?.status === 403) {
+    console.log('🚫 403 error - access denied');
+    toast.error("Không có quyền truy cập. Vui lòng kiểm tra lại quyền của bạn!");
+  } else {
+    toast.error(errorMessage);
+  }
+  
+  return errorMessage;
+};
+
 
 // API helpers
 const apiList = async (query = {}) => {
@@ -56,32 +68,43 @@ const apiList = async (query = {}) => {
     params.append("categoryName", query.categoryName.trim());
   }
   
-  // Add sort parameters if provided
+  // Add sort parameters if provided - map frontend values to backend expected values
   if (query.sortBy && query.sortBy.trim()) {
-    params.append("sortBy", query.sortBy.trim());
+    const sortBy = query.sortBy.trim().toLowerCase();
+    // Map frontend sortBy to backend expected values
+    if (sortBy === "default" || sortBy === "none" || sortBy === "") {
+      // Default mode - không gửi sort parameters
+    } else if (sortBy === "createdat" || sortBy === "created") {
+      params.append("sortBy", "createdat");
+    } else if (sortBy === "price") {
+      params.append("sortBy", "price");
+    } else if (sortBy === "name") {
+      params.append("sortBy", "name");
+    } else {
+      // Default to no sort if invalid
+    }
   }
   if (query.sortOrder && query.sortOrder.trim()) {
-    params.append("sortOrder", query.sortOrder.trim());
+    const sortOrder = query.sortOrder.trim().toLowerCase();
+    // Validate sortOrder
+    if (sortOrder === "asc" || sortOrder === "desc") {
+      params.append("sortOrder", sortOrder);
+    }
   }
   
   const queryString = params.toString();
-  const url = queryString ? `${API_BASE_URL}/catalog/api/products?${queryString}` : `${API_BASE_URL}/catalog/api/products`;
+  const url = queryString ? `/catalog/api/products?${queryString}` : `/catalog/api/products`;
   
-  const res = await axios.get(url, { headers: getAuthHeaders() });
+  const res = await apiClient.get(url);
   return res.data;
 };
 
 const apiDetail = async (id) => {
-  const res = await axios.get(`${API_BASE_URL}/catalog/api/products/${id}`, { headers: getAuthHeaders() });
+  const res = await apiClient.get(`/catalog/api/products/${id}`);
   return res.data;
 };
 
 const apiCreate = async (payload) => {
-  console.log("=== ProductSaga apiCreate ===");
-  console.log("Received payload:", payload);
-  console.log("payload.short_desc:", payload.short_desc);
-  console.log("payload.detail_desc:", payload.detail_desc);
-  
   // Check if payload contains image files (FormData needed)
   const hasImageFiles = payload.images && Array.isArray(payload.images) && 
     payload.images.some(img => typeof File !== 'undefined' && img instanceof File);
@@ -106,28 +129,23 @@ const apiCreate = async (payload) => {
     });
     
     data = formData;
-    console.log("=== Final FormData entries ===");
-    for (let [key, value] of formData.entries()) {
-      console.log(key + ": " + value);
-    }
-  } else {
-    console.log("Using JSON payload (no images)");
   }
   
-  console.log("=== Sending to backend ===");
-  console.log("URL:", `${API_BASE_URL}/catalog/api/products`);
-  console.log("Data type:", hasImageFiles ? "FormData" : "JSON");
-  
-  const res = await axios.post(`${API_BASE_URL}/catalog/api/products`, data, { headers: getAuthHeaders(hasImageFiles) });
-  console.log("Backend response:", res.data);
+  const res = await apiClient.post('/catalog/api/products', data);
   return res.data;
 };
 
 const apiUpdate = async (id, payload) => {
+  console.log("=== ProductSaga apiUpdate ===");
+  console.log("ID:", id);
+  console.log("Payload:", payload);
+  
   // Check if payload contains image files (FormData needed)
   const hasImageFiles = payload.images && Array.isArray(payload.images) && 
     payload.images.some(img => typeof File !== 'undefined' && img instanceof File);
   let data = payload;
+  
+  console.log("Has image files:", hasImageFiles);
   
   if (hasImageFiles) {
     const formData = new FormData();
@@ -141,26 +159,35 @@ const apiUpdate = async (id, payload) => {
     if (payload.status !== undefined) formData.append("status", payload.status);
     
     // Append image files
-    payload.images.forEach((image) => {
+    payload.images.forEach((image, index) => {
       if (image instanceof File) {
+        console.log(`Appending image ${index}:`, image.name, image.size);
         formData.append("images", image);
       }
     });
     
     data = formData;
+    console.log("FormData created with entries:");
+    for (let [key, value] of formData.entries()) {
+      console.log(`${key}:`, value instanceof File ? `File(${value.name})` : value);
+    }
   }
   
-  const res = await axios.put(`${API_BASE_URL}/catalog/api/products/${id}`, data, { headers: getAuthHeaders(hasImageFiles) });
+  console.log("Sending request to:", `/catalog/api/products/${id}`);
+  console.log("Data type:", data instanceof FormData ? "FormData" : "JSON");
+  
+  const res = await apiClient.put(`/catalog/api/products/${id}`, data);
+  console.log("Update response:", res.data);
   return res.data;
 };
 
 const apiDelete = async (id) => {
-  const res = await axios.delete(`${API_BASE_URL}/catalog/api/products/${id}`, { headers: getAuthHeaders() });
+  const res = await apiClient.delete(`/catalog/api/products/${id}`);
   return res.data;
 };
 
 const apiStats = async () => {
-  const res = await axios.get(`${API_BASE_URL}/catalog/api/products/stats`, { headers: getAuthHeaders() });
+  const res = await apiClient.get('/catalog/api/products/stats');
   return res.data;
 };
 
@@ -175,8 +202,9 @@ function* listWorker(action) {
       throw new Error(data.message || "Không thể tải danh sách sản phẩm");
     }
   } catch (error) {
-    yield put(productListFailure(error.message));
-    toast.error(error.message);
+    // Xử lý lỗi từ backend hoặc network - chỉ hiển thị toast một lần
+    const errorMessage = handleError(error);
+    yield put(productListFailure(errorMessage));
   }
 }
 
@@ -189,26 +217,33 @@ function* detailWorker(action) {
       throw new Error(data.message || "Không thể tải chi tiết sản phẩm");
     }
   } catch (error) {
-    yield put(productDetailFailure(error.message));
-    toast.error(error.message);
+    // Xử lý lỗi từ backend hoặc network - chỉ hiển thị toast một lần
+    const errorMessage = handleError(error);
+    yield put(productDetailFailure(errorMessage));
   }
 }
 
 function* createWorker(action) {
   try {
+    console.log("=== ProductSaga createWorker ===");
+    console.log("action.payload:", action.payload);
+    
     const data = yield call(apiCreate, action.payload);
+    console.log("Backend response data:", data);
+    console.log("data.data:", data.data);
+    console.log("data.data.category:", data.data?.category);
+    
     if (data.status === "OK") {
       yield put(productCreateSuccess(data.data, data.message));
       toast.success(data.message || "Sản phẩm đã được tạo thành công");
     } else {
-      // Bubble up server message with full details for debugging
-      const message = typeof data.message === 'string' ? data.message : JSON.stringify(data.message);
-      throw new Error(message || "Tạo sản phẩm thất bại");
+      // Backend trả về lỗi với message chi tiết
+      throw new Error(data.message || "Tạo sản phẩm thất bại");
     }
   } catch (error) {
-    const friendly = error?.response?.data?.message || error.message;
-    yield put(productCreateFailure(friendly));
-    toast.error(friendly);
+    // Xử lý lỗi từ backend hoặc network - chỉ hiển thị toast một lần
+    const errorMessage = handleError(error);
+    yield put(productCreateFailure(errorMessage));
   }
 }
 
@@ -220,13 +255,13 @@ function* updateWorker(action) {
       yield put(productUpdateSuccess(data.data, data.message));
       toast.success(data.message || "Sản phẩm đã được cập nhật thành công");
     } else {
-      const message = typeof data.message === 'string' ? data.message : JSON.stringify(data.message);
-      throw new Error(message || "Cập nhật sản phẩm thất bại");
+      // Backend trả về lỗi với message chi tiết
+      throw new Error(data.message || "Cập nhật sản phẩm thất bại");
     }
   } catch (error) {
-    const friendly = error?.response?.data?.message || error.message;
-    yield put(productUpdateFailure(friendly));
-    toast.error(friendly);
+    // Xử lý lỗi từ backend hoặc network - chỉ hiển thị toast một lần
+    const errorMessage = handleError(error);
+    yield put(productUpdateFailure(errorMessage));
   }
 }
 
@@ -238,11 +273,13 @@ function* deleteWorker(action) {
       yield put(productDeleteSuccess(id, data.message));
       toast.success(data.message || "Sản phẩm đã được xóa thành công");
     } else {
+      // Backend trả về lỗi với message chi tiết
       throw new Error(data.message || "Xóa sản phẩm thất bại");
     }
   } catch (error) {
-    yield put(productDeleteFailure(error.message));
-    toast.error(error.message);
+    // Xử lý lỗi từ backend hoặc network - chỉ hiển thị toast một lần
+    const errorMessage = handleError(error);
+    yield put(productDeleteFailure(errorMessage));
   }
 }
 
@@ -252,11 +289,13 @@ function* statsWorker() {
     if (data.status === "OK") {
       yield put(productStatsSuccess(data.data));
     } else {
+      // Backend trả về lỗi với message chi tiết
       throw new Error(data.message || "Không thể tải thống kê sản phẩm");
     }
   } catch (error) {
-    yield put(productStatsFailure(error.message));
-    toast.error(error.message);
+    // Xử lý lỗi từ backend hoặc network - chỉ hiển thị toast một lần
+    const errorMessage = handleError(error);
+    yield put(productStatsFailure(errorMessage));
   }
 }
 

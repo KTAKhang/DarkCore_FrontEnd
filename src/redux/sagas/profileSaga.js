@@ -15,75 +15,78 @@ import {
 
 const API_BASE_URL = "http://localhost:3000";
 
-// Lấy token từ localStorage
-const getAuthHeaders = () => {
+// ===== API CALLS CƠ BẢN =====
+const apiCall = async (method, url, data = null, isForm = false) => {
     const token = localStorage.getItem("token");
-    return {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`,
-    };
-};
-
-const getFormHeaders = () => {
-    const token = localStorage.getItem("token");
-    return {
-        "Content-Type": "multipart/form-data",
-        "Authorization": `Bearer ${token}`,
-    };
-};
-
-// ===== API CALLS =====
-const apiUpdateProfile = async (formData) => {
-    const response = await axios.put(
-        `${API_BASE_URL}/profile/update-user`,
-        formData,
-        {
-            headers: getFormHeaders(),
+    try {
+        const res = await axios({
+            method,
+            url: `${API_BASE_URL}${url}`,
+            data,
             withCredentials: true,
+            headers: {
+                "Content-Type": isForm ? "multipart/form-data" : "application/json",
+                Authorization: `Bearer ${token}`,
+            },
+        });
+        return res.data;
+    } catch (error) {
+        // Nếu access token hết hạn → gọi refresh
+        if (error.response?.status === 401) {
+            console.log("401");
+            try {
+                const refreshRes = await axios.post(
+                    `${API_BASE_URL}/auth/refresh-token`,
+                    {},
+                    { withCredentials: true }
+                );
+                const newToken = refreshRes.data?.token?.access_token;
+                if (newToken) {
+                    localStorage.setItem("token", newToken);
+                    // thử gọi lại request với token mới
+                    const retryRes = await axios({
+                        method,
+                        url: `${API_BASE_URL}${url}`,
+                        data,
+                        withCredentials: true,
+                        headers: {
+                            "Content-Type": isForm ? "multipart/form-data" : "application/json",
+                            Authorization: `Bearer ${newToken}`,
+                        },
+                    });
+                    return retryRes.data;
+                }
+            } catch (refreshError) {
+                localStorage.removeItem("token");
+                localStorage.removeItem("user");
+                window.location.href = "/login";
+            }
         }
-    );
-    return response.data;
-};
 
-const apiChangePassword = async (data) => {
-    const response = await axios.put(
-        `${API_BASE_URL}/profile/change-password`,
-        data,
-        {
-            headers: getAuthHeaders(),
-            withCredentials: true,
+        // ✅ Nếu tài khoản bị block (403)
+        if (error.response?.status === 403) {
+            alert("Tài khoản của bạn đã bị khóa bởi admin.");
+            localStorage.removeItem("token");
+            localStorage.removeItem("user");
+            window.location.href = "/login";
         }
-    );
-    return response.data;
-};
 
-const apiGetProfile = async () => {
-    const response = await axios.get(
-        `${API_BASE_URL}/profile/user-info`,
-        {
-            headers: getAuthHeaders(),
-            withCredentials: true,
-        }
-    );
-    return response.data;
+        throw error;
+    }
 };
 
 
 // ===== SAGAS =====
 function* updateProfileSaga(action) {
     try {
-        const response = yield call(apiUpdateProfile, action.payload);
+        const response = yield call(() => apiCall("put", "/profile/update-user", action.payload, true));
 
         if (response.status === "OK") {
-            // Dispatch lên reducer
             yield put(updateProfileSuccess(response.message, response.data));
 
-            // Cập nhật lại localStorage
+            // cập nhật localStorage user
             const storedUser = JSON.parse(localStorage.getItem("user")) || {};
-            const updatedUser = {
-                ...storedUser,
-                ...response.data, // dữ liệu mới từ API
-            };
+            const updatedUser = { ...storedUser, ...response.data };
             localStorage.setItem("user", JSON.stringify(updatedUser));
 
             toast.success(response.message || "Cập nhật thành công!");
@@ -91,17 +94,15 @@ function* updateProfileSaga(action) {
             throw new Error(response.message);
         }
     } catch (error) {
-        const msg =
-            error.response?.data?.message || error.message || "Cập nhật thất bại";
+        const msg = error.response?.data?.message || error.message || "Cập nhật thất bại";
         yield put(updateProfileFailure(msg));
         toast.error(msg);
     }
 }
 
-
 function* changePasswordSaga(action) {
     try {
-        const response = yield call(apiChangePassword, action.payload);
+        const response = yield call(() => apiCall("put", "/profile/change-password", action.payload));
         if (response.status === "OK") {
             yield put(changePasswordSuccess(response.message));
             toast.success(response.message || "Đổi mật khẩu thành công!");
@@ -117,7 +118,7 @@ function* changePasswordSaga(action) {
 
 function* getProfileSaga() {
     try {
-        const response = yield call(apiGetProfile);
+        const response = yield call(() => apiCall("get", "/profile/user-info"));
         if (response.status === "OK") {
             yield put(getProfileSuccess(response.data));
         } else {

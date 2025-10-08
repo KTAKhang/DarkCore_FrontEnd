@@ -64,7 +64,7 @@ const categoryReducer = (state = initialState, action) => {
         ...state,
         creating: false,
         items: [action.payload.item, ...state.items],
-        message: action.payload.message || "Danh mục đã được tạo thành công",
+        // Removed message - using toast notification instead
       };
     case CATEGORY_CREATE_FAILURE:
       return { ...state, creating: false, error: action.payload };
@@ -77,7 +77,7 @@ const categoryReducer = (state = initialState, action) => {
         updating: false,
         items: state.items.map((c) => (c._id === action.payload.item._id ? action.payload.item : c)),
         item: action.payload.item,
-        message: action.payload.message || "Danh mục đã được cập nhật thành công",
+        // Removed message - using toast notification instead
       };
     case CATEGORY_UPDATE_FAILURE:
       return { ...state, updating: false, error: action.payload };
@@ -89,7 +89,7 @@ const categoryReducer = (state = initialState, action) => {
         ...state,
         deleting: false,
         items: state.items.filter((c) => c._id !== action.payload.id),
-        message: action.payload.message || "Danh mục đã được xóa thành công",
+        // Removed message - using toast notification instead
       };
     case CATEGORY_DELETE_FAILURE:
       return { ...state, deleting: false, error: action.payload };
