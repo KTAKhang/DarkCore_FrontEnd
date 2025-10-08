@@ -29,6 +29,9 @@ const LoginPage = () => {
             if (role === "customer") {
                 navigate("/", { replace: true });
             }
+            if (role === "repair-staff") {
+                navigate("/staff", { replace: true });
+            }
         }
     }, [isAuthenticated, role, navigate]);
 

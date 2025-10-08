@@ -3,7 +3,9 @@ import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { logoutRequest } from "../../redux/actions/authActions";
 import { LogOut, Settings, User } from "lucide-react";
+import { Clock } from "lucide-react";
 import PropTypes from "prop-types";
+
 
 const Header = ({ searchTerm, setSearchTerm }) => {
     const navigate = useNavigate();
@@ -185,6 +187,14 @@ const Header = ({ searchTerm, setSearchTerm }) => {
                                                     >
                                                         <Settings className="w-5 h-5" style={{ color: '#135cc2ff' }} />
                                                         <span>Đổi mật khẩu</span>
+                                                    </button>
+
+                                                    <button
+                                                        onClick={() => navigate('/repair/history')}
+                                                        className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-gray-50 transition-all duration-200 hover:translate-x-1"
+                                                    >
+                                                        <Clock className="w-5 h-5" style={{ color: '#135cc2ff' }} />
+                                                        <span>Lịch sử sửa chữa</span>
                                                     </button>
 
                                                     <div className="border-t border-gray-200/50 mt-2 pt-2">
