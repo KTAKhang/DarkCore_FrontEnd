@@ -29,6 +29,7 @@ import {
     ReloadOutlined,
     FilterOutlined,
     DeleteOutlined,
+    EyeInvisibleOutlined,  // THÊM: Icon cho views
 } from "@ant-design/icons";
 
 import CreateNews from "./CreateNews";
@@ -38,9 +39,10 @@ import {
     newsListRequest,
     newsCreateRequest,
     newsUpdateRequest,
+    newsStatsRequest,  // THÊM: Action mới để fetch stats tổng (không filter)
 } from "../../redux/actions/newsActions";
 
-const { Title } = Typography;
+const { Title, Text } = Typography;  // SỬA: Thêm Text vào destructuring từ Typography để tránh TypeError
 
 // Placeholder colors for news avatars if no image
 const NEWS_COLORS = ["#13C2C2", "#52c41a", "#fa8c16", "#722ED1", "#0D364C"];
@@ -49,7 +51,7 @@ const NewsManagement = () => {
     const dispatch = useDispatch();
     const {
         list,
-        stats,
+        stats,  // SỬ DỤNG: stats từ Redux (tổng, không filter)
         pagination: apiPagination,
         loadingList,
         loadingStats,
@@ -58,141 +60,128 @@ const NewsManagement = () => {
         error
     } = useSelector((state) => state.news);
 
-    // Filters / sort / search
-    const [searchText, setSearchText] = useState("");
-    const [statusFilter, setStatusFilter] = useState("all"); // "all", "published", "draft", "archived"
-    const [sortBy, setSortBy] = useState("publishedAt"); // Default: "publishedAt", "title"
-    const [sortOrder, setSortOrder] = useState("desc"); // "asc", "desc"
+    const [filters, setFilters] = useState({
+        searchText: "",
+        status: "all"
+    });
+    const [pagination, setPagination] = useState({ current: 1, pageSize: 5 });
+    const [sort, setSort] = useState({ sortBy: "createdAt", sortOrder: "desc" });
+    const [isInitialLoad, setIsInitialLoad] = useState(true);
 
-    // Modals state
     const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
     const [isUpdateModalVisible, setIsUpdateModalVisible] = useState(false);
     const [isViewDetailModalVisible, setIsViewDetailModalVisible] = useState(false);
     const [selectedNews, setSelectedNews] = useState(null);
 
-    // Debounce ref for search / filter changes
-    const debounceRef = useRef(null);
-    const prevFiltersRef = useRef({ searchText, statusFilter, sortBy, sortOrder });
+    const filtersRef = useRef(filters);
+    const paginationRef = useRef(pagination);
+    const sortRef = useRef(sort);
 
-    // Local pagination state controlled by UI
-    const [localPagination, setLocalPagination] = useState({
-        current: 1,
-        pageSize: 5,
-        total: 0,
-    });
+    useEffect(() => { filtersRef.current = filters; }, [filters]);
+    useEffect(() => { paginationRef.current = pagination; }, [pagination]);
+    useEffect(() => { sortRef.current = sort; }, [sort]);
 
-    // Sync apiPagination -> localPagination (when backend returns new pagination)
-    useEffect(() => {
-        if (apiPagination) {
-            setLocalPagination((prev) => ({
-                ...prev,
-                current: apiPagination.page || prev.current,
-                pageSize: apiPagination.limit || prev.pageSize,
-                total: apiPagination.total ?? prev.total,
-            }));
-        }
-    }, [apiPagination]);
+    // THÊM: Fetch stats tổng riêng (không filter)
+    const fetchStats = useCallback(() => {
+        dispatch(newsStatsRequest({}));  // Gửi empty query để lấy tổng stats
+    }, [dispatch]);
 
-    // Initial load: dispatch first page (uses localPagination defaults)
-    useEffect(() => {
-        dispatch(newsListRequest({
-            page: localPagination.current,
-            limit: localPagination.pageSize,
-            sortBy,
-            order: sortOrder
-        }));
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [dispatch]); // only initial dispatch; subsequent dispatches happen in other handlers
+    const fetchNews = useCallback((params = {}) => {
+        const currentFilters = filtersRef.current;
+        const currentPagination = paginationRef.current;
+        const currentSort = sortRef.current;
 
-    // Debounced fetch on filter/sort/search change: reset to page 1
-    useEffect(() => {
-        if (debounceRef.current) {
-            clearTimeout(debounceRef.current);
-        }
-
-        debounceRef.current = setTimeout(() => {
-            // Reset UI pagination to page 1 on filter/search/sort change
-            setLocalPagination((prev) => ({ ...prev, current: 1 }));
-
-            const query = {
-                page: 1,
-                limit: localPagination.pageSize,
-                sortBy,
-                order: sortOrder,
-            };
-
-            if (statusFilter !== "all") {
-                query.status = statusFilter;
-            }
-
-            if (searchText.trim()) {
-                query.q = searchText.trim();
-            }
-
-            console.log("🔄 News Filter/Sort query (debounced):", query);
-            dispatch(newsListRequest(query));
-
-            // Update prev filters
-            prevFiltersRef.current = { searchText, statusFilter, sortBy, sortOrder };
-        }, 500); // Debounce 500ms for all changes
-
-        return () => clearTimeout(debounceRef.current);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [searchText, statusFilter, sortBy, sortOrder, dispatch]);
-
-    // Compute stats from list if no API stats
-    const displayStats = useMemo(() => {
-        const data = list?.data || [];
-        return {
-            total: list?.total || data.length,
-            published: data.filter(n => n.status === "published").length,
-            draft: data.filter(n => n.status === "draft").length,
-            archived: data.filter(n => n.status === "archived").length,
+        const query = {
+            page: currentPagination.current,
+            limit: currentPagination.pageSize,
+            sortBy: currentSort.sortBy,
+            order: currentSort.sortOrder,
+            ...params
         };
-    }, [list]);
+
+        if (currentFilters.status !== "all") {
+            query.status = currentFilters.status;
+        }
+
+        if (currentFilters.searchText.trim()) {
+            query.q = currentFilters.searchText.trim();
+        }
+
+        console.log("🔄 fetchNews called with params:", params);
+        console.log("🔄 Full query sent to API:", query);
+
+        dispatch(newsListRequest(query));
+    }, [dispatch]);
+
+    // SỬA: useEffect mount - fetch cả news và stats
+    useEffect(() => {
+        fetchStats();  // Fetch stats tổng trước
+        fetchNews({ page: 1 });
+        setIsInitialLoad(false);
+    }, [fetchNews, fetchStats]);
+
+    // THÊM: useEffect để fetch stats khi refresh (handleRefresh)
+    useEffect(() => {
+        if (!isInitialLoad) {
+            fetchStats();  // Refetch stats tổng khi component update (nếu cần)
+        }
+    }, [isInitialLoad, fetchStats]);
+
+    useEffect(() => {
+        if (isInitialLoad) return;
+
+        const timeoutId = setTimeout(() => {
+            setPagination(prev => ({ ...prev, current: 1 }));
+            fetchNews({ page: 1 });
+        }, filters.searchText.trim() ? 500 : 0);
+
+        return () => clearTimeout(timeoutId);
+    }, [filters, fetchNews, isInitialLoad]);
+
+    useEffect(() => {
+        if (isInitialLoad) return;
+        fetchNews();
+    }, [sort, fetchNews, isInitialLoad]);
+
+    // MỚI: Sync local pagination.current từ apiPagination sau mỗi fetch
+    useEffect(() => {
+        if (apiPagination?.page && apiPagination.page !== pagination.current) {
+            setPagination(prev => ({ ...prev, current: apiPagination.page }));
+        }
+    }, [apiPagination?.page]);
+
+    // SỬA: displayStats dùng từ stats Redux (tổng, không phụ thuộc filter)
+    const displayStats = useMemo(() => {
+        return stats || {  // Fallback nếu stats chưa load
+            total: 0,
+            published: 0,
+            draft: 0,
+            archived: 0,
+        };
+    }, [stats]);
 
     const newsItems = useMemo(() => {
-        // If your redux `list` is structured as { data: [...], total: n },
-        // use list.data; else adjust accordingly.
         return (list?.data || []);
     }, [list]);
 
-    // Check if any filters are active
-    const hasActiveFilters = searchText.trim() || statusFilter !== "all";
+    const hasActiveFilters = filters.searchText.trim() || filters.status !== "all";
 
-    // Create filter summary text
     const getFilterSummary = useMemo(() => {
-        const filters = [];
-        if (statusFilter !== "all") {
+        const filtersArr = [];
+        if (filters.status !== "all") {
             const statusMap = { published: "Đã xuất bản", draft: "Bản nháp", archived: "Đã lưu trữ" };
-            filters.push(`Trạng thái: ${statusMap[statusFilter] || statusFilter}`);
+            filtersArr.push(`Trạng thái: ${statusMap[filters.status] || filters.status}`);
         }
-        if (searchText.trim()) {
-            filters.push(`Tìm kiếm: "${searchText.trim()}"`);
+        if (filters.searchText.trim()) {
+            filtersArr.push(`Tìm kiếm: "${filters.searchText.trim()}"`);
         }
-        return filters.length > 0 ? filters.join(" • ") : "";
-    }, [searchText, statusFilter]);
+        return filtersArr.length > 0 ? filtersArr.join(" • ") : "";
+    }, [filters]);
 
-    // Refresh using current localPagination & filters/sort
     const handleRefresh = useCallback(() => {
-        const query = {
-            page: localPagination.current || 1,
-            limit: localPagination.pageSize || 5,
-            sortBy,
-            order: sortOrder,
-        };
-
-        if (statusFilter !== "all") {
-            query.status = statusFilter;
-        }
-
-        if (searchText.trim()) {
-            query.q = searchText.trim();
-        }
-
-        console.log("🔄 handleRefresh query:", query);
-        dispatch(newsListRequest(query));
-    }, [dispatch, localPagination, statusFilter, searchText, sortBy, sortOrder]);
+        fetchStats();  // SỬA: Refetch stats tổng
+        fetchNews();
+    }, [fetchNews, fetchStats]);
 
     const handleOpenUpdateModal = useCallback((news) => {
         setSelectedNews(news);
@@ -207,51 +196,31 @@ const NewsManagement = () => {
     const handleCreateSuccess = useCallback((createdNews) => {
         message.success("Tạo tin tức thành công!");
         setIsCreateModalVisible(false);
-
-        // After create, reload current page (could also go to page 1 if you prefer)
-        handleRefresh();
-    }, [handleRefresh]);
+        setPagination(prev => ({ ...prev, current: 1 }));
+        fetchStats();  // SỬA: Refetch stats sau create (vì total thay đổi)
+        setTimeout(() => fetchNews({ page: 1 }), 1000);
+    }, [fetchNews, fetchStats]);
 
     const handleUpdateSuccess = useCallback((updatedNews) => {
         message.success("Cập nhật tin tức thành công!");
         setIsUpdateModalVisible(false);
         setSelectedNews(null);
+        fetchStats();  // SỬA: Refetch stats sau update (nếu status thay đổi)
+        setTimeout(() => fetchNews(), 1000);
+    }, [fetchNews, fetchStats]);
 
-        // After update, reload current page
-        handleRefresh();
-    }, [handleRefresh]);
-
-    // Handle sort option change from dropdown
+    // SỬA: Xóa title sort, giữ newest/oldest/views-desc, thống nhất sortBy="createdAt"
     const handleSortChange = useCallback((value) => {
-        switch (value) {
-            case "default":
-                setSortBy("publishedAt");
-                setSortOrder("desc");
-                break;
-            case "newest":
-                setSortBy("publishedAt");
-                setSortOrder("desc");
-                break;
-            case "oldest":
-                setSortBy("publishedAt");
-                setSortOrder("asc");
-                break;
-            case "title-asc":
-                setSortBy("title");
-                setSortOrder("asc");
-                break;
-            case "title-desc":
-                setSortBy("title");
-                setSortOrder("desc");
-                break;
-            default:
-                setSortBy("publishedAt");
-                setSortOrder("desc");
-        }
-        // reset to page 1 when sorting changes (debounced effect above will handle dispatch)
-        setLocalPagination((prev) => ({ ...prev, current: 1 }));
+        const sortMap = {
+            default: { sortBy: "createdAt", sortOrder: "desc" },
+            newest: { sortBy: "createdAt", sortOrder: "desc" },
+            oldest: { sortBy: "createdAt", sortOrder: "asc" },
+            "views-desc": { sortBy: "views", sortOrder: "desc" }  // Giữ: Sort theo views desc (nhiều xem nhất)
+        };
+        setSort(sortMap[value] || sortMap.default);
     }, []);
 
+    // SỬA: Columns - Thêm cột "Lượt xem" (views) với sorter, thống nhất "createdAt"
     const columns = useMemo(
         () => [
             {
@@ -348,12 +317,27 @@ const NewsManagement = () => {
                     );
                 },
             },
+            // THÊM: Cột mới "Lượt xem" (views) với sorter
+            {
+                title: "Lượt xem",
+                dataIndex: "views",
+                key: "views",
+                width: 100,
+                // sorter: true,  // Enable sorter cho column này
+                // sortOrder: sort.sortBy === 'views' ? (sort.sortOrder === 'asc' ? 'ascend' : 'descend') : null,
+                // render: (views) => (
+                //     <Space>
+                //         <EyeInvisibleOutlined style={{ color: "#13C2C2" }} />
+                //         <Text>{views || 0}</Text>  {/* SỬA: Bây giờ <Text> đã được import đúng */}
+                //     </Space>
+                // ),
+            },
             {
                 title: "Ngày tạo",
                 dataIndex: "createdAt",
                 key: "createdAt",
-                sorter: true, // Enable Antd sorter (we map it in handleTableChange)
-                sortOrder: (sortBy === "publishedAt" || sortBy === "createdAt") ? (sortOrder === "asc" ? "ascend" : "descend") : false,
+                // sorter: true,
+                // sortOrder: sort.sortBy === 'createdAt' ? (sort.sortOrder === 'asc' ? 'ascend' : 'descend') : null,
                 render: (date) => (
                     <div>
                         <span style={{ color: "#0D364C", fontSize: 14, display: "block" }}>
@@ -376,66 +360,77 @@ const NewsManagement = () => {
                 ),
             },
         ],
-        [handleOpenDetailModal, handleOpenUpdateModal, sortBy, sortOrder]
+        [handleOpenDetailModal, handleOpenUpdateModal, sort]
     );
 
-    // Table onChange handles pagination & sorter & filters
-    const handleTableChange = (pagination, filters, sorter) => {
-        const newPage = pagination.current;
-        const newPageSize = pagination.pageSize;
-
-        let newSortBy = sortBy;
-        let newSortOrder = sortOrder;
+    // SỬA: handleTableChange - Cải thiện cancel sort (lần 3): Force clear và fetch default nếu cancel, thống nhất "createdAt"
+    const handleTableChange = (paginationData, tableFilters, sorter) => {
         if (sorter && sorter.field && sorter.order) {
+            let newSortBy, newSortOrder;
             if (sorter.field === "createdAt") {
-                newSortBy = "publishedAt";
+                newSortBy = "createdAt";
                 newSortOrder = sorter.order === "ascend" ? "asc" : "desc";
-                setSortBy(newSortBy);
-                setSortOrder(newSortOrder);
+            } else if (sorter.field === "views") {  // THÊM: Handle sort views từ table header
+                newSortBy = "views";
+                newSortOrder = sorter.order === "ascend" ? "asc" : "desc";
             }
+            if (newSortBy) {
+                setSort({ sortBy: newSortBy, sortOrder: newSortOrder });
+            }
+        } else if (sorter?.field && !sorter?.order) {
+            // SỬA: Khi cancel (lần 3), set về default và force fetch page 1 để clear visual
+            setSort({ sortBy: "createdAt", sortOrder: "desc" });
+            setPagination(prev => ({ ...prev, current: 1 }));  // Reset page về 1
+            fetchNews({ page: 1 });  // Force fetch với default sort
         }
-
-        const query = {
-            page: newPage,
-            limit: newPageSize,
-            sortBy: newSortBy,
-            order: newSortOrder,
-        };
-
-        if (statusFilter !== "all") query.status = statusFilter;
-        if (searchText.trim()) query.q = searchText.trim();
-
-        // Dispatch API fetch
-        dispatch(newsListRequest(query));
-
-        // Update pagination state để Table nhận pageSize mới
-        // FIX: cập nhật luôn state pagination của reducer
-        // Nếu không muốn chỉnh reducer, có thể dùng local state:
-        // setPagination({ page: newPage, limit: newPageSize });
     };
 
+    const tablePagination = useMemo(() => {
+        console.log("🔄 tablePagination computed:", {
+            current: apiPagination?.page || pagination.current,
+            pageSize: pagination.pageSize,
+            total: apiPagination?.total || 0,
+            localPagination: pagination,
+            apiPagination
+        });
 
-    // Pagination object passed to Table (controlled)
-    const tablePagination = useMemo(() => ({
-        current: apiPagination?.page || 1,
-        pageSize: apiPagination?.limit || 5,  // ← phải lấy từ reducer sau khi fetch
-        total: apiPagination?.total || 0,
-        showSizeChanger: true,
-        onChange: (page, pageSize) => {
-            handleTableChange({ current: page, pageSize }, {}, {});
-        },
-        onShowSizeChange: (current, size) => {
-            handleTableChange({ current, pageSize: size }, {}, {});
-        },
-    }), [apiPagination, statusFilter, searchText, sortBy, sortOrder, loadingList]);
+        return {
+            current: apiPagination?.page || pagination.current,
+            pageSize: pagination.pageSize,
+            total: apiPagination?.total || 0,
+            showSizeChanger: true,
+            showQuickJumper: true,
+            pageSizeOptions: ["5", "10", "20", "50", "100"],
+            showTotal: (total, range) => (
+                <div style={{ color: "#0D364C" }}>
+                    Hiển thị {range[0]}-{range[1]} trong tổng số {total} news
+                    {hasActiveFilters && <span style={{ color: "#13C2C2" }}> (đã lọc)</span>}
+                </div>
+            ),
+            onChange: (page, pageSize) => {
+                console.log("🔄 onChange triggered:", { page, pageSize });
+                setPagination({ current: page, pageSize: pageSize || pagination.pageSize });
+                fetchNews({ page, limit: pageSize });
+            },
+            onShowSizeChange: (current, size) => {
+                console.log("🔄 onShowSizeChange triggered:", { current, size });
+                setPagination({ current, pageSize: size });
+                fetchNews({ page: current, limit: size });
+            },
+        };
+    }, [apiPagination, pagination, hasActiveFilters, fetchNews]);
 
-
-    // No data fallback message
     const noDataMessage = useMemo(() => {
         if (loadingList) return "Đang tải...";
         if ((apiPagination?.total ?? 0) === 0 && !error) return "Chưa có news nào. Thêm mới để bắt đầu!";
         return undefined;
     }, [loadingList, apiPagination, error]);
+
+    useEffect(() => {
+        console.log("🔄 apiPagination updated after fetch:", apiPagination);
+        console.log("🔄 Current local pagination:", pagination);
+        console.log("🔄 Data length:", newsItems.length);
+    }, [apiPagination, pagination, newsItems]);
 
     return (
         <div
@@ -445,7 +440,6 @@ const NewsManagement = () => {
                 minHeight: "100vh",
             }}
         >
-            {/* Statistics */}
             <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
                 <Col xs={24} sm={6}>
                     <Card style={{ borderRadius: 12, border: "1px solid #13C2C230" }}>
@@ -499,17 +493,17 @@ const NewsManagement = () => {
                     <Space size="middle" style={{ flex: 1, flexWrap: "wrap" }}>
                         <Input.Search
                             placeholder="Tìm kiếm theo tiêu đề, nội dung hoặc ID..."
-                            value={searchText}
-                            onChange={(e) => setSearchText(e.target.value)}
+                            value={filters.searchText}
+                            onChange={(e) => setFilters(prev => ({ ...prev, searchText: e.target.value }))}
                             style={{ width: 320, maxWidth: "100%" }}
                             size="large"
                             prefix={<SearchOutlined style={{ color: "#13C2C2" }} />}
                             allowClear
-                            onSearch={(value) => setSearchText(value)}
+                            onSearch={(value) => setFilters(prev => ({ ...prev, searchText: value }))}
                         />
                         <Select
-                            value={statusFilter}
-                            onChange={(val) => { setStatusFilter(val); setLocalPagination((p) => ({ ...p, current: 1 })); }}
+                            value={filters.status}
+                            onChange={(val) => setFilters(prev => ({ ...prev, status: val }))}
                             style={{ width: 150 }}
                             size="large"
                             placeholder="Lọc theo trạng thái"
@@ -520,15 +514,15 @@ const NewsManagement = () => {
                             <Select.Option value="draft">Bản nháp</Select.Option>
                             <Select.Option value="archived">Đã lưu trữ</Select.Option>
                         </Select>
+                        {/* SỬA: Xóa title options, giữ newest/oldest/views-desc, cập nhật computed value */}
                         <Select
                             value={(() => {
-                                if (sortBy === "publishedAt" && sortOrder === "desc") return "newest";
-                                if (sortBy === "publishedAt" && sortOrder === "asc") return "oldest";
-                                if (sortBy === "title" && sortOrder === "asc") return "title-asc";
-                                if (sortBy === "title" && sortOrder === "desc") return "title-desc";
+                                if (sort.sortBy === "createdAt" && sort.sortOrder === "desc") return "newest";
+                                if (sort.sortBy === "createdAt" && sort.sortOrder === "asc") return "oldest";
+                                if (sort.sortBy === "views" && sort.sortOrder === "desc") return "views-desc";
                                 return "default";
                             })()}
-                            onChange={(val) => { handleSortChange(val); setLocalPagination((p) => ({ ...p, current: 1 })); }}
+                            onChange={handleSortChange}
                             style={{ width: 180 }}
                             size="large"
                             placeholder="Sắp xếp"
@@ -537,8 +531,7 @@ const NewsManagement = () => {
                             <Select.Option value="default">Mặc định</Select.Option>
                             <Select.Option value="newest">Mới nhất</Select.Option>
                             <Select.Option value="oldest">Cũ nhất</Select.Option>
-                            <Select.Option value="title-asc">Tiêu đề A-Z</Select.Option>
-                            <Select.Option value="title-desc">Tiêu đề Z-A</Select.Option>
+                            <Select.Option value="views-desc">Xem nhiều nhất</Select.Option>  {/* Giữ: Option views */}
                         </Select>
                     </Space>
                     <Space>
@@ -547,7 +540,6 @@ const NewsManagement = () => {
                     </Space>
                 </div>
 
-                {/* Error and Success Messages */}
                 {error && (
                     <Alert
                         message={error}
@@ -563,7 +555,6 @@ const NewsManagement = () => {
                     />
                 )}
 
-                {/* Filter status indicator */}
                 {hasActiveFilters && (
                     <Alert
                         message={`Đang hiển thị kết quả đã lọc: ${getFilterSummary}`}
@@ -581,11 +572,9 @@ const NewsManagement = () => {
                                 size="small"
                                 type="link"
                                 onClick={() => {
-                                    setSearchText("");
-                                    setStatusFilter("all");
-                                    setSortBy("publishedAt");
-                                    setSortOrder("desc");
-                                    setLocalPagination((p) => ({ ...p, current: 1 }));
+                                    setFilters({ searchText: "", status: "all" });
+                                    setSort({ sortBy: "createdAt", sortOrder: "desc" });
+                                    setPagination((p) => ({ ...p, current: 1 }));
                                 }}
                                 style={{ color: "#13C2C2" }}
                             >
@@ -595,7 +584,6 @@ const NewsManagement = () => {
                     />
                 )}
 
-                {/* No results for filters */}
                 {(!loadingList && (apiPagination?.total ?? 0) === 0 && hasActiveFilters) && (
                     <Alert message="Không tìm thấy news phù hợp với bộ lọc" type="warning" showIcon style={{ marginBottom: 16 }} />
                 )}

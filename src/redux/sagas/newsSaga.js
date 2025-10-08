@@ -1,7 +1,7 @@
 import { call, put, takeLatest } from "redux-saga/effects";
 import { toast } from "react-toastify";
 import axios from "axios";
-import * as actions from "../actions/newsActions";
+import * as actions from "../actions/newsActions"; // Import * để dùng actions.newsStatsSuccess, etc.
 
 const API_BASE_URL = "http://localhost:3000"; // Giữ nguyên vì dùng gateway
 
@@ -65,16 +65,17 @@ function* getNewsSaga(action) {
   }
 }
 
-function* getNewsSlugSaga(action) {
+// THÊM: Saga cho fetch stats tổng (không filter)
+function* statsNewsSaga(action) {
   try {
-    const res = yield call(() => apiCall("get", `/news/${action.payload}`));
-    console.log("🔄 News Slug API res:", res);
-    yield put(actions.newsGetSlugSuccess(res));
+    const res = yield call(() => apiCall("get", "/news/stats", action.payload)); // Gọi /news/stats với empty params
+    console.log("🔄 News Stats API res:", res);
+    yield put(actions.newsStatsSuccess(res)); // res = { total, published, draft, archived }
   } catch (err) {
-    console.error("🔄 News Slug API err:", err.response || err);
+    console.error("🔄 News Stats API err:", err.response || err);
     const errorMsg =
-      err.response?.data?.message || err.message || "Lỗi không xác định";
-    yield put(actions.newsGetSlugFailure(errorMsg));
+      err.response?.data?.message || err.message || "Lỗi tải thống kê";
+    yield put(actions.newsStatsFailure(errorMsg));
     toast.error(errorMsg);
   }
 }
@@ -100,7 +101,7 @@ function* updateNewsSaga(action) {
     const res = yield call(() => apiCall("put", `/news/${id}`, data));
     console.log("🔄 News Update API res:", res);
     yield put(actions.newsUpdateSuccess(res));
-    toast.success("Cập nhật tin tức thành công!");
+    toast.success("Cập nhật tin tức thành công!"); // SỬA: Thêm toast consistent
   } catch (err) {
     console.error("🔄 News Update API err:", err.response || err);
     const errorMsg =
@@ -129,7 +130,8 @@ function* deleteNewsSaga(action) {
 export default function* newsSaga() {
   yield takeLatest(actions.NEWS_LIST_REQUEST, listNewsSaga);
   yield takeLatest(actions.NEWS_GET_REQUEST, getNewsSaga);
-  yield takeLatest(actions.NEWS_GET_SLUG_REQUEST, getNewsSlugSaga);
+  // THÊM: Watcher cho stats
+  yield takeLatest(actions.NEWS_STATS_REQUEST, statsNewsSaga);
   yield takeLatest(actions.NEWS_CREATE_REQUEST, createNewsSaga);
   yield takeLatest(actions.NEWS_UPDATE_REQUEST, updateNewsSaga);
   yield takeLatest(actions.NEWS_DELETE_REQUEST, deleteNewsSaga);

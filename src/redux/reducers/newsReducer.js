@@ -5,9 +5,6 @@ import {
   NEWS_GET_REQUEST,
   NEWS_GET_SUCCESS,
   NEWS_GET_FAILURE,
-  NEWS_GET_SLUG_REQUEST,
-  NEWS_GET_SLUG_SUCCESS,
-  NEWS_GET_SLUG_FAILURE,
   NEWS_CREATE_REQUEST,
   NEWS_CREATE_SUCCESS,
   NEWS_CREATE_FAILURE,
@@ -17,6 +14,10 @@ import {
   NEWS_DELETE_REQUEST,
   NEWS_DELETE_SUCCESS,
   NEWS_DELETE_FAILURE,
+  // THÊM: Import actions cho stats
+  NEWS_STATS_REQUEST,
+  NEWS_STATS_SUCCESS,
+  NEWS_STATS_FAILURE,
 } from "../actions/newsActions";
 
 const initialState = {
@@ -36,10 +37,17 @@ const newsReducer = (state = initialState, action) => {
   switch (action.type) {
     case NEWS_LIST_REQUEST:
     case NEWS_GET_REQUEST:
-    case NEWS_GET_SLUG_REQUEST:
       return {
         ...state,
         loadingList: true,
+        error: null,
+      };
+
+    // THÊM: Case cho stats request
+    case NEWS_STATS_REQUEST:
+      return {
+        ...state,
+        loadingStats: true,
         error: null,
       };
 
@@ -63,11 +71,18 @@ const newsReducer = (state = initialState, action) => {
         error: null,
       };
     case NEWS_GET_SUCCESS:
-    case NEWS_GET_SLUG_SUCCESS:
       return {
         ...state,
         loadingList: false,
         current: action.payload,
+        error: null,
+      };
+    // THÊM: Case cho stats success
+    case NEWS_STATS_SUCCESS:
+      return {
+        ...state,
+        loadingStats: false,
+        stats: action.payload, // { total, published, draft, archived }
         error: null,
       };
     case NEWS_CREATE_SUCCESS:
@@ -89,13 +104,15 @@ const newsReducer = (state = initialState, action) => {
 
     case NEWS_LIST_FAILURE:
     case NEWS_GET_FAILURE:
-    case NEWS_GET_SLUG_FAILURE:
+    // THÊM: Case cho stats failure
+    case NEWS_STATS_FAILURE:
     case NEWS_CREATE_FAILURE:
     case NEWS_UPDATE_FAILURE:
     case NEWS_DELETE_FAILURE:
       return {
         ...state,
         loadingList: false,
+        loadingStats: false, // SỬA: Clear loadingStats nếu có error
         creating: false,
         updating: false,
         deleting: false,

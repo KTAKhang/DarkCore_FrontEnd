@@ -25,6 +25,8 @@ import ProductDetail from "../pages/CustomerVIew/ProductDetail";
 
 import WishlistPage from "../pages/CustomerVIew/WishlistPage";
 
+import NewsPage from "../pages/CustomerVIew/NewsPage";
+
 import ProfileManagement from "../pages/ProfileManagement/ProfileManagerment";
 import UpdatePassword from "../pages/ProfileManagement/UpdatePassword";
 import PrivateRoute from "../components/PrivateRouter";
@@ -56,6 +58,12 @@ export const routes = [
   {
     path: "/wishlist",
     element: <WishlistPage />,
+  },
+
+  // THÊM: Trang tin tức cho customer (public, chỉ published news)
+  {
+    path: "/news",
+    element: <NewsPage />,
   },
 
   // Khu vực quản trị
