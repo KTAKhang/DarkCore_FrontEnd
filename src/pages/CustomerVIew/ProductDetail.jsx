@@ -54,7 +54,7 @@ const ProductDetail = () => {
     // Handle cart errors
     useEffect(() => {
         if (cartError) {
-            toast.error(cartError);
+            // toast.error(cartError);
             dispatch(cartClearMessage());
         }
     }, [cartError, dispatch]);

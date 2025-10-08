@@ -3,29 +3,40 @@ import { toast } from "react-toastify";
 import axios from "axios";
 import * as actions from "../actions/newsActions";
 
-const API_BASE_URL = "http://localhost:3000"; // chỉnh theo BE bạn
+const API_BASE_URL = "http://localhost:3000"; // Giữ nguyên vì dùng gateway
 
-// ===== API CALL HELPER =====
+// ===== API CALL HELPER (FIX: Tự detect FormData cho upload ảnh) =====
 const apiCall = async (method, url, data, isForm = false) => {
   const token = localStorage.getItem("token");
-  const config = {
+  let headers = { ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+
+  let config = {
     method,
     url: `${API_BASE_URL}${url}`,
-    headers: {
-      "Content-Type": isForm ? "multipart/form-data" : "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
+    headers,
     withCredentials: true,
-    ...(data ? { data } : {}),
   };
-  const res = await axios(config);
-  return res.data;
+
+  if (data instanceof FormData) {
+    isForm = true;
+  }
+
+  if (method.toLowerCase() === "get" && data && typeof data === "object") {
+    // GET request -> params
+    config.params = data;
+  } else if (data) {
+    // POST, PUT, DELETE
+    if (!isForm) headers["Content-Type"] = "application/json";
+    config.data = data;
+  }
+
+  return (await axios(config)).data;
 };
 
 // ===== SAGAS =====
 function* listNewsSaga(action) {
   try {
-    const res = yield call(() => apiCall("get", "/news", action.payload));
+    const res = yield call(() => apiCall("get", "/news", action.payload)); // GET: Không cần data
     console.log("🔄 News API res:", res); // Log response để debug
     if (import.meta.env.DEV) {
       console.log("🔄 News data length:", res.data?.length || 0);

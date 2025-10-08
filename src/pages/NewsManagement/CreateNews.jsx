@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import PropTypes from "prop-types";
-import { Form, Input, Button, Card, Select, Upload, Modal, Typography, Space, Divider, message } from "antd";
-import { PlusOutlined, CameraOutlined, TagsOutlined, UploadOutlined } from "@ant-design/icons";
+import { Form, Input, Button, Card, Select, Upload, Modal, Typography, Space, Divider, message, Spin } from "antd";
+import { PlusOutlined, CameraOutlined, TagsOutlined, UploadOutlined, LoadingOutlined } from "@ant-design/icons";
+import { useDispatch } from "react-redux";
+import * as actions from "../../redux/actions/newsActions"; // Thay đường dẫn đúng đến newsActions.js
 
 const { Title, Text } = Typography;
 
@@ -19,16 +21,21 @@ const CreateNews = ({ visible, onClose, onSuccess }) => {
     const [previewImage, setPreviewImage] = useState("");
     const [modalVisible, setModalVisible] = useState(false);
     const [imageFile, setImageFile] = useState(null);
+    const [loading, setLoading] = useState(false); // Local loading cho form submit
+
+    const dispatch = useDispatch();
 
     useEffect(() => {
         if (visible) {
             form.resetFields();
             form.setFieldsValue({ status: "draft" });
+            setImageFile(null);
+            setLoading(false);
         }
     }, [visible, form]);
 
     const handleFinish = async (values) => {
-        // Validate required fields
+        // Validate required fields (giữ nguyên)
         const trimmedTitle = values.title?.trim();
         const trimmedContent = values.content?.trim();
 
@@ -41,18 +48,28 @@ const CreateNews = ({ visible, onClose, onSuccess }) => {
             return;
         }
 
-        const newNews = {
-            _id: undefined,
-            title: trimmedTitle,
-            excerpt: values.excerpt?.trim() || "",
-            content: trimmedContent,
-            tags: values.tags || [],
-            imageFile: imageFile || null, // Optional if adding image field
-            status: values.status || "draft",
-            createdAt: new Date().toISOString(),
-        };
+        setLoading(true);
 
-        onSuccess && onSuccess(newNews);
+        // Tạo FormData (giữ nguyên)
+        const formData = new FormData();
+        formData.append("title", trimmedTitle);
+        formData.append("excerpt", values.excerpt?.trim() || "");
+        formData.append("content", trimmedContent);
+        formData.append("tags", Array.isArray(values.tags) ? values.tags.join(",") : (values.tags || ""));
+        formData.append("status", values.status || "draft");
+        if (imageFile) {
+            formData.append("image", imageFile);
+        }
+
+        // FIX: Dispatch mà không try-catch (saga handle error/success qua toast)
+        dispatch(actions.newsCreateRequest(formData));
+
+        // Đóng modal và gọi onSuccess để refetch (không chờ response, saga sẽ toast)
+        onSuccess && onSuccess(null); // null vì saga đã handle
+        onClose();
+
+        // Reset loading sau 2s (hoặc dùng effect watch reducer state)
+        setTimeout(() => setLoading(false), 2000);
     };
 
     const handlePreview = async (file) => {
@@ -73,8 +90,16 @@ const CreateNews = ({ visible, onClose, onSuccess }) => {
             return Upload.LIST_IGNORE;
         }
         setImageFile(file);
-        return false;
+        return false; // Không auto upload, vì BE handle
     };
+
+    const uploadButton = (
+        <div>
+            {loading ? <LoadingOutlined spin /> : <CameraOutlined />}
+            <div style={{ marginTop: 8, color: "#13C2C2", fontWeight: 500, fontSize: 14 }}>Tải ảnh lên</div>
+            <div style={{ color: "#999", fontSize: 12, marginTop: 4 }}>PNG, JPG tối đa 2MB</div>
+        </div>
+    );
 
     const customStyles = useMemo(
         () => ({
@@ -134,14 +159,16 @@ const CreateNews = ({ visible, onClose, onSuccess }) => {
                                     />
                                 </Form.Item>
 
-                                {/* Optional Image Upload - if adding image field to model */}
-                                <Form.Item label={<span style={customStyles.label}>Hình ảnh</span>} name="image">
-                                    <Upload listType="picture-card" maxCount={1} beforeUpload={beforeUpload} onPreview={handlePreview} accept="image/*">
-                                        <div style={{ padding: "20px 0" }}>
-                                            <CameraOutlined style={{ color: "#13C2C2", fontSize: 24 }} />
-                                            <div style={{ marginTop: 8, color: "#13C2C2", fontWeight: 500, fontSize: 14 }}>Tải ảnh lên</div>
-                                            <div style={{ color: "#999", fontSize: 12, marginTop: 4 }}>PNG, JPG tối đa 2MB</div>
-                                        </div>
+                                <Form.Item label={<span style={customStyles.label}>Hình ảnh</span>} name="image" valuePropName="fileList" getValueFromEvent={(e) => (e && e.fileList ? e.fileList : [])}>
+                                    <Upload
+                                        listType="picture-card"
+                                        maxCount={1}
+                                        beforeUpload={beforeUpload}
+                                        onPreview={handlePreview}
+                                        accept="image/*"
+                                        fileList={imageFile ? [imageFile] : []} // Hiển thị file đã chọn
+                                    >
+                                        {imageFile ? null : uploadButton}
                                     </Upload>
                                 </Form.Item>
 
@@ -157,8 +184,10 @@ const CreateNews = ({ visible, onClose, onSuccess }) => {
 
                                 <Form.Item style={{ marginBottom: 0 }}>
                                     <Space style={{ width: "100%", justifyContent: "space-between" }}>
-                                        <Button onClick={onClose} size="large" style={{ height: 44, borderRadius: 8, fontWeight: 500, minWidth: 120, borderColor: "#d9d9d9", color: "#666" }}>Hủy bỏ</Button>
-                                        <Button type="primary" htmlType="submit" icon={<PlusOutlined />} size="large" style={{ ...customStyles.primaryButton, minWidth: 140 }}>Tạo Tin Tức</Button>
+                                        <Button onClick={onClose} size="large" style={{ height: 44, borderRadius: 8, fontWeight: 500, minWidth: 120, borderColor: "#d9d9d9", color: "#666" }} disabled={loading}>Hủy bỏ</Button>
+                                        <Button type="primary" htmlType="submit" icon={loading ? <LoadingOutlined spin /> : <PlusOutlined />} size="large" style={{ ...customStyles.primaryButton, minWidth: 140 }} loading={loading} disabled={loading}>
+                                            {loading ? "Đang tạo..." : "Tạo Tin Tức"}
+                                        </Button>
                                     </Space>
                                 </Form.Item>
                             </Form>
