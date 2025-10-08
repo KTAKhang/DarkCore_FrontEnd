@@ -91,7 +91,7 @@ const ShowAllProduct = () => {
     // Handle cart errors
     useEffect(() => {
         if (cartError) {
-            toast.error(cartError);
+            // toast.error(cartError);
             dispatch(cartClearMessage()); // Xóa lỗi sau khi hiển thị
         }
     }, [cartError, dispatch]);

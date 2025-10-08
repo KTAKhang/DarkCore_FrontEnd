@@ -21,6 +21,7 @@ import {
 
 const API_BASE_URL = "http://localhost:3000";
 console.log("🟢 cartSaga loaded");
+
 // ===== API CALLS CƠ BẢN =====
 const apiCall = async (method, url, data, isForm = false) => {
   console.log("🔴 apiCall: Starting", { method, url, data });
@@ -33,8 +34,6 @@ const apiCall = async (method, url, data, isForm = false) => {
   }
 
   try {
-    console.log("🔴 apiCall: Making request to", `${API_BASE_URL}${url}`);
-    // Cấu hình request cơ bản
     const config = {
       method,
       url: `${API_BASE_URL}${url}`,
@@ -46,17 +45,14 @@ const apiCall = async (method, url, data, isForm = false) => {
       timeout: 5000,
     };
 
-    // Chỉ thêm data khi thật sự có
     if (data !== undefined && data !== null) {
       config.data = data;
     }
-    console.log("🔴 apiCall: Config", config);
 
     const res = await axios(config);
-    console.log("🔴 apiCall: Response received", res.data);
     return res.data;
   } catch (error) {
-    // Nếu access token hết hạn → gọi refresh
+    // ===== Xử lý lỗi hết hạn token =====
     if (error.response?.status === 401) {
       try {
         const refreshRes = await axios.post(
@@ -65,10 +61,8 @@ const apiCall = async (method, url, data, isForm = false) => {
           { withCredentials: true }
         );
         const newToken = refreshRes.data?.token?.access_token;
-
         if (newToken) {
           localStorage.setItem("token", newToken);
-
           const retryConfig = {
             method,
             url: `${API_BASE_URL}${url}`,
@@ -81,11 +75,9 @@ const apiCall = async (method, url, data, isForm = false) => {
             },
             timeout: 5000,
           };
-
           if (data !== undefined && data !== null) {
             retryConfig.data = data;
           }
-
           const retryRes = await axios(retryConfig);
           return retryRes.data;
         }
@@ -97,18 +89,22 @@ const apiCall = async (method, url, data, isForm = false) => {
       }
     }
 
-    // Xử lý lỗi chung
+    // ===== Xử lý lỗi chung =====
     const msg =
       error.response?.data?.message ||
       error.response?.data?.error ||
       error.message ||
       "Request failed";
+
+    // 🧠 CHỈ LOG LẠI, KHÔNG HIỂN TOAST Ở ĐÂY
     console.error(
       `API Error [${method.toUpperCase()} ${url}]:`,
       msg,
       error.response?.data
     );
-    throw new Error(msg);
+
+    // 🟡 TRẢ LẠI LỖI — để saga tự hiển thị toast (chỉ 1 cái)
+    throw error;
   }
 };
 
@@ -118,8 +114,7 @@ function* getCartSaga() {
     const response = yield call(() => apiCall("get", "/cart"));
     if (response.status === "OK") {
       yield put(cartGetSuccess(response.cart));
-      // toast.success(response.message || "Lấy giỏ hàng thành công!");
-      toast.success(response.message);
+      toast.success(response.message || "Lấy giỏ hàng thành công!");
     } else {
       throw new Error(response.message || "Lấy giỏ hàng thất bại");
     }
@@ -135,11 +130,11 @@ function* addCartSaga(action) {
   console.log("🟢 watchCartAdd started");
   console.log("Saga received:", action.payload);
   try {
-    console.log("🔴 addCartSaga: Before apiCall");
     const response = yield call(() =>
       apiCall("post", "/cart/add", action.payload)
     );
     console.log("🔴 addCartSaga: After apiCall", response);
+
     if (response.status === "OK") {
       yield put(cartAddSuccess(response.cart));
       toast.success(response.message || "Thêm vào giỏ hàng thành công!");
@@ -148,10 +143,25 @@ function* addCartSaga(action) {
     }
   } catch (error) {
     console.error("🔴 addCartSaga: CATCH ERROR", error);
-    const msg = error.message || "Thêm vào giỏ hàng thất bại";
-    console.error("addCartSaga error:", msg, error);
-    yield put(cartAddFailure(msg));
-    // toast.error(msg);
+
+    // 🟡 FIX: Lấy backendMsg từ cả error.message (cho throw new Error) và error.response (cho Axios error)
+    let backendMsg = "";
+    if (error.response) {
+      backendMsg = error.response.data?.message || error.message || "";
+    } else {
+      backendMsg = error.message || "";
+    }
+
+    // 🟡 THÊM XỬ LÝ LỖI VƯỢT TỒN KHO
+    if (backendMsg.includes("exceeds stock")) {
+      toast.warning("Số lượng sản phẩm vượt quá tồn kho!");
+    } else if (backendMsg.includes("not found")) {
+      toast.error("Sản phẩm không tồn tại hoặc đã bị xóa!");
+    } else {
+      toast.error(backendMsg || "Thêm vào giỏ hàng thất bại!"); // 🟡 SỬA: Dùng backendMsg để toast cụ thể hơn, tránh generic
+    }
+
+    yield put(cartAddFailure(backendMsg || "Thêm vào giỏ hàng thất bại"));
   }
 }
 
@@ -162,7 +172,6 @@ function* updateCartSaga(action) {
       apiCall("put", `/cart/update/${productId}`, { quantity })
     );
 
-    // KIỂM TRA NẾU CÓ LỖI TỪ BACKEND
     if (response.error) {
       throw new Error(response.error);
     }
@@ -174,17 +183,20 @@ function* updateCartSaga(action) {
       throw new Error(response.message || "Cập nhật giỏ hàng thất bại");
     }
   } catch (error) {
-    const msg = error.message || "Cập nhật giỏ hàng thất bại";
-    console.error("updateCartSaga error:", msg, error);
-    yield put(cartUpdateFailure(msg));
-    // toast.error(msg); // CHỈ HIỂN THỞ TOAST Ở ĐÂY
+    const backendMsg = error.response?.data?.message || "";
+    if (backendMsg.includes("exceeds stock")) {
+      toast.warning("Không thể tăng thêm — vượt quá tồn kho!");
+    } else {
+      toast.error("Sản phẩm vượt quá tồn kho");
+    }
+
+    yield put(cartUpdateFailure(backendMsg || "Cập nhật giỏ hàng thất bại"));
   }
 }
 
 function* removeCartSaga(action) {
   try {
     const { productId } = action.payload;
-    console.log("removeCartSaga: Attempting to remove item", { productId });
     const response = yield call(() =>
       apiCall("delete", `/cart/remove/${productId}`)
     );
@@ -224,7 +236,6 @@ function* clearCartSaga() {
 }
 
 // ===== ROOT SAGA =====
-// TRONG cartSaga.js - THÊM TRY-CATCH
 export default function* cartSaga() {
   try {
     console.log("🔴 cartSaga: Starting execution");

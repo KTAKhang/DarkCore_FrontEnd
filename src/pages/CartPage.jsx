@@ -35,12 +35,12 @@ const CartPage = () => {
         dispatch(cartGetRequest());
     }, [dispatch, navigate]);
 
-    // Handle cart errors
+    // Handle cart errors - FIX: Chỉ log và clear, không toast để tránh duplicate với saga
     useEffect(() => {
         if (error) {
             console.log('CartPage error:', error);
-            toast.error(error || 'Lỗi khi tải giỏ hàng');
-            dispatch(cartClearMessage()); // Xóa lỗi sau khi hiển thị
+            // toast.error(error || 'Lỗi khi tải giỏ hàng');  // ← XÓA: GÂY DUPLICATE TOAST
+            dispatch(cartClearMessage());
         }
     }, [error, dispatch]);
 
@@ -85,7 +85,8 @@ const CartPage = () => {
                         <p className="text-gray-600">{totalItems} sản phẩm trong giỏ hàng</p>
                     </div>
 
-                    {error && (
+                    {/* FIX: XÓA ALERT ĐỎ TRÊN UI ĐỂ TRÁNH DUPLICATE VISUAL VỚI TOAST TỪ SAGA */}
+                    {/* {error && (
                         <div className="text-center py-12 text-red-600">
                             <h3 className="text-xl font-medium mb-2">Lỗi: {error || 'Không thể tải giỏ hàng'}</h3>
                             <button
@@ -95,7 +96,7 @@ const CartPage = () => {
                                 Thử lại
                             </button>
                         </div>
-                    )}
+                    )} */}
                     {loading && !error && (
                         <div className="text-center py-12">
                             {console.log('CartPage: Loading state', loading)}
