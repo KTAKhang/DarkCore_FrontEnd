@@ -74,6 +74,13 @@ const Sidebar = ({ isFinance = false, isAdmin = false, isApprover = false, isCla
     },
 
     {
+      title: "Repair Service",
+      path: "/admin/repair",
+      icon: <ProjectOutlined />,
+      color: "#13C2C2"
+    },
+
+    {
       title: "Quản Lý Khách Hàng",
       path: "/admin/customer",
       icon: <UserOutlined />,
