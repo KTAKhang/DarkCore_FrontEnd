@@ -2,8 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { logoutRequest } from "../../redux/actions/authActions";
-import { LogOut, Settings, User } from "lucide-react";
-import { Clock } from "lucide-react";
+import { LogOut, Settings, User, Clock, Package } from "lucide-react";
 import PropTypes from "prop-types";
 
 
@@ -190,7 +189,21 @@ const Header = ({ searchTerm, setSearchTerm }) => {
                                                     </button>
 
                                                     <button
-                                                        onClick={() => navigate('/repair/history')}
+                                                        onClick={() => {
+                                                            navigate("/customer/orders");
+                                                            setIsDropdownOpen(false);
+                                                        }}
+                                                        className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-gray-50 transition-all duration-200 hover:translate-x-1"
+                                                    >
+                                                        <Package className="w-5 h-5" style={{ color: '#135cc2ff' }} />
+                                                        <span>Lịch sử đơn hàng</span>
+                                                    </button>
+
+                                                    <button
+                                                        onClick={() => {
+                                                            navigate('/repair/history');
+                                                            setIsDropdownOpen(false);
+                                                        }}
                                                         className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-gray-50 transition-all duration-200 hover:translate-x-1"
                                                     >
                                                         <Clock className="w-5 h-5" style={{ color: '#135cc2ff' }} />
