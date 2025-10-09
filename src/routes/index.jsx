@@ -32,6 +32,7 @@ import RepairStaffServices from "../pages/Repair/Staff/RepairStaffServices";
 import ShowAllProduct from "../pages/CustomerVIew/ShowAllProduct";
 import ProductDetail from "../pages/CustomerVIew/ProductDetail";
 import WishlistPage from "../pages/CustomerVIew/WishlistPage";
+import OrderHistory from "../pages/CustomerVIew/OrderHistory";
 import NewsPage from "../pages/CustomerVIew/NewsPage";
 import ProfileManagement from "../pages/ProfileManagement/ProfileManagerment";
 import UpdatePassword from "../pages/ProfileManagement/UpdatePassword";
@@ -107,6 +108,10 @@ export const routes = [
       {
         path: "cart",
         element: <CartPage />,
+      },
+      {
+        path: "orders",
+        element: <OrderHistory />,
       },
     ],
   },

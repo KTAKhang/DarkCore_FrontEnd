@@ -4,22 +4,33 @@ import {
   ORDER_LIST_FAILED,
   ORDER_DETAIL_REQUEST,
   ORDER_DETAIL_SUCCESS,
+  ORDER_DETAIL_FAILURE,
   ORDER_DETAIL_FAILED,
   ORDER_UPDATE_STATUS_REQUEST,
   ORDER_UPDATE_STATUS_SUCCESS,
+  ORDER_UPDATE_STATUS_FAILURE,
   ORDER_UPDATE_STATUS_FAILED,
   ORDER_STATS_REQUEST,
   ORDER_STATS_SUCCESS,
   ORDER_STATS_FAILED,
   ORDER_STATUSES_REQUEST,
   ORDER_STATUSES_SUCCESS,
+  ORDER_STATUSES_FAILURE,
   ORDER_STATUSES_FAILED,
+  ORDER_HISTORY_REQUEST,
+  ORDER_HISTORY_SUCCESS,
+  ORDER_HISTORY_FAILURE,
+  ORDER_CREATE_REQUEST,
+  ORDER_CREATE_SUCCESS,
+  ORDER_CREATE_FAILURE,
+  ORDER_CREATE_FAILED,
   ORDER_CLEAR_MESSAGES,
 } from "../actions/orderActions";
 
 const initialState = {
   items: [],
   currentOrder: null,
+  history: [], // 🆕 Lịch sử đơn hàng của customer
   stats: {
     total: 0,
     pending: 0,
@@ -39,10 +50,20 @@ const initialState = {
     hasNextPage: false,
     hasPrevPage: false,
   },
+  historyPagination: { // 🆕 Pagination cho history
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0,
+    hasNextPage: false,
+    hasPrevPage: false,
+  },
   loadingList: false,
   loadingDetail: false,
   loadingStats: false,
   loadingStatuses: false,
+  loadingHistory: false, // 🆕
+  creating: false, // 🆕
   updating: false,
   error: null,
   success: null,
@@ -90,6 +111,7 @@ const orderReducer = (state = initialState, action) => {
         error: null,
       };
 
+    case ORDER_DETAIL_FAILURE:
     case ORDER_DETAIL_FAILED:
       return {
         ...state,
@@ -121,6 +143,7 @@ const orderReducer = (state = initialState, action) => {
       };
     }
 
+    case ORDER_UPDATE_STATUS_FAILURE:
     case ORDER_UPDATE_STATUS_FAILED:
       return {
         ...state,
@@ -167,10 +190,60 @@ const orderReducer = (state = initialState, action) => {
         error: null,
       };
 
+    case ORDER_STATUSES_FAILURE:
     case ORDER_STATUSES_FAILED:
       return {
         ...state,
         loadingStatuses: false,
+        error: action.payload,
+      };
+
+    // Order History
+    case ORDER_HISTORY_REQUEST:
+      return {
+        ...state,
+        loadingHistory: true,
+        error: null,
+      };
+
+    case ORDER_HISTORY_SUCCESS:
+      return {
+        ...state,
+        loadingHistory: false,
+        history: action.payload.data || [],
+        historyPagination: action.payload.pagination || state.historyPagination,
+        error: null,
+      };
+
+    case ORDER_HISTORY_FAILURE:
+      return {
+        ...state,
+        loadingHistory: false,
+        error: action.payload,
+      };
+
+    // Create Order
+    case ORDER_CREATE_REQUEST:
+      return {
+        ...state,
+        creating: true,
+        error: null,
+      };
+
+    case ORDER_CREATE_SUCCESS:
+      return {
+        ...state,
+        creating: false,
+        currentOrder: action.payload,
+        success: "Đơn hàng đã được tạo thành công",
+        error: null,
+      };
+
+    case ORDER_CREATE_FAILURE:
+    case ORDER_CREATE_FAILED:
+      return {
+        ...state,
+        creating: false,
         error: action.payload,
       };
 

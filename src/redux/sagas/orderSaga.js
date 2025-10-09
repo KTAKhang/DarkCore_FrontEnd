@@ -6,6 +6,8 @@ import {
   ORDER_UPDATE_STATUS_REQUEST,
   ORDER_STATS_REQUEST,
   ORDER_STATUSES_REQUEST,
+  ORDER_HISTORY_REQUEST,
+  ORDER_CREATE_REQUEST,
   orderListSuccess,
   orderListFailed,
   orderDetailSuccess,
@@ -16,6 +18,10 @@ import {
   orderStatsFailed,
   orderStatusesSuccess,
   orderStatusesFailed,
+  orderHistorySuccess,
+  orderHistoryFailure,
+  orderCreateSuccess,
+  orderCreateFailure,
 } from "../actions/orderActions";
 
 // API call functions
@@ -139,6 +145,55 @@ function* fetchOrderStatusesSaga() {
   }
 }
 
+// 🆕 Lấy lịch sử đơn hàng của khách hàng
+function* fetchOrderHistorySaga(action) {
+  try {
+    console.log("🚀 fetchOrderHistorySaga called with action:", action);
+    const { userId, query } = action.payload;
+    
+    console.log("🔄 Calling order history API for userId:", userId, "with query:", query);
+    
+    const response = yield call(apiClient.get, `/order/orders/history/${userId}`, {
+      params: query
+    });
+    console.log("✅ API order history response:", response);
+    
+    if (response.data.status === "OK") {
+      yield put(orderHistorySuccess(response.data.data, response.data.pagination));
+    } else {
+      console.log("❌ API order history error:", response.data.message);
+      yield put(orderHistoryFailure(response.data.message || "Lỗi khi tải lịch sử đơn hàng"));
+    }
+    
+  } catch (error) {
+    console.log("❌ API Order History Error:", error);
+    const errorMessage = error.response?.data?.message || error.message || "Lỗi kết nối server";
+    yield put(orderHistoryFailure(errorMessage));
+  }
+}
+
+// 🆕 Tạo đơn hàng mới
+function* createOrderSaga(action) {
+  try {
+    console.log("🚀 createOrderSaga called with action:", action);
+    
+    const response = yield call(apiClient.post, "/order/orders", action.payload);
+    console.log("✅ API create order response:", response);
+    
+    if (response.data.status === "OK") {
+      yield put(orderCreateSuccess(response.data.data));
+    } else {
+      console.log("❌ API create order error:", response.data.message);
+      yield put(orderCreateFailure(response.data.message || "Lỗi khi tạo đơn hàng"));
+    }
+    
+  } catch (error) {
+    console.log("❌ API Create Order Error:", error);
+    const errorMessage = error.response?.data?.message || error.message || "Lỗi kết nối server";
+    yield put(orderCreateFailure(errorMessage));
+  }
+}
+
 // Watcher sagas
 export function* watchFetchOrders() {
   yield takeEvery(ORDER_LIST_REQUEST, fetchOrdersSaga);
@@ -160,6 +215,14 @@ export function* watchFetchOrderStatuses() {
   yield takeEvery(ORDER_STATUSES_REQUEST, fetchOrderStatusesSaga);
 }
 
+export function* watchFetchOrderHistory() {
+  yield takeEvery(ORDER_HISTORY_REQUEST, fetchOrderHistorySaga);
+}
+
+export function* watchCreateOrder() {
+  yield takeEvery(ORDER_CREATE_REQUEST, createOrderSaga);
+}
+
 // Root order saga
 export default function* orderSaga() {
   console.log("🚀 orderSaga root saga initialized");
@@ -168,4 +231,6 @@ export default function* orderSaga() {
   yield takeEvery(ORDER_UPDATE_STATUS_REQUEST, updateOrderStatusSaga);
   yield takeEvery(ORDER_STATS_REQUEST, fetchOrderStatsSaga);
   yield takeEvery(ORDER_STATUSES_REQUEST, fetchOrderStatusesSaga);
+  yield takeEvery(ORDER_HISTORY_REQUEST, fetchOrderHistorySaga);
+  yield takeEvery(ORDER_CREATE_REQUEST, createOrderSaga);
 }
