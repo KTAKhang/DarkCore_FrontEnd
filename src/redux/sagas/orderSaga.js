@@ -161,6 +161,7 @@ export function* watchFetchOrderStatuses() {
 }
 
 // Root order saga
+// update order status
 export default function* orderSaga() {
   console.log("🚀 orderSaga root saga initialized");
   yield takeEvery(ORDER_LIST_REQUEST, fetchOrdersSaga);
