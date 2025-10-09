@@ -60,27 +60,6 @@ function* fetchOrdersSaga(action) {
     console.log("❌ API Error:", error);
     const errorMessage = error.response?.data?.message || error.message || "Lỗi kết nối server";
     yield put(orderListFailed(errorMessage));
-    
-    // Disabled fallback to see real API error
-    // console.log("🔄 Falling back to mock data...");
-    // try {
-    //   yield new Promise(resolve => setTimeout(resolve, 300));
-    //   const mockResponse = {
-    //     status: "OK",
-    //     data: mockOrders,
-    //     pagination: {
-    //       page: 1,
-    //       limit: 5,
-    //       total: mockOrders.length,
-    //       totalPages: 1,
-    //       hasNextPage: false,
-    //       hasPrevPage: false
-    //     }
-    //   };
-    //   yield put(orderListSuccess(mockResponse.data, mockResponse.pagination));
-    // } catch (mockError) {
-    //   console.log("❌ Mock data also failed:", mockError);
-    // }
   }
 }
 
