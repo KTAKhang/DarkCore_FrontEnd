@@ -72,6 +72,30 @@ const ViewOrderDetail = ({ visible, onClose, orderData }) => {
 
   const statusConfig = getStatusConfig(orderData.status);
 
+  // Helper để validate và lấy ảnh hợp lệ
+  const getValidImageUrl = (record) => {
+    let imageUrl = null;
+    
+    try {
+      // Try to get image from various possible fields
+      if (record.product && typeof record.product === 'object') {
+        imageUrl = record.product.images?.[0] || record.productImage;
+      } else {
+        imageUrl = record.productImage;
+      }
+      
+      // Check if URL is valid (not from example.com)
+      if (imageUrl && !imageUrl.includes('example.com')) {
+        return imageUrl;
+      }
+    } catch (error) {
+      console.error("Error extracting image:", error);
+    }
+    
+    // Fallback to placeholder
+    return 'https://via.placeholder.com/64x64?text=No+Image';
+  };
+
   // Order items table columns
   const itemColumns = [
     {
@@ -107,15 +131,33 @@ const ViewOrderDetail = ({ visible, onClose, orderData }) => {
         }
         
         return (
-          <div>
-            <Text strong style={{ color: "#0D364C", fontSize: 14 }}>
-              {productName}
-            </Text>
-            <br />
-            <Text type="secondary" style={{ fontSize: 12 }}>
-              ID: {productId}
-            </Text>
-          </div>
+          <Space>
+            <img
+              src={getValidImageUrl(record)}
+              alt={productName}
+              style={{
+                width: 64,
+                height: 64,
+                objectFit: 'cover',
+                borderRadius: 8,
+                border: '1px solid #d9d9d9'
+              }}
+              onError={(e) => {
+                if (e.target.src !== 'https://via.placeholder.com/64x64?text=No+Image') {
+                  e.target.src = 'https://via.placeholder.com/64x64?text=No+Image';
+                }
+              }}
+            />
+            <div>
+              <Text strong style={{ color: "#0D364C", fontSize: 14 }}>
+                {productName}
+              </Text>
+              <br />
+              <Text type="secondary" style={{ fontSize: 12 }}>
+                ID: {productId}
+              </Text>
+            </div>
+          </Space>
         );
       },
     },

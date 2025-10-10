@@ -124,6 +124,19 @@ const OrderHistory = () => {
     setExpandedOrder(expandedOrder === orderId ? null : orderId);
   };
 
+  // Helper để validate và lấy ảnh hợp lệ
+  const getValidImageUrl = (item) => {
+    const imageUrl = item.productImage || item.productId?.images?.[0];
+    
+    // Kiểm tra nếu là URL giả từ example.com
+    if (imageUrl && !imageUrl.includes('example.com')) {
+      return imageUrl;
+    }
+    
+    // Fallback về placeholder
+    return 'https://via.placeholder.com/64x64?text=No+Image';
+  };
+
   // Tạo timeline từ order data
   const generateTimeline = (order) => {
     const statusName = getStatusName(order.orderStatusId);
@@ -281,9 +294,14 @@ const OrderHistory = () => {
                     {(order.orderDetails || []).map((item, index) => (
                       <div key={index} className="flex items-center gap-4">
                         <img
-                          src={item.productImage || item.productId?.images?.[0] || '/placeholder-product.jpg'}
+                          src={getValidImageUrl(item)}
                           alt={item.productName}
                           className="w-16 h-16 object-cover rounded-lg border border-gray-200"
+                          onError={(e) => {
+                            if (e.target.src !== 'https://via.placeholder.com/64x64?text=No+Image') {
+                              e.target.src = 'https://via.placeholder.com/64x64?text=No+Image';
+                            }
+                          }}
                         />
                         <div className="flex-1">
                           <h4 className="font-medium text-gray-900">{item.productName}</h4>
