@@ -31,6 +31,7 @@ import {
   ReloadOutlined,
   FilterOutlined,
   SearchOutlined,
+  UserOutlined,
 } from "@ant-design/icons";
 import {
   getAllCustomersRequest,
@@ -42,17 +43,17 @@ import { useNavigate } from "react-router-dom";
 const { Title, Text } = Typography;
 
 const statusOptions = [
-  { value: "all", label: "Tất cả" },
+  { value: "all", label: "Tất cả status" },
   { value: "true", label: "Đang hiển thị" },
   { value: "false", label: "Đang ẩn" },
 ];
 const googleOptions = [
-  { value: "all", label: "Tất cả" },
+  { value: "all", label: "Lọc theo Google" },
   { value: "true", label: "Có" },
   { value: "false", label: "Không" },
 ];
 const sortOptions = [
-  { value: "default", label: "Mặc định" },
+  { value: "default", label: "Sắp xếp theo thời gian tạo" },
   { value: "desc", label: "Mới nhất" },
   { value: "asc", label: "Cũ nhất" },
 ];
@@ -119,8 +120,18 @@ const CustomerManagement = () => {
 
   const handleToggleStatus = (customer) => {
     const newStatus = !customer.status;
-    dispatch(updateCustomerStatusRequest(customer._id, newStatus));
-    console.log("Toggling status for customer:", customer._id, "to", newStatus);
+    Modal.confirm({
+      title: newStatus ? "Bạn có chắc muốn mở khóa tài khoản này?" : "Bạn có chắc muốn khóa tài khoản này?",
+      content: newStatus
+        ? "Tài khoản sẽ được mở khóa và có thể đăng nhập lại."
+        : "Sau khi khóa, khách hàng sẽ không thể đăng nhập vào hệ thống. Bạn chắc chắn muốn thực hiện?",
+      okText: newStatus ? "Mở khóa" : "Khóa",
+      okType: newStatus ? "primary" : "danger",
+      cancelText: "Hủy",
+      onOk() {
+        dispatch(updateCustomerStatusRequest(customer._id, newStatus));
+      },
+    });
   };
 
   const columns = [
@@ -130,7 +141,6 @@ const CustomerManagement = () => {
       render: (_, record) => (
         <Space>
           <Avatar src={record.image} alt="avatar" style={{ backgroundColor: "#13C2C2" }} />
-          {/* <img src={record.image} alt="avatar" style={{ width: 50, height: 50 }} /> */}
 
           <div>
             <Text strong style={{ color: "#0D364C", display: "block", fontSize: 16 }}>
@@ -228,6 +238,7 @@ const CustomerManagement = () => {
 
 
   const totalUser = customers?.total?.totalUser || 0;
+
   const tablePagination = useMemo(() => ({
     current: pagination.current,
     pageSize: pagination.pageSize,
@@ -290,7 +301,7 @@ const CustomerManagement = () => {
         </Col>
       </Row>
 
-      <Card style={{ borderRadius: 16, boxShadow: "0 8px 24px rgba(0,0,0,0.12)", border: "1px solid #13C2C220" }} title={<Space><Avatar style={{ backgroundColor: "#13C2C2" }} icon={<ShoppingCartOutlined />} /><Title level={3} style={{ margin: 0, color: "#0D364C" }}>Quản lý Khách hàng</Title></Space>}>
+      <Card style={{ borderRadius: 16, boxShadow: "0 8px 24px rgba(0,0,0,0.12)", border: "1px solid #13C2C220" }} title={<Space><Avatar style={{ backgroundColor: "#13C2C2" }} icon={<UserOutlined />} /><Title level={3} style={{ margin: 0, color: "#0D364C" }}>Quản lý Khách hàng</Title></Space>}>
         <div style={{ marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16 }}>
           <Space size="middle" style={{ flex: 1, flexWrap: "wrap" }}>
             <Input.Search
@@ -397,6 +408,9 @@ const CustomerManagement = () => {
             style={{ borderRadius: 12, overflow: "hidden" }}
             scroll={{ x: true }}
             size="middle"
+            locale={{
+              emptyText: "Không tồn tại khách hàng nào!",
+            }}
           />
         </Spin>
       </Card>

@@ -4,17 +4,22 @@ import { LockOutlined, KeyOutlined, SafetyOutlined, CheckCircleOutlined } from "
 import { useDispatch, useSelector } from "react-redux";
 import { changePasswordRequest, clearProfileMessages } from "../../redux/actions/profileAction";
 import PropTypes from 'prop-types';
-
+import { useNavigate, Link } from 'react-router-dom';
 const { Title, Text } = Typography;
 
 // Motion component simulation (since framer-motion isn't available)
 const Motion = ({ children, className = '', delay = 0, ...props }) => {
   const [isVisible, setIsVisible] = useState(false);
-
+  const storedUser = JSON.parse(localStorage.getItem("user") || "null");
+  const navigate = useNavigate();
   useEffect(() => {
+    if (storedUser?.isGoogleAccount === true) {
+      navigate(-1);
+    }
     const timer = setTimeout(() => setIsVisible(true), delay * 100);
     return () => clearTimeout(timer);
-  }, [delay]);
+  }, [delay, storedUser]);
+
 
   return (
     <div

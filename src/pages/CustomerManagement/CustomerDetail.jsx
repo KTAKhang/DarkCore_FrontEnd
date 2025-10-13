@@ -18,16 +18,40 @@ import {
     UserCog,
     Contact
 } from "lucide-react";
+import { Alert } from "antd";
 
 export default function CustomerDetail() {
     const { id } = useParams();
     const dispatch = useDispatch();
     const navigate = useNavigate();
-    const { selectedCustomer, loading } = useSelector((state) => state.customer);
+    const { selectedCustomer, loading, error } = useSelector((state) => state.customer);
 
     useEffect(() => {
         dispatch(getCustomerByIdRequest(id));
     }, [dispatch, id]);
+
+    // Hiển thị lỗi nếu có
+    if (error) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+                <div className="max-w-md w-full text-center">
+                    <Alert
+                        message="Lỗi khi tải dữ liệu khách hàng"
+                        description={error}
+                        type="error"
+                        showIcon
+                        style={{ marginBottom: 24 }}
+                    />
+                    <button
+                        onClick={() => navigate("/admin/customer")}
+                        className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+                    >
+                        Quay lại danh sách khách hàng
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     if (loading || !selectedCustomer) {
         return (
@@ -46,7 +70,7 @@ export default function CustomerDetail() {
         <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
             {/* Header */}
             <div className="bg-white shadow-sm">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+                <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-4">
                     <div className="flex items-center space-x-4">
                         <button
                             onClick={() => navigate("/admin/customer")}
@@ -63,146 +87,124 @@ export default function CustomerDetail() {
             </div>
 
             {/* Main Content */}
-            <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                {/* Profile Card */}
+            <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                {/* Profile Section - Horizontal */}
                 <div className="bg-white rounded-2xl shadow-lg overflow-hidden mb-6">
-                    <div className="bg-gradient-to-r from-[#0D364C] via-[#13C2C2] to-[#0D364C] h-32"></div>
-                    <div className="px-8 pb-8">
-                        <div className="flex flex-col sm:flex-row items-center sm:items-end -mt-16 sm:-mt-12">
-                            <div className="flex-shrink-0 mb-4 sm:mb-0">
-                                <div className="w-32 h-32 rounded-2xl overflow-hidden bg-white p-2 shadow-xl ring-4 ring-white">
-                                    <img
-                                        alt={customer.user_name}
-                                        className="w-full h-full object-cover rounded-xl"
-                                        src={customer.avatar}
-                                    />
-                                </div>
+                    <div className="flex flex-col lg:flex-row">
+                        {/* Left: Avatar & Basic Info */}
+                        <div className="lg:w-1/3 bg-gradient-to-br from-[#0D364C] via-[#13C2C2] to-[#0D364C] p-8 flex flex-col items-center justify-center text-white">
+                            <div className="w-40 h-40 rounded-2xl overflow-hidden bg-white p-2 shadow-xl ring-4 ring-white/30 mb-6">
+                                <img
+                                    alt={customer.user_name}
+                                    className="w-full h-full object-cover rounded-xl"
+                                    src={customer.avatar}
+                                />
                             </div>
-                            <div className="flex-1 sm:ml-6 text-center sm:text-left">
-                                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                                    <div>
-                                        <h2 className="text-3xl font-bold text-gray-900 mb-2">{customer.user_name}</h2>
-                                        <p className="text-gray-600 flex items-center justify-center sm:justify-start space-x-2 mb-1">
-                                            <Mail className="w-4 h-4" />
-                                            <span>{customer.email}</span>
-                                        </p>
-                                        <p className="text-sm text-gray-500 flex items-center justify-center sm:justify-start space-x-2">
-                                            <Shield className="w-4 h-4" />
-                                            <span className="capitalize">{customer.role_name}</span>
-                                        </p>
-                                    </div>
-                                    <div className="mt-4 sm:mt-0">
-                                        <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold shadow-sm ${customer.status
-                                            ? "bg-green-100 text-green-700 ring-2 ring-green-200"
-                                            : "bg-gray-100 text-gray-700 ring-2 ring-gray-200"
-                                            }`}>
-                                            <span className={`w-2 h-2 rounded-full mr-2 ${customer.status ? "bg-green-500" : "bg-gray-500"}`}></span>
-                                            {customer.status ? "Hoạt động" : "Không hoạt động"}
-                                        </span>
-                                    </div>
-                                </div>
-                                <p className="text-xs text-gray-400 mt-2 font-mono">ID: {customer._id}</p>
+                            <h2 className="text-3xl font-bold mb-2 text-center">{customer.user_name}</h2>
+                            <p className="text-white/90 mb-2 flex items-center space-x-2">
+                                <Mail className="w-4 h-4" />
+                                <span className="text-sm">{customer.email}</span>
+                            </p>
+                            <div className="flex items-center space-x-2 mb-4">
+                                <Shield className="w-4 h-4" />
+                                <span className="text-sm capitalize">{customer.role_name}</span>
                             </div>
+                            <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold ${customer.status
+                                ? "bg-green-100 text-green-700"
+                                : "bg-gray-100 text-gray-700"
+                                }`}>
+                                <span className={`w-2 h-2 rounded-full mr-2 ${customer.status ? "bg-green-500" : "bg-gray-500"}`}></span>
+                                {customer.status ? "Hoạt động" : "Không hoạt động"}
+                            </span>
+                            <p className="text-xs text-white/60 mt-4 font-mono">ID: {customer._id}</p>
                         </div>
-                    </div>
-                </div>
 
-                {/* Information Grid */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {/* Contact Information Card */}
-                    <div className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow duration-300">
-                        <div className="flex items-center mb-6">
-                            <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center mr-3">
-                                <Contact className="w-5 h-5 text-blue-600" />
-                            </div>
-                            <h3 className="text-xl font-bold text-gray-900">Thông tin liên hệ</h3>
-                        </div>
-                        <div className="space-y-4">
-                            <div className="p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
-                                <label className="block text-xs font-semibold text-gray-500 uppercase mb-2">Email</label>
-                                <div className="flex items-center space-x-3">
-                                    <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                        <Mail className="w-4 h-4 text-blue-600" />
+                        {/* Right: Detailed Information Grid */}
+                        <div className="lg:w-2/3 p-8">
+                            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 h-full">
+                                {/* Contact Information */}
+                                <div>
+                                    <div className="flex items-center mb-4">
+                                        <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                                            <Contact className="w-4 h-4 text-blue-600" />
+                                        </div>
+                                        <h3 className="text-lg font-bold text-gray-900">Thông tin liên hệ</h3>
                                     </div>
-                                    <span className="text-gray-900 font-medium break-all">{customer.email}</span>
-                                </div>
-                            </div>
-                            <div className="p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
-                                <label className="block text-xs font-semibold text-gray-500 uppercase mb-2">Số điện thoại</label>
-                                <div className="flex items-center space-x-3">
-                                    <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                        <Phone className="w-4 h-4 text-green-600" />
+                                    <div className="space-y-3">
+                                        <div className="p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+                                            <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Email</label>
+                                            <div className="flex items-center space-x-2">
+                                                <Mail className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                                                <span className="text-gray-900 text-sm font-medium break-all">{customer.email}</span>
+                                            </div>
+                                        </div>
+                                        <div className="p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+                                            <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Số điện thoại</label>
+                                            <div className="flex items-center space-x-2">
+                                                <Phone className="w-4 h-4 text-green-600 flex-shrink-0" />
+                                                <span className="text-gray-900 text-sm font-medium">{customer.phone || "Chưa cập nhật"}</span>
+                                            </div>
+                                        </div>
+                                        <div className="p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+                                            <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Địa chỉ</label>
+                                            <div className="flex items-center space-x-2">
+                                                <MapPin className="w-4 h-4 text-orange-600 flex-shrink-0" />
+                                                <span className="text-gray-900 text-sm font-medium">{customer.address || "Chưa cập nhật"}</span>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <span className="text-gray-900 font-medium">{customer.phone || "Chưa cập nhật"}</span>
                                 </div>
-                            </div>
-                            <div className="p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
-                                <label className="block text-xs font-semibold text-gray-500 uppercase mb-2">Địa chỉ</label>
-                                <div className="flex items-center space-x-3">
-                                    <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                        <MapPin className="w-4 h-4 text-orange-600" />
-                                    </div>
-                                    <span className="text-gray-900 font-medium">{customer.address || "Chưa cập nhật"}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
 
-                    {/* Account Information Card */}
-                    <div className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow duration-300">
-                        <div className="flex items-center mb-6">
-                            <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center mr-3">
-                                <UserCog className="w-5 h-5 text-purple-600" />
-                            </div>
-                            <h3 className="text-xl font-bold text-gray-900">Thông tin tài khoản</h3>
-                        </div>
-                        <div className="space-y-4">
-                            <div className="p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
-                                <label className="block text-xs font-semibold text-gray-500 uppercase mb-2">Vai trò</label>
-                                <div className="flex items-center space-x-3">
-                                    <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                        <UserCircle className="w-4 h-4 text-indigo-600" />
+                                {/* Account Information */}
+                                <div>
+                                    <div className="flex items-center mb-4">
+                                        <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
+                                            <UserCog className="w-4 h-4 text-purple-600" />
+                                        </div>
+                                        <h3 className="text-lg font-bold text-gray-900">Thông tin tài khoản</h3>
                                     </div>
-                                    <span className="text-gray-900 font-medium capitalize">{customer.role_name}</span>
-                                </div>
-                            </div>
-                            <div className="p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
-                                <label className="block text-xs font-semibold text-gray-500 uppercase mb-2">Trạng thái</label>
-                                <div className="flex items-center space-x-3">
-                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${customer.status ? "bg-green-100" : "bg-red-100"
-                                        }`}>
-                                        {customer.status ? (
-                                            <CheckCircle className="w-4 h-4 text-green-600" />
-                                        ) : (
-                                            <XCircle className="w-4 h-4 text-red-600" />
-                                        )}
+                                    <div className="space-y-3">
+                                        <div className="p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+                                            <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Vai trò</label>
+                                            <div className="flex items-center space-x-2">
+                                                <UserCircle className="w-4 h-4 text-indigo-600 flex-shrink-0" />
+                                                <span className="text-gray-900 text-sm font-medium capitalize">{customer.role_name}</span>
+                                            </div>
+                                        </div>
+                                        <div className="p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+                                            <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Trạng thái</label>
+                                            <div className="flex items-center space-x-2">
+                                                {customer.status ? (
+                                                    <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
+                                                ) : (
+                                                    <XCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
+                                                )}
+                                                <span className="text-gray-900 text-sm font-medium">{customer.status ? "Đang hoạt động" : "Đang ẩn"}</span>
+                                            </div>
+                                        </div>
+                                        <div className="p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+                                            <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Loại tài khoản</label>
+                                            <div className="flex items-center space-x-2">
+                                                <Shield className={`w-4 h-4 flex-shrink-0 ${customer.isGoogleAccount ? "text-red-600" : "text-blue-600"}`} />
+                                                <span className="text-gray-900 text-sm font-medium">{customer.isGoogleAccount ? "Tài khoản Google" : "Tài khoản thường"}</span>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <span className="text-gray-900 font-medium">{customer.status ? "Đang hoạt động" : "Đang ẩn"}</span>
-                                </div>
-                            </div>
-                            <div className="p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
-                                <label className="block text-xs font-semibold text-gray-500 uppercase mb-2">Loại tài khoản</label>
-                                <div className="flex items-center space-x-3">
-                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${customer.isGoogleAccount ? "bg-red-100" : "bg-blue-100"
-                                        }`}>
-                                        <Shield className={`w-4 h-4 ${customer.isGoogleAccount ? "text-red-600" : "text-blue-600"}`} />
-                                    </div>
-                                    <span className="text-gray-900 font-medium">{customer.isGoogleAccount ? "Tài khoản Google" : "Tài khoản thường"}</span>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* Timeline Card */}
-                <div className="bg-white rounded-2xl shadow-lg p-6 mt-6 hover:shadow-xl transition-shadow duration-300">
+                {/* Timeline - Horizontal */}
+                <div className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow duration-300">
                     <div className="flex items-center mb-6">
                         <div className="w-10 h-10 bg-cyan-100 rounded-xl flex items-center justify-center mr-3">
                             <Clock className="w-5 h-5 text-cyan-600" />
                         </div>
                         <h3 className="text-xl font-bold text-gray-900">Thông tin thời gian</h3>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl border border-blue-200">
                             <label className="block text-xs font-semibold text-blue-700 uppercase mb-2">Ngày tạo tài khoản</label>
                             <div className="flex items-center space-x-3">

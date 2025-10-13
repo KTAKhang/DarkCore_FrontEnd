@@ -24,16 +24,16 @@ const { Option } = Select;
 
 const ProfileManager = () => {
   const dispatch = useDispatch();
-  const { user, loading, error, updateLoading, updateError, updateSuccess } = useSelector(state => state.profile);
+  const { user, loading, error, updateLoading, updateError, updateSuccess, updateMessage } = useSelector(state => state.profile);
 
   const [editMode, setEditMode] = useState(false);
   const [avatarFile, setAvatarFile] = useState(null);
   const [avatarUrl, setAvatarUrl] = useState('');
   const [form] = Form.useForm();
-  const storedUser = JSON.parse(localStorage.getItem("user"));
 
   useEffect(() => {
     dispatch(getProfileRequest());
+    dispatch(clearProfileMessages());
   }, [dispatch]);
 
   useEffect(() => {
@@ -51,13 +51,9 @@ const ProfileManager = () => {
     if (updateSuccess && updateSuccess.data) {
       setEditMode(false);
       setAvatarFile(null);
-      message.success('Cập nhật thông tin thành công!');
-    }
-    if (updateError) {
-      message.error(`Có lỗi xảy ra: ${updateError}`);
     }
     dispatch(clearProfileMessages());
-  }, [updateSuccess, updateError]);
+  }, [updateSuccess]);
 
   // Format date helper function
   const formatDate = (dateString) => {
@@ -110,21 +106,15 @@ const ProfileManager = () => {
         message.error('Chỉ có thể tải lên file JPG/PNG!');
         return false;
       }
-      const isLt2M = file.size / 1024 / 1024 < 2;
-      if (!isLt2M) {
-        message.error('Kích thước ảnh phải nhỏ hơn 2MB!');
+      const isLt3M = file.size / 1024 / 1024 < 3;
+      if (!isLt3M) {
+        message.error('Kích thước ảnh phải nhỏ hơn 3MB!');
         return false;
       }
       message.success('Tải ảnh đại diện thành công!');
       return true;
     },
     onChange: handleAvatarChange,
-    customRequest: ({ onSuccess }) => {
-      // Custom request to prevent automatic upload
-      setTimeout(() => {
-        onSuccess("ok");
-      }, 0);
-    },
   };
 
   useEffect(() => {
@@ -132,7 +122,7 @@ const ProfileManager = () => {
       message.success("Cập nhật thành công!");
       setTimeout(() => {
         window.location.reload();
-      }, 2000);
+      }, 1000);
       dispatch(clearProfileMessages());
     }
     if (error) {
@@ -358,19 +348,43 @@ const ProfileManager = () => {
                         </div>
                       }
                     >
+                      {console.log("updateError", updateError)}
+                      {console.log("updateMessage", updateMessage)}
+                      {updateError && (
+                        <div className="mb-5 p-4 rounded-xl border border-red-300 bg-red-50 text-red-700 flex items-center gap-2">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-5 w-5 text-red-500"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M12 8v4m0 4h.01M12 2a10 10 0 100 20 10 10 0 000-20z"
+                            />
+                          </svg>
+                          <span className="font-medium">{updateMessage}</span>
+                        </div>
+                      )}
+
+
                       <Form
                         form={form}
                         layout="vertical"
                         onFinish={handleSubmit}
                         autoComplete="off"
                       >
+                        {/* User name */}
                         <Form.Item
                           label="Tên người dùng"
                           name="user_name"
                           initialValue={user.user_name}
                           rules={[
-                            { required: true, message: 'Vui lòng nhập tên người dùng!' },
-                            { min: 2, message: 'Tên người dùng phải có ít nhất 2 ký tự!' }
+                            { required: true, message: "Vui lòng nhập tên người dùng!" },
+                            { min: 2, message: "Tên người dùng phải có ít nhất 2 ký tự!" },
                           ]}
                         >
                           <Input
@@ -385,8 +399,8 @@ const ProfileManager = () => {
                           name="phone"
                           initialValue={user.phone}
                           rules={[
-                            { required: true, message: 'Vui lòng nhập số điện thoại!' },
-                            { pattern: /^[0-9]{9,11}$/, message: 'Số điện thoại không hợp lệ!' },
+                            { required: true, message: "Vui lòng nhập số điện thoại!" },
+                            { pattern: /^[0-9]{9,11}$/, message: "Số điện thoại không hợp lệ!" },
                           ]}
                         >
                           <Input
@@ -402,8 +416,8 @@ const ProfileManager = () => {
                           name="address"
                           initialValue={user.address}
                           rules={[
-                            { required: true, message: 'Vui lòng nhập địa chỉ!' },
-                            { min: 5, message: 'Địa chỉ phải có ít nhất 5 ký tự!' },
+                            { required: true, message: "Vui lòng nhập địa chỉ!" },
+                            { min: 5, message: "Địa chỉ phải có ít nhất 5 ký tự!" },
                           ]}
                         >
                           <Input.TextArea
@@ -420,7 +434,8 @@ const ProfileManager = () => {
                             onClick={() => {
                               setEditMode(false);
                               setAvatarFile(null);
-                              setAvatarUrl(user.avatar || '');
+                              setAvatarUrl(user.avatar || "");
+                              dispatch(clearProfileMessages());
                               form.resetFields();
                             }}
                           >
@@ -434,12 +449,12 @@ const ProfileManager = () => {
                             className="px-8 py-2 h-auto rounded-xl bg-gradient-to-r from-[#0D364C] via-[#13C2C2] to-[#0D364C] border-0 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300"
                             htmlType="submit"
                           >
-                            {updateLoading ? 'Đang lưu...' : 'Lưu thay đổi'}
+                            {updateLoading ? "Đang lưu..." : "Lưu thay đổi"}
                           </Button>
                         </div>
                       </Form>
-
                     </Card>
+
                   )}
                 </div>
               </Col>
