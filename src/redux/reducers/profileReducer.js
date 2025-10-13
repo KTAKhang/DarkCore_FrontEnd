@@ -50,7 +50,7 @@ const profileReducer = (state = initialState, action) => {
             };
 
         case UPDATE_PROFILE_FAILURE:
-            return { ...state, updateLoading: false, updateError: action.payload, updateSuccess: false };
+            return { ...state, updateLoading: false, updateError: true, updateMessage: action.payload, updateSuccess: false };
 
         // ===== CHANGE PASSWORD =====
         case CHANGE_PASSWORD_REQUEST:

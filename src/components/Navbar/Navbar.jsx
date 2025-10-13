@@ -180,6 +180,7 @@ const Navbar = () => {
 
                       <button
                         onClick={() => { navigate("/admin/change-password"); toggleDropdown(); }}
+                        disabled={storedUser?.isGoogleAccount === true}
                         className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-gray-50 transition-all duration-200 hover:translate-x-1"
                       >
                         <Settings className="w-5 h-5" style={{ color: '#13C2C2' }} />

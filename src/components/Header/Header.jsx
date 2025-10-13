@@ -178,6 +178,7 @@ const Header = ({ searchTerm, setSearchTerm }) => {
                                                             navigate("/customer/change-password");
                                                             setIsDropdownOpen(false);
                                                         }}
+                                                        disabled={storedUser?.isGoogleAccount === true}
                                                         className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-gray-50 transition-all duration-200 hover:translate-x-1"
                                                     >
                                                         <Settings className="w-5 h-5" style={{ color: '#135cc2ff' }} />
