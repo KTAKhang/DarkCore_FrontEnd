@@ -61,7 +61,7 @@ const sortOptions = [
 const CustomerManagement = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { customers, loading, error, updateStatusLoading } = useSelector((state) => state.customer);
+  const { customers, loading, error, updateStatusSuccess, updateStatusLoading } = useSelector((state) => state.customer);
 
   const [searchText, setSearchText] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -107,6 +107,20 @@ const CustomerManagement = () => {
     setTimeout(() => setLoadingTable(false), 400);
   }, [dispatch, searchText, statusFilter, googleFilter, sortBy, pagination]);
 
+  useEffect(() => {
+    if (updateStatusSuccess) {
+
+      const params = {
+        page: pagination.current,
+        limit: pagination.pageSize,
+        sort: sortBy === "default" ? undefined : sortBy,
+        search: searchText.trim() ? searchText.trim() : undefined,
+        status: statusFilter !== "all" ? statusFilter : undefined,
+        isGoogleAccount: googleFilter !== "all" ? googleFilter : undefined,
+      };
+      dispatch(getAllCustomersRequest(params));
+    }
+  }, [updateStatusSuccess]);
   const dataSource = useMemo(() => (customers?.user || []).map((item) => ({
     _id: item._id,
     name: item.user_name,
@@ -130,8 +144,10 @@ const CustomerManagement = () => {
       cancelText: "Hủy",
       onOk() {
         dispatch(updateCustomerStatusRequest(customer._id, newStatus));
+        setSearchText("");
       },
     });
+
   };
 
   const columns = [
@@ -260,6 +276,27 @@ const CustomerManagement = () => {
     },
   }), [pagination, totalUser, hasActiveFilters]);
 
+  // Khi search/filter/sort, reset về trang 1
+  const handleSearch = (value) => {
+    setSearchText(value);
+    setPagination(prev => ({ ...prev, current: 1 }));
+  };
+
+  const handleStatusFilter = (value) => {
+    setStatusFilter(value);
+    setPagination(prev => ({ ...prev, current: 1 }));
+  };
+
+  const handleGoogleFilter = (value) => {
+    setGoogleFilter(value);
+    setPagination(prev => ({ ...prev, current: 1 }));
+  };
+
+  const handleSort = (value) => {
+    setSortBy(value);
+    setPagination(prev => ({ ...prev, current: 1 }));
+  };
+
   return (
     <div style={{ padding: 24, background: "linear-gradient(135deg, #13C2C205 0%, #0D364C05 100%)", minHeight: "100vh" }}>
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
@@ -307,16 +344,16 @@ const CustomerManagement = () => {
             <Input.Search
               placeholder="Tìm kiếm theo tên, email hoặc ID..."
               value={searchText}
-              onChange={(e) => setSearchText(e.target.value)}
+              onChange={(e) => handleSearch(e.target.value)}
               style={{ width: 320, maxWidth: "100%" }}
               size="large"
               prefix={<SearchOutlined style={{ color: "#13C2C2" }} />}
               allowClear
-              onSearch={(value) => setSearchText(value)}
+              onSearch={handleSearch}
             />
             <Select
               value={statusFilter}
-              onChange={setStatusFilter}
+              onChange={handleStatusFilter}
               style={{ width: 150 }}
               size="large"
               placeholder="Lọc theo trạng thái"
@@ -326,7 +363,7 @@ const CustomerManagement = () => {
             </Select>
             <Select
               value={googleFilter}
-              onChange={setGoogleFilter}
+              onChange={handleGoogleFilter}
               style={{ width: 180 }}
               size="large"
               placeholder="Lọc theo Google"
@@ -336,7 +373,7 @@ const CustomerManagement = () => {
             </Select>
             <Select
               value={sortBy}
-              onChange={setSortBy}
+              onChange={handleSort}
               style={{ width: 200 }}
               size="large"
               placeholder="Sắp xếp"
