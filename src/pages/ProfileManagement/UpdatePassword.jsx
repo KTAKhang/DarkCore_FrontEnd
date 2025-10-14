@@ -7,36 +7,6 @@ import PropTypes from 'prop-types';
 import { useNavigate, Link } from 'react-router-dom';
 const { Title, Text } = Typography;
 
-// Motion component simulation (since framer-motion isn't available)
-const Motion = ({ children, className = '', delay = 0, ...props }) => {
-  const [isVisible, setIsVisible] = useState(false);
-  const storedUser = JSON.parse(localStorage.getItem("user") || "null");
-  const navigate = useNavigate();
-  useEffect(() => {
-    if (storedUser?.isGoogleAccount === true) {
-      navigate(-1);
-    }
-    const timer = setTimeout(() => setIsVisible(true), delay * 100);
-    return () => clearTimeout(timer);
-  }, [delay, storedUser]);
-
-
-  return (
-    <div
-      className={`${className} transition-all duration-500 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'
-        }`}
-      {...props}
-    >
-      {children}
-    </div>
-  );
-};
-
-Motion.propTypes = {
-  children: PropTypes.node.isRequired,
-  className: PropTypes.string,
-  delay: PropTypes.number,
-};
 
 export default function UpdatePassword() {
   const dispatch = useDispatch();
@@ -53,6 +23,14 @@ export default function UpdatePassword() {
   });
   const [errors, setErrors] = useState({});
 
+  const storedUser = JSON.parse(localStorage.getItem("user") || "null");
+  const navigate = useNavigate();
+  useEffect(() => {
+    if (storedUser?.isGoogleAccount === true) {
+      navigate(-1);
+    }
+  }, [storedUser]);
+
   // Handle success/error from Redux
   useEffect(() => {
     if (changePasswordSuccess) {
@@ -67,14 +45,6 @@ export default function UpdatePassword() {
     }
   }, [changePasswordSuccess]);
 
-  useEffect(() => {
-    if (changePasswordError) {
-      message.error({
-        content: changePasswordError,
-        duration: 4,
-      });
-    }
-  }, [changePasswordError]);
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
@@ -124,14 +94,7 @@ export default function UpdatePassword() {
   };
 
   const customStyles = `
-   
-    
-    @keyframes float {
-      0%, 100% { transform: translate(0, 0) rotate(0deg); }
-      33% { transform: translate(30px, -30px) rotate(120deg); }
-      66% { transform: translate(-20px, 20px) rotate(240deg); }
-    }
-    
+
     .password-card {
       background: rgba(255, 255, 255, 0.95);
       backdrop-filter: blur(20px);
@@ -399,7 +362,7 @@ export default function UpdatePassword() {
     <>
       <style>{customStyles}</style>
       <div className="modern-container flex justify-center ">
-        <Motion className="w-full max-w-4xl" delay={2}>
+        <div className="w-full max-w-4xl">
           <div className="flex flex-col md:flex-row gap-8">
             {/* Left: Đổi mật khẩu */}
             <div className="flex-1">
@@ -506,7 +469,7 @@ export default function UpdatePassword() {
               </Card>
             </div>
           </div>
-        </Motion>
+        </div>
       </div>
     </>
   );
