@@ -92,6 +92,8 @@ function* updateOrderStatusSaga(action) {
     
     if (response.status === "OK") {
       yield put(orderUpdateStatusSuccess(response.data));
+      // Tự động cập nhật lại stats sau khi update status thành công
+      yield put({ type: ORDER_STATS_REQUEST });
     } else {
       yield put(orderUpdateStatusFailed(response.message || "Lỗi khi cập nhật trạng thái đơn hàng"));
     }

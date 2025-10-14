@@ -1,12 +1,11 @@
 import { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import { useDispatch, useSelector } from "react-redux";
-import { Form, Button, Card, Modal, Select, Typography, Space, Divider, Input, message } from "antd";
+import { Form, Button, Card, Modal, Select, Typography, Space, Divider, message } from "antd";
 import { EditOutlined, FileTextOutlined, CheckCircleOutlined, ClockCircleOutlined, CloseCircleOutlined, ShoppingCartOutlined } from "@ant-design/icons";
 import { orderStatusesRequest } from "../../redux/actions/orderActions";
 
 const { Title, Text } = Typography;
-const { TextArea } = Input;
 
 const UpdateOrder = ({ visible, onClose, onSuccess, orderData }) => {
   const dispatch = useDispatch();
@@ -32,8 +31,6 @@ const UpdateOrder = ({ visible, onClose, onSuccess, orderData }) => {
         
         form.setFieldsValue({
           status: orderData.status,
-          notes: orderData.notes || "",
-          shippingNotes: orderData.shippingNotes || "",
         });
         setSelectedStatus(orderData.status);
       }
@@ -107,8 +104,6 @@ const UpdateOrder = ({ visible, onClose, onSuccess, orderData }) => {
         _id: orderData?._id,
         orderStatusId: finalStatusId, // Send the final status ID
         status: values.status, // Keep the status name for reference
-        notes: (values.notes || "").trim(),
-        shippingNotes: (values.shippingNotes || "").trim(),
       };
 
       onSuccess && onSuccess(payload);
@@ -131,18 +126,25 @@ const UpdateOrder = ({ visible, onClose, onSuccess, orderData }) => {
 
   // Get current status info
   const currentStatus = statusOptions.find(option => option.value === selectedStatus);
-  const nextStatuses = getNextStatuses(selectedStatus);
+  // ✅ Sử dụng trạng thái thực tế của đơn hàng (orderData.status) thay vì selectedStatus
+  const nextStatuses = getNextStatuses(orderData?.status || "pending");
 
   // Function to determine valid next statuses
+  // ✅ Luồng chính: pending → confirmed → processing → shipped → delivered
+  // ✅ Luồng phụ: pending → cancelled, delivered → returned
   function getNextStatuses(currentStatus) {
     const statusFlow = {
       pending: ["confirmed", "cancelled"],
-      confirmed: ["shipping", "cancelled"],
-      shipping: ["completed", "cancelled"],
-      completed: [], // No further transitions from completed
-      cancelled: ["pending"] // Allow reactivation if needed
+      confirmed: ["processing"],
+      processing: ["shipped"],
+      shipped: ["delivered"],
+      delivered: ["returned"],
+      cancelled: [], // Không thể chuyển sang trạng thái khác
+      returned: [] // Không thể chuyển sang trạng thái khác
     };
     
+    // Chỉ cho phép chuyển sang các trạng thái hợp lệ HOẶC giữ nguyên trạng thái hiện tại
+    // ✅ currentStatus ở đây là trạng thái thực tế của đơn hàng (orderData.status)
     return statusOptions.filter(option => 
       statusFlow[currentStatus]?.includes(option.value) || option.value === currentStatus
     );
@@ -182,7 +184,7 @@ const UpdateOrder = ({ visible, onClose, onSuccess, orderData }) => {
                   Khách hàng: {orderData?.customer?.name || "N/A"}
                 </Text>
                 <Text style={{ color: "#666", fontSize: 13 }}>
-                  Tổng tiền: {(orderData?.totalAmount || 0).toLocaleString("vi-VN")}đ
+                  Tổng tiền: {(orderData?.totalPrice || orderData?.totalAmount || 0).toLocaleString("vi-VN")}đ
                 </Text>
               </Space>
             </Card>
@@ -230,42 +232,6 @@ const UpdateOrder = ({ visible, onClose, onSuccess, orderData }) => {
                   </Space>
                 </Card>
               )}
-
-              <Form.Item 
-                label={
-                  <Space>
-                    <FileTextOutlined style={{ color: "#13C2C2" }} />
-                    <span style={customStyles.label}>Ghi chú đơn hàng</span>
-                  </Space>
-                } 
-                name="notes"
-              >
-                <TextArea 
-                  rows={3} 
-                  placeholder="Nhập ghi chú về đơn hàng (tuỳ chọn)" 
-                  style={{ borderRadius: 8 }} 
-                  maxLength={500} 
-                  showCount 
-                />
-              </Form.Item>
-              
-              <Form.Item 
-                label={
-                  <Space>
-                    <ShoppingCartOutlined style={{ color: "#13C2C2" }} />
-                    <span style={customStyles.label}>Ghi chú giao hàng</span>
-                  </Space>
-                } 
-                name="shippingNotes"
-              >
-                <TextArea 
-                  rows={3} 
-                  placeholder="Nhập ghi chú về giao hàng (tuỳ chọn)" 
-                  style={{ borderRadius: 8 }} 
-                  maxLength={500} 
-                  showCount 
-                />
-              </Form.Item>
 
               <Divider style={customStyles.divider} />
 
