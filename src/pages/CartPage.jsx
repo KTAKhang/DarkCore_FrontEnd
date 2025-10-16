@@ -13,67 +13,72 @@ import {
 } from '../redux/actions/cartActions';
 
 const CartPage = () => {
-    const navigate = useNavigate();
-    const dispatch = useDispatch();
+    const navigate = useNavigate(); // Khởi tạo hook useNavigate để điều hướng
+    const dispatch = useDispatch(); // Khởi tạo hook useDispatch để dispatch action
 
-    // Redux state
+    // Lấy state từ Redux store (cart, loading, error)
     const { cart, loading, error } = useSelector((state) => state.cart || {});
-    const [searchTerm, setSearchTerm] = useState('');
-    const [couponCode, setCouponCode] = useState('');
+    const [searchTerm, setSearchTerm] = useState(''); // State để lưu giá trị tìm kiếm
+    const [couponCode, setCouponCode] = useState(''); // State để lưu mã giảm giá
 
-    // Debug log
+    // Debug log trạng thái ban đầu
     useEffect(() => {
-        console.log('CartPage state:', { cart, loading, error });
-        const token = localStorage.getItem('token');
+        console.log('CartPage state:', { cart, loading, error }); // Ghi log trạng thái Redux để debug
+        const token = localStorage.getItem('token'); // Lấy token từ localStorage
         if (!token) {
-            console.log('CartPage: No token found, redirecting to login');
-            toast.error('Vui lòng đăng nhập để xem giỏ hàng');
-            navigate('/login');
+            console.log('CartPage: No token found, redirecting to login'); // Ghi log nếu không có token
+            toast.error('Vui lòng đăng nhập để xem giỏ hàng'); // Hiển thị thông báo lỗi
+            navigate('/login'); // Chuyển hướng đến trang đăng nhập
             return;
         }
-        console.log('CartPage: Dispatching cartGetRequest with token:', token);
-        dispatch(cartGetRequest());
-    }, [dispatch, navigate]);
+        console.log('CartPage: Dispatching cartGetRequest with token:', token); // Ghi log khi dispatch action
+        dispatch(cartGetRequest()); // Dispatch action để lấy giỏ hàng
+    }, [dispatch, navigate]); // Chạy lại khi dispatch hoặc navigate thay đổi
 
-    // Handle cart errors - FIX: Chỉ log và clear, không toast để tránh duplicate với saga
+    // Xử lý lỗi giỏ hàng
     useEffect(() => {
         if (error) {
-            console.log('CartPage error:', error);
-            // toast.error(error || 'Lỗi khi tải giỏ hàng');  // ← XÓA: GÂY DUPLICATE TOAST
-            dispatch(cartClearMessage());
+            console.log('CartPage error:', error); // Ghi log lỗi để debug
+            dispatch(cartClearMessage()); // Dispatch action để xóa thông báo lỗi
         }
-    }, [error, dispatch]);
+    }, [error, dispatch]); // Chạy lại khi error hoặc dispatch thay đổi
 
+    // Hàm định dạng giá tiền sang định dạng VND
     const formatPrice = (price) => {
-        return new Intl.NumberFormat('vi-VN').format(price) + '₫';
+        return new Intl.NumberFormat('vi-VN').format(price) + '₫'; // Định dạng giá với dấu ₫
     };
 
+    // Tính tổng tạm tính của giỏ hàng
     const calculateSubtotal = () => {
-        return cart?.items?.reduce((total, item) => total + item.price * item.quantity, 0) || 0;
+        return cart?.items?.reduce((total, item) => total + item.price * item.quantity, 0) || 0; // Tính tổng giá (giá * số lượng)
     };
 
+    // Cập nhật số lượng sản phẩm
     const updateQuantity = (productId, change) => {
-        const item = cart?.items?.find((i) => i.productId === productId);
-        if (!item) return;
-        const newQuantity = Math.max(1, item.quantity + change);
-        console.log('CartPage: Updating quantity', { productId, newQuantity });
-        dispatch(cartUpdateRequest(productId, newQuantity));
+        const item = cart?.items?.find((i) => i.productId === productId); // Tìm sản phẩm trong giỏ hàng
+        if (!item) return; // Thoát nếu không tìm thấy sản phẩm
+        const newQuantity = Math.max(1, item.quantity + change); // Đảm bảo số lượng không nhỏ hơn 1
+        console.log('CartPage: Updating quantity', { productId, newQuantity }); // Ghi log khi cập nhật số lượng
+        dispatch(cartUpdateRequest(productId, newQuantity)); // Dispatch action cập nhật số lượng
     };
 
+    // Xóa sản phẩm khỏi giỏ hàng
     const removeItem = (productId) => {
-        console.log('CartPage: Removing item', { productId });
-        dispatch(cartRemoveRequest(productId));
+        console.log('CartPage: Removing item', { productId }); // Ghi log khi xóa sản phẩm
+        dispatch(cartRemoveRequest(productId)); // Dispatch action xóa sản phẩm
     };
 
+    // Xóa toàn bộ giỏ hàng
     const clearCart = () => {
-        console.log('CartPage: Clearing cart');
-        dispatch(cartClearRequest());
+        console.log('CartPage: Clearing cart'); // Ghi log khi xóa toàn bộ giỏ hàng
+        dispatch(cartClearRequest()); // Dispatch action xóa giỏ hàng
     };
 
-    const totalItems = cart?.items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
+    // Tính tổng số lượng sản phẩm trong giỏ
+    const totalItems = cart?.items?.reduce((sum, item) => sum + item.quantity, 0) || 0; // Tổng số lượng sản phẩm
 
-    // Debug log trước render
-    console.log('CartPage render:', { loading, cartItems: cart?.items, totalItems });
+    // Debug log trước khi render
+    console.log('CartPage render:', { loading, cartItems: cart?.items, totalItems }); // Ghi log trạng thái trước render
 
     return (
         <>
