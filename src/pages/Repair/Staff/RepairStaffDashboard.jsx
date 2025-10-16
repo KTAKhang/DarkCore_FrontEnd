@@ -41,7 +41,6 @@ const RepairStaffDashboard = () => {
               </div>
             </div>
           </div>
-
           {/* Pending Jobs */}
           <div className="bg-white rounded-lg border p-6 shadow-sm">
             <div className="flex items-center">

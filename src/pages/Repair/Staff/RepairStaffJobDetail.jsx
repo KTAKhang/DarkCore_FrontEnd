@@ -36,7 +36,7 @@ const RepairStaffJobDetail = () => {
       setLoading(false);
     }
   };
-
+// load chi tiết công việc khi id thay đổi
   useEffect(() => {
     loadJobDetail();
   }, [id]);
@@ -162,7 +162,7 @@ const RepairStaffJobDetail = () => {
                 <p className="text-gray-900">{job.deviceModel}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-600">Serial Number</label>
+                <label className="text-sm font-medium text-gray-600">Số series</label>
                 <p className="text-gray-900">{job.serialNumber || 'Không có'}</p>
               </div>
             </div>

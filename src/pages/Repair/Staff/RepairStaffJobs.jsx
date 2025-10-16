@@ -16,32 +16,32 @@ const RepairStaffJobs = () => {
   const getStatusInfo = (status) => {
     switch (status) {
       case 'waiting':
-        return { 
-          text: 'Chờ xử lý', 
+        return {
+          text: 'Chờ xử lý',
           color: 'bg-yellow-100 text-yellow-800',
           icon: <Clock className="h-4 w-4" />
         };
       case 'in-progress':
-        return { 
-          text: 'Đang xử lý', 
+        return {
+          text: 'Đang xử lý',
           color: 'bg-blue-100 text-blue-800',
           icon: <AlertCircle className="h-4 w-4" />
         };
       case 'completed':
-        return { 
-          text: 'Hoàn thành', 
+        return {
+          text: 'Hoàn thành',
           color: 'bg-green-100 text-green-800',
           icon: <CheckCircle className="h-4 w-4" />
         };
       case 'canceled':
-        return { 
-          text: 'Đã hủy', 
+        return {
+          text: 'Đã hủy',
           color: 'bg-red-100 text-red-800',
           icon: <AlertCircle className="h-4 w-4" />
         };
       default:
-        return { 
-          text: status, 
+        return {
+          text: status,
           color: 'bg-gray-100 text-gray-800',
           icon: <AlertCircle className="h-4 w-4" />
         };
@@ -73,110 +73,110 @@ const RepairStaffJobs = () => {
           </div>
         </div>
 
-      {/* Loading */}
-      {state.loading && (
-        <div className="text-center py-8">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <p className="mt-2 text-gray-600">Đang tải...</p>
-        </div>
-      )}
-
-      {/* Error */}
-      {state.error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <div className="text-red-800">{state.error}</div>
-        </div>
-      )}
-
-      {/* Jobs List */}
-      {!state.loading && !state.error && (
-        <div className="bg-white rounded-lg border overflow-hidden">
-          <div className="px-6 py-4 border-b bg-gray-50">
-            <h2 className="text-lg font-semibold text-gray-900">Công việc được giao</h2>
+        {/* Loading */}
+        {state.loading && (
+          <div className="text-center py-8">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <p className="mt-2 text-gray-600">Đang tải...</p>
           </div>
-          
-          {state.items?.length === 0 ? (
-            <div className="text-center py-12">
-              <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Chưa có công việc nào</h3>
-              <p className="text-gray-600">Bạn chưa được giao công việc sửa chữa nào.</p>
+        )}
+
+        {/* Error */}
+        {state.error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <div className="text-red-800">{state.error}</div>
+          </div>
+        )}
+
+        {/* Jobs List */}
+        {!state.loading && !state.error && (
+          <div className="bg-white rounded-lg border overflow-hidden">
+            <div className="px-6 py-4 border-b bg-gray-50">
+              <h2 className="text-lg font-semibold text-gray-900">Công việc được giao</h2>
             </div>
-          ) : (
-            <div className="divide-y">
-              {state.items?.map((job) => {
-                const statusInfo = getStatusInfo(job.status);
-                return (
-                  <div key={job._id} className="p-6 hover:bg-gray-50 transition-colors">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-3 mb-2">
-                          <h3 className="text-lg font-medium text-gray-900">
-                            {job.deviceBrand} {job.deviceModel}
-                          </h3>
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusInfo.color}`}>
-                            {statusInfo.icon}
-                            <span className="ml-1">{statusInfo.text}</span>
-                          </span>
-                        </div>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
-                          <div className="flex items-center text-sm text-gray-600">
-                            <User className="h-4 w-4 mr-2" />
-                            <span className="font-medium">Khách hàng:</span>
-                            <span className="ml-1">{job.user?.user_name || job.user?.email}</span>
-                          </div>
-                          
-                          <div className="flex items-center text-sm text-gray-600">
-                            <Calendar className="h-4 w-4 mr-2" />
-                            <span className="font-medium">Lịch hẹn:</span>
-                            <span className="ml-1">{new Date(job.appointmentDate).toLocaleDateString('vi-VN')}</span>
-                          </div>
-                          
-                          <div className="flex items-center text-sm text-gray-600">
-                            <DollarSign className="h-4 w-4 mr-2" />
-                            <span className="font-medium">Ước tính:</span>
-                            <span className="ml-1 text-blue-600 font-semibold">
-                              {new Intl.NumberFormat('vi-VN').format(job.estimatedCost)}₫
+
+            {state.items?.length === 0 ? (
+              <div className="text-center py-12">
+                <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Chưa có công việc nào</h3>
+                <p className="text-gray-600">Bạn chưa được giao công việc sửa chữa nào.</p>
+              </div>
+            ) : (
+              <div className="divide-y">
+                {state.items?.map((job) => {
+                  const statusInfo = getStatusInfo(job.status);
+                  return (
+                    <div key={job._id} className="p-6 hover:bg-gray-50 transition-colors">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-3 mb-2">
+                            <h3 className="text-lg font-medium text-gray-900">
+                              {job.deviceBrand} {job.deviceModel}
+                            </h3>
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusInfo.color}`}>
+                              {statusInfo.icon}
+                              <span className="ml-1">{statusInfo.text}</span>
                             </span>
                           </div>
-                          
-                          <div className="text-sm text-gray-600">
-                            <span className="font-medium">Dịch vụ:</span>
-                            <div className="mt-1">
-                              {(job.services || []).map(service => (
-                                <span key={service._id} className="inline-block bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs mr-1 mb-1">
-                                  {service.name}
-                                </span>
-                              ))}
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+                            <div className="flex items-center text-sm text-gray-600">
+                              <User className="h-4 w-4 mr-2" />
+                              <span className="font-medium">Khách hàng:</span>
+                              <span className="ml-1">{job.user?.user_name || job.user?.email}</span>
+                            </div>
+
+                            <div className="flex items-center text-sm text-gray-600">
+                              <Calendar className="h-4 w-4 mr-2" />
+                              <span className="font-medium">Lịch hẹn:</span>
+                              <span className="ml-1">{new Date(job.appointmentDate).toLocaleDateString('vi-VN')}</span>
+                            </div>
+
+                            <div className="flex items-center text-sm text-gray-600">
+                              <DollarSign className="h-4 w-4 mr-2" />
+                              <span className="font-medium">Ước tính:</span>
+                              <span className="ml-1 text-blue-600 font-semibold">
+                                {new Intl.NumberFormat('vi-VN').format(job.estimatedCost)}₫
+                              </span>
+                            </div>
+
+                            <div className="text-sm text-gray-600">
+                              <span className="font-medium">Dịch vụ:</span>
+                              <div className="mt-1">
+                                {(job.services || []).map(service => (
+                                  <span key={service._id} className="inline-block bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs mr-1 mb-1">
+                                    {service.name}
+                                  </span>
+                                ))}
+                              </div>
                             </div>
                           </div>
+
+                          {job.description && (
+                            <div className="mt-3">
+                              <p className="text-sm text-gray-600">
+                                <span className="font-medium">Mô tả:</span> {job.description}
+                              </p>
+                            </div>
+                          )}
                         </div>
-                        
-                        {job.description && (
-                          <div className="mt-3">
-                            <p className="text-sm text-gray-600">
-                              <span className="font-medium">Mô tả:</span> {job.description}
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                      
-                      <div className="ml-4">
-                        <button
-                          onClick={() => navigate(`/staff/jobs/${job._id}`)}
-                          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-                        >
-                          Xem chi tiết
-                        </button>
+
+                        <div className="ml-4">
+                          <button
+                            onClick={() => navigate(`/staff/jobs/${job._id}`)}
+                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                          >
+                            Xem chi tiết
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      )}
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

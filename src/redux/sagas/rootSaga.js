@@ -6,7 +6,6 @@ import staffSaga from "./staffSaga";
 import categoryHomeSaga from "./categoryHomeSaga";
 import productHomeSaga from "./productHomeSaga";
 import profileSaga from "./profileSaga";
-
 import customerSaga from "./customerSaga";
 import cartSaga from "./cartSaga";
 import orderSaga from "./orderSaga";
@@ -14,6 +13,7 @@ import favoriteSaga from "./favoriteSaga";
 import newsSaga from "./newsSaga";
 import repairServiceSaga from "./repairServiceSaga";
 import repairRequestSaga from "./repairRequestSaga";
+import discountSaga from "./discountSaga";
 
 export default function* rootSaga() {
   try {
@@ -32,6 +32,7 @@ export default function* rootSaga() {
       favoriteSaga(),
       repairServiceSaga(),
       repairRequestSaga(),
+      discountSaga(),
     ]);
   } catch (error) {
     console.error("🔴 rootSaga ERROR:", error);

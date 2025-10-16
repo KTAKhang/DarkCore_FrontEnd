@@ -16,6 +16,7 @@ import favoriteReducer from "./reducers/favoriteReducer";
 import newsReducer from "./reducers/newsReducer";
 import repairServiceReducer from "./reducers/repairServiceReducer";
 import repairRequestReducer from "./reducers/repairRequestReducer";
+import discountReducer from "./reducers/discountReducer";
 
 
 import rootSaga from "./sagas/rootSaga";
@@ -34,6 +35,7 @@ const rootReducer = combineReducers({
   news: newsReducer,
   repairService: repairServiceReducer,
   repairRequest: repairRequestReducer,
+  discount: discountReducer,
 });
 
 const sagaMiddleware = createSagaMiddleware();

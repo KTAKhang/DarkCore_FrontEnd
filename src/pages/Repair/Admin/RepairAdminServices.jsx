@@ -28,13 +28,13 @@ const RepairAdminServices = () => {
       dispatch(repairServiceListRequest());
     }
   }, [create.success, update.success, remove.success, dispatch]);
-
+//hàm xử lý khi nhấn nút thêm dịch vụ
   const handleAdd = () => {
     setShowAddForm(true);
     setEditingService(null);
     setFormData({ name: '', description: '', basePrice: '' });
   };
-
+//hàm xử lý khi nhấn nút sửa dịch vụ
   const handleEdit = (service) => {
     setEditingService(service);
     setFormData({
@@ -42,9 +42,10 @@ const RepairAdminServices = () => {
       description: service.description,
       basePrice: service.basePrice.toString()
     });
+    // hiện form thêm/sửa
     setShowAddForm(true);
   };
-
+//hàm xử lý khi nhấn nút submit trong form thêm/sửa dịch vụ
   const handleSubmit = (e) => {
     e.preventDefault();
     if (editingService) {
@@ -81,7 +82,7 @@ const RepairAdminServices = () => {
         {/* Header */}
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Repair Services</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Dịch vụ sửa chữa</h1>
             <p className="text-gray-600 mt-1">Quản lý các dịch vụ sửa chữa</p>
           </div>
           <button
