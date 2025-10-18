@@ -14,7 +14,7 @@ import favoriteSaga from "./favoriteSaga";
 import newsSaga from "./newsSaga";
 import repairServiceSaga from "./repairServiceSaga";
 import repairRequestSaga from "./repairRequestSaga";
-
+import reviewSaga from "./reviewSaga";
 export default function* rootSaga() {
   try {
     yield all([
@@ -32,6 +32,7 @@ export default function* rootSaga() {
       favoriteSaga(),
       repairServiceSaga(),
       repairRequestSaga(),
+      reviewSaga(),
     ]);
   } catch (error) {
     console.error("🔴 rootSaga ERROR:", error);

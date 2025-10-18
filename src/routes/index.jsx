@@ -38,7 +38,9 @@ import ProfileManagement from "../pages/ProfileManagement/ProfileManagerment";
 import UpdatePassword from "../pages/ProfileManagement/UpdatePassword";
 import PrivateRoute from "../components/PrivateRouter";
 import CustomerLayout from "../layout/CustomerLayout";
-
+import OrderReviewPage from "../pages/ProductReview/OrderReviewPage";
+import ProductReviewManagement from "../pages/ProductReview/ProductReviewManagement";
+import AdminProductReviewDetailPage from "../pages/ProductReview/AdminProductReviewDetailPage";
 
 
 export const routes = [
@@ -113,6 +115,7 @@ export const routes = [
         path: "orders",
         element: <OrderHistory />,
       },
+      { path: "review/:id", element: <OrderReviewPage /> },
     ],
   },
 
@@ -137,6 +140,8 @@ export const routes = [
       { path: "customer/:id", element: <CustomerDetail /> },
       { path: "order", element: <OrderManagement /> },
       { path: "profile", element: <ProfileManagement /> },
+      { path: "review", element: <ProductReviewManagement /> },
+      { path: "review/:id", element: <AdminProductReviewDetailPage /> },
       { path: "change-password", element: <UpdatePassword /> },
       { path: "news", element: <NewsManagement /> },
     ],
