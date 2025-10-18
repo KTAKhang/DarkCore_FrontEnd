@@ -66,41 +66,13 @@ const ReviewProductDetailModal = () => {
             <div className="p-6">
                 <div className="space-y-6">
                     {/* Rating Summary */}
-                    <div className="bg-gray-50 rounded-lg p-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {/* Overall Rating */}
-                            <div className="text-center">
-                                <div className="text-4xl font-bold text-gray-900 mb-2">4.5/5</div>
-                                <div className="flex justify-center mb-2">
-                                    {renderStars(5)}
-                                </div>
-                                <div className="text-sm text-gray-600">128 đánh giá</div>
-                            </div>
 
-                            {/* Rating Breakdown */}
-                            <div className="space-y-2">
-                                {ratingStats.map((stat) => (
-                                    <div key={stat.stars} className="flex items-center space-x-2">
-                                        <span className="text-sm text-gray-600 w-6">{stat.stars}</span>
-                                        <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                                        <div className="flex-1 bg-gray-200 rounded-full h-2">
-                                            <div
-                                                className="bg-yellow-400 h-2 rounded-full"
-                                                style={{ width: `${stat.percentage}%` }}
-                                            ></div>
-                                        </div>
-                                        <span className="text-sm text-gray-600 w-8">{stat.count}</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
 
                     {/* Filters and Sort */}
                     <div className="flex flex-wrap items-center justify-between gap-4">
                         <div className="flex items-center space-x-4">
                             <div className="flex items-center space-x-2">
-                                <label className="text-sm font-medium text-gray-700">Lọc theo:</label>
+                                {/* <label className="text-sm font-medium text-gray-700">Lọc theo:</label> */}
                                 <select
                                     value={filterRating}
                                     onChange={(e) => setFilterRating(e.target.value)}

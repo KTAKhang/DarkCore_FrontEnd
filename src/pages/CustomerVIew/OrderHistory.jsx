@@ -28,12 +28,12 @@ const OrderHistory = () => {
         page: currentPage,
         limit: 10,
       };
-      
+
       // Thêm filter theo status nếu có
       if (selectedStatus !== 'all') {
         query.status = selectedStatus;
       }
-      
+
       dispatch(orderHistoryRequest(userId, query));
     }
   }, [dispatch, userId, selectedStatus, currentPage]);
@@ -111,12 +111,12 @@ const OrderHistory = () => {
   // Filter theo search term (client-side filtering)
   const filteredOrders = (history || []).filter(order => {
     if (!searchTerm) return true;
-    
+
     const orderIdMatch = order._id?.toLowerCase().includes(searchTerm.toLowerCase());
-    const productMatch = order.orderDetails?.some(item => 
+    const productMatch = order.orderDetails?.some(item =>
       item.productName?.toLowerCase().includes(searchTerm.toLowerCase())
     );
-    
+
     return orderIdMatch || productMatch;
   });
 
@@ -127,12 +127,12 @@ const OrderHistory = () => {
   // Helper để validate và lấy ảnh hợp lệ
   const getValidImageUrl = (item) => {
     const imageUrl = item.productImage || item.productId?.images?.[0];
-    
+
     // Kiểm tra nếu là URL giả từ example.com
     if (imageUrl && !imageUrl.includes('example.com')) {
       return imageUrl;
     }
-    
+
     // Fallback về placeholder
     return 'https://via.placeholder.com/64x64?text=No+Image';
   };
@@ -214,11 +214,10 @@ const OrderHistory = () => {
                 <button
                   key={key}
                   onClick={() => setSelectedStatus(key)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                    selectedStatus === key
-                      ? 'bg-blue-600 text-white shadow-md'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${selectedStatus === key
+                    ? 'bg-blue-600 text-white shadow-md'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
                 >
                   {config.label}
                 </button>
@@ -272,6 +271,18 @@ const OrderHistory = () => {
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
+                      {getStatusName(order.orderStatusId) === 'delivered' && (
+                        <button
+                          onClick={() => {
+                            navigate(`/customer/review/${order._id}`, {
+                              orderData: history,
+                            });
+                          }}
+                          className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                        >
+                          Đánh giá đơn hàng
+                        </button>
+                      )}
                       <div className="text-right">
                         <p className="text-sm text-gray-500">Tổng tiền</p>
                         <p className="text-xl font-bold text-blue-600">{formatPrice(order.totalPrice)}</p>
@@ -328,9 +339,8 @@ const OrderHistory = () => {
                         <div className="space-y-4">
                           {generateTimeline(order).map((step, index) => (
                             <div key={index} className="flex items-start gap-3">
-                              <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                                step.completed ? 'bg-green-100' : 'bg-gray-200'
-                              }`}>
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${step.completed ? 'bg-green-100' : 'bg-gray-200'
+                                }`}>
                                 {step.completed ? (
                                   <CheckCircle className="w-5 h-5 text-green-600" />
                                 ) : (
@@ -388,7 +398,7 @@ const OrderHistory = () => {
                         {/* Action Buttons */}
                         <div className="flex gap-3 pt-2">
                           {getStatusName(order.orderStatusId) === 'pending' && (
-                            <button 
+                            <button
                               onClick={() => {
                                 if (window.confirm('Bạn có chắc chắn muốn hủy đơn hàng này?')) {
                                   // TODO: Implement cancel order
@@ -401,7 +411,7 @@ const OrderHistory = () => {
                             </button>
                           )}
                           {getStatusName(order.orderStatusId) === 'delivered' && (
-                            <button 
+                            <button
                               onClick={() => {
                                 // TODO: Implement reorder
                                 toast.info('Chức năng mua lại đang được phát triển');
@@ -411,7 +421,7 @@ const OrderHistory = () => {
                               Mua lại
                             </button>
                           )}
-                          <button 
+                          <button
                             onClick={() => {
                               toast.info('Vui lòng liên hệ: 0123.456.789');
                             }}

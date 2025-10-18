@@ -85,18 +85,20 @@ const Sidebar = ({ isFinance = false, isAdmin = false, isApprover = false, isCla
       path: "/admin/customer",
       icon: <UserOutlined />,
       color: "#54A0FF"
+    }
+    ,
+
+    {
+      title: "Quản Lý Đánh giá",
+      path: "/admin/review",
+      icon: <ProfileOutlined />,
+      color: "#FF9F43"
     },
     {
       title: "Quản Lý Đơn Hàng",
       path: "/admin/order",
       icon: <ShoppingCartOutlined />,
       color: "#5F27CD"
-    },
-    {
-      title: "Quản Lý Reviews",
-      path: "/admin/review",
-      icon: <ProfileOutlined />,
-      color: "#FF9F43"
     },
     {
       title: "Quản Lý News",
