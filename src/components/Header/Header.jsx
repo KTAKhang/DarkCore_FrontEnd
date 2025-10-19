@@ -80,6 +80,7 @@ const Header = ({ searchTerm, setSearchTerm }) => {
                         <Link to="/contact" className="text-gray-700 hover:text-blue-600">
                             Liên hệ
                         </Link>
+                        
                     </nav>
 
                     {/* Search + Cart + User */}
@@ -209,6 +210,17 @@ const Header = ({ searchTerm, setSearchTerm }) => {
                                                     >
                                                         <Clock className="w-5 h-5" style={{ color: '#135cc2ff' }} />
                                                         <span>Lịch sử sửa chữa</span>
+                                                    </button>
+
+                                                    <button
+                                                        onClick={() => {
+                                                            navigate('/customer/contact/history');
+                                                            setIsDropdownOpen(false);
+                                                        }}
+                                                        className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-gray-50 transition-all duration-200 hover:translate-x-1"
+                                                    >
+                                                        <Clock className="w-5 h-5" style={{ color: '#135cc2ff' }} />
+                                                        <span>Lịch sử liên hệ</span>
                                                     </button>
 
                                                     <div className="border-t border-gray-200/50 mt-2 pt-2">

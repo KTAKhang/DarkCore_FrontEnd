@@ -14,6 +14,9 @@ import CustomerDetail from "../pages/CustomerManagement/CustomerDetail";
 import CustomerManagement from "../pages/CustomerManagement/CustomerManagement";
 import OrderManagement from "../pages/OrderManagement/OrderManagement";
 import NewsManagement from "../pages/NewsManagement/NewsManagement";
+import ContactManagement from "../pages/ContactManagement/ContactManagement";
+
+
 //Repair customer client
 import RepairLandingPage from "../pages/Repair/RepairLandingPage";
 import RepairRequestPage from "../pages/Repair/RepairRequestPage";
@@ -38,6 +41,8 @@ import ProfileManagement from "../pages/ProfileManagement/ProfileManagerment";
 import UpdatePassword from "../pages/ProfileManagement/UpdatePassword";
 import PrivateRoute from "../components/PrivateRouter";
 import CustomerLayout from "../layout/CustomerLayout";
+import ContactPage from "../pages/CustomerVIew/ContactPage";
+import ContactHistory from "../pages/CustomerVIew/ContactHistory";
 
 
 
@@ -92,6 +97,11 @@ export const routes = [
     path: "/news",
     element: <NewsPage />,
   },
+  {
+    path: "/contact",
+    element: <ContactPage />,
+  },
+  
 
   // Khu vực quản trị
   {
@@ -113,6 +123,10 @@ export const routes = [
         path: "orders",
         element: <OrderHistory />,
       },
+      {
+        path: "contact/history",
+        element: <ContactHistory />,
+      }
     ],
   },
 
@@ -139,6 +153,7 @@ export const routes = [
       { path: "profile", element: <ProfileManagement /> },
       { path: "change-password", element: <UpdatePassword /> },
       { path: "news", element: <NewsManagement /> },
+      { path: "contact", element: <ContactManagement /> },
     ],
   },
 
