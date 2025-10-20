@@ -194,7 +194,7 @@ const NewsManagement = () => {
     }, []);
 
     const handleCreateSuccess = useCallback((createdNews) => {
-        message.success("Tạo tin tức thành công!");
+        // message.success("Tạo tin tức thành công!");
         setIsCreateModalVisible(false);
         setPagination(prev => ({ ...prev, current: 1 }));
         fetchStats();  // SỬA: Refetch stats sau create (vì total thay đổi)
@@ -202,7 +202,7 @@ const NewsManagement = () => {
     }, [fetchNews, fetchStats]);
 
     const handleUpdateSuccess = useCallback((updatedNews) => {
-        message.success("Cập nhật tin tức thành công!");
+        // message.success("Cập nhật tin tức thành công!");
         setIsUpdateModalVisible(false);
         setSelectedNews(null);
         fetchStats();  // SỬA: Refetch stats sau update (nếu status thay đổi)
@@ -540,20 +540,20 @@ const NewsManagement = () => {
                     </Space>
                 </div>
 
-                {error && (
+                {/* {error && (
                     <Alert
                         message={error}
                         type="error"
                         showIcon
                         closable
-                        onClose={() => { /* Clear error if action exists */ }}
+                        onClose={() => {}}
                         style={{
                             marginBottom: 16,
                             borderColor: "#ff4d4f",
                             backgroundColor: "#fff2f0"
                         }}
                     />
-                )}
+                )} */}
 
                 {hasActiveFilters && (
                     <Alert

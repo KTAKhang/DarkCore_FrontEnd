@@ -14,6 +14,7 @@ import newsSaga from "./newsSaga";
 import repairServiceSaga from "./repairServiceSaga";
 import repairRequestSaga from "./repairRequestSaga";
 import discountSaga from "./discountSaga";
+import reviewSaga from "./reviewSaga";
 
 export default function* rootSaga() {
   try {
@@ -33,6 +34,8 @@ export default function* rootSaga() {
       repairServiceSaga(),
       repairRequestSaga(),
       discountSaga(),
+      reviewSaga(),
+
     ]);
   } catch (error) {
     console.error("🔴 rootSaga ERROR:", error);

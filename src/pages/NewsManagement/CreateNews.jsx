@@ -5,105 +5,116 @@ import { PlusOutlined, CameraOutlined, TagsOutlined, UploadOutlined, LoadingOutl
 import { useDispatch } from "react-redux";
 import * as actions from "../../redux/actions/newsActions"; // Thay đường dẫn đúng đến newsActions.js
 
-const { Title, Text } = Typography;
+const { Title, Text } = Typography; // Destructure Typography để sử dụng Title và Text
 
+// Hàm chuyển đổi file thành base64 để preview ảnh
 function getBase64(file) {
     return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = (error) => reject(error);
+        const reader = new FileReader(); // Tạo FileReader để đọc file
+        reader.readAsDataURL(file); // Đọc file dưới dạng Data URL
+        reader.onload = () => resolve(reader.result); // Trả về kết quả khi đọc thành công
+        reader.onerror = (error) => reject(error); // Ném lỗi nếu đọc thất bại
     });
 }
 
+// Component để tạo tin tức mới
 const CreateNews = ({ visible, onClose, onSuccess }) => {
-    const [form] = Form.useForm();
-    const [previewImage, setPreviewImage] = useState("");
-    const [modalVisible, setModalVisible] = useState(false);
-    const [imageFile, setImageFile] = useState(null);
-    const [loading, setLoading] = useState(false); // Local loading cho form submit
+    const [form] = Form.useForm(); // Khởi tạo form từ Ant Design
+    const [previewImage, setPreviewImage] = useState(""); // State lưu URL ảnh để preview
+    const [modalVisible, setModalVisible] = useState(false); // State kiểm soát hiển thị modal preview ảnh
+    const [imageFile, setImageFile] = useState(null); // State lưu file ảnh được chọn
+    const [loading, setLoading] = useState(false); // State quản lý trạng thái loading khi submit form
 
-    const dispatch = useDispatch();
+    const dispatch = useDispatch(); // Khởi tạo hook useDispatch để dispatch action
 
+    // Reset form và state khi modal mở
     useEffect(() => {
         if (visible) {
-            form.resetFields();
-            form.setFieldsValue({ status: "draft" });
-            setImageFile(null);
-            setLoading(false);
+            form.resetFields(); // Reset các trường trong form
+            form.setFieldsValue({ status: "draft" }); // Đặt trạng thái mặc định là draft
+            setImageFile(null); // Reset file ảnh
+            setLoading(false); // Reset trạng thái loading
         }
-    }, [visible, form]);
+    }, [visible, form]); // Chạy lại khi visible hoặc form thay đổi
 
+    // Xử lý submit form
     const handleFinish = async (values) => {
-        // Validate required fields (giữ nguyên)
+        // Cắt bỏ khoảng trắng ở tiêu đề và nội dung
         const trimmedTitle = values.title?.trim();
         const trimmedContent = values.content?.trim();
 
+        // Kiểm tra các trường bắt buộc
         if (!trimmedTitle) {
-            message.error("Vui lòng nhập tiêu đề tin tức!");
+            message.error("Vui lòng nhập tiêu đề tin tức!"); // Hiển thị lỗi nếu thiếu tiêu đề
             return;
         }
         if (!trimmedContent) {
-            message.error("Vui lòng nhập nội dung tin tức!");
+            message.error("Vui lòng nhập nội dung tin tức!"); // Hiển thị lỗi nếu thiếu nội dung
             return;
         }
 
-        setLoading(true);
+        setLoading(true); // Bật trạng thái loading
 
-        // Tạo FormData (giữ nguyên)
+        // Tạo FormData để gửi dữ liệu
         const formData = new FormData();
-        formData.append("title", trimmedTitle);
-        formData.append("excerpt", values.excerpt?.trim() || "");
-        formData.append("content", trimmedContent);
+        formData.append("title", trimmedTitle); // Thêm tiêu đề
+        formData.append("excerpt", values.excerpt?.trim() || ""); // Thêm đoạn trích, mặc định rỗng
+        formData.append("content", trimmedContent); // Thêm nội dung
+        // Xử lý tags: chuyển mảng thành chuỗi, hoặc dùng giá trị mặc định
         formData.append("tags", Array.isArray(values.tags) ? values.tags.join(",") : (values.tags || ""));
-        formData.append("status", values.status || "draft");
+        formData.append("status", values.status || "draft"); // Thêm trạng thái, mặc định là draft
         if (imageFile) {
-            formData.append("image", imageFile);
+            formData.append("image", imageFile); // Thêm file ảnh nếu có
         }
 
-        // FIX: Dispatch mà không try-catch (saga handle error/success qua toast)
+        // Dispatch action tạo tin tức (saga sẽ xử lý lỗi/thành công)
         dispatch(actions.newsCreateRequest(formData));
 
-        // Đóng modal và gọi onSuccess để refetch (không chờ response, saga sẽ toast)
-        onSuccess && onSuccess(null); // null vì saga đã handle
-        onClose();
+        // Gọi onSuccess và đóng modal (không chờ response vì saga xử lý toast)
+        onSuccess && onSuccess(null); // Gọi callback onSuccess với null
+        onClose(); // Đóng modal
 
-        // Reset loading sau 2s (hoặc dùng effect watch reducer state)
+        // Reset loading sau 2 giây để tránh UI bị treo
         setTimeout(() => setLoading(false), 2000);
     };
 
+    // Xử lý preview ảnh
     const handlePreview = async (file) => {
+        // Lấy URL của ảnh từ file hoặc chuyển đổi file thành base64
         const src = file.url || (file.originFileObj ? await getBase64(file.originFileObj) : "");
-        setPreviewImage(src);
-        setModalVisible(true);
+        setPreviewImage(src); // Cập nhật state previewImage
+        setModalVisible(true); // Mở modal preview
     };
 
+    // Kiểm tra file trước khi upload
     const beforeUpload = (file) => {
-        const isImage = file.type.startsWith("image/");
+        const isImage = file.type.startsWith("image/"); // Kiểm tra file có phải ảnh
         if (!isImage) {
-            message.error("Chỉ được phép tải lên file hình ảnh!");
-            return Upload.LIST_IGNORE;
+            message.error("Chỉ được phép tải lên file hình ảnh!"); // Hiển thị lỗi nếu không phải ảnh
+            return Upload.LIST_IGNORE; // Bỏ qua file
         }
-        const isLt2M = file.size / 1024 / 1024 < 2;
+        const isLt2M = file.size / 1024 / 1024 < 2; // Kiểm tra kích thước file < 2MB
         if (!isLt2M) {
-            message.error("Kích thước file phải nhỏ hơn 2MB!");
-            return Upload.LIST_IGNORE;
+            message.error("Kích thước file phải nhỏ hơn 2MB!"); // Hiển thị lỗi nếu file quá lớn
+            return Upload.LIST_IGNORE; // Bỏ qua file
         }
-        setImageFile(file);
-        return false; // Không auto upload, vì BE handle
+        setImageFile(file); // Lưu file ảnh vào state
+        return false; // Ngăn upload tự động vì backend xử lý
     };
 
+    // Component nút upload ảnh
     const uploadButton = (
         <div>
-            {loading ? <LoadingOutlined spin /> : <CameraOutlined />}
+            {loading ? <LoadingOutlined spin /> : <CameraOutlined />} {/* Hiển thị icon loading hoặc camera */}
             <div style={{ marginTop: 8, color: "#13C2C2", fontWeight: 500, fontSize: 14 }}>Tải ảnh lên</div>
             <div style={{ color: "#999", fontSize: 12, marginTop: 4 }}>PNG, JPG tối đa 2MB</div>
         </div>
     );
 
+    // Định nghĩa các style tùy chỉnh bằng useMemo để tối ưu hiệu suất
     const customStyles = useMemo(
         () => ({
-            card: { borderRadius: 8, border: "none", boxShadow: "none" },
+            card: { borderRadius: 8, border: "none", boxShadow: "none" }, // Style cho card
             primaryButton: {
                 backgroundColor: "#13C2C2",
                 borderColor: "#13C2C2",
@@ -111,13 +122,13 @@ const CreateNews = ({ visible, onClose, onSuccess }) => {
                 borderRadius: 8,
                 fontWeight: 600,
                 fontSize: 16,
-            },
-            title: { color: "#0D364C", marginBottom: 24, fontWeight: 700 },
-            label: { color: "#0D364C", fontWeight: 600, fontSize: 14 },
-            input: { borderRadius: 8, height: 40, borderColor: "#d9d9d9" },
-            divider: { borderColor: "#13C2C2", opacity: 0.3 },
+            }, // Style cho nút chính
+            title: { color: "#0D364C", marginBottom: 24, fontWeight: 700 }, // Style cho tiêu đề
+            label: { color: "#0D364C", fontWeight: 600, fontSize: 14 }, // Style cho nhãn
+            input: { borderRadius: 8, height: 40, borderColor: "#d9d9d9" }, // Style cho input
+            divider: { borderColor: "#13C2C2", opacity: 0.3 }, // Style cho đường phân cách
         }),
-        []
+        [] // Chỉ tính toán một lần khi component mount
     );
 
     return (

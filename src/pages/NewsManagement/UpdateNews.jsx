@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import PropTypes from "prop-types";
-import { Form, Input, Button, Card, Select, Upload, Modal, Typography, Space, Divider, message, Spin } from "antd";
-import { EditOutlined, CameraOutlined, TagsOutlined, LoadingOutlined } from "@ant-design/icons";
+import { Form, Input, Button, Card, Select, Upload, Modal, Typography, Space, Divider, message, Spin, Popconfirm } from "antd";
+import { EditOutlined, CameraOutlined, TagsOutlined, LoadingOutlined, DeleteOutlined } from "@ant-design/icons";
 import { useDispatch } from "react-redux";
-import * as actions from "../../redux/actions/newsActions"; // Điều chỉnh đường dẫn nếu cần (dựa trên cấu trúc src/pages/NewsManagement/)
+import * as actions from "../../redux/actions/newsActions";
 
 const { Title, Text } = Typography;
 
@@ -20,7 +20,7 @@ const UpdateNews = ({ visible, onClose, onSuccess, newsData }) => {
   const [form] = Form.useForm();
   const [previewImage, setPreviewImage] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
-  const [imageFile, setImageFile] = useState(null); // File mới nếu upload
+  const [imageFile, setImageFile] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const dispatch = useDispatch();
@@ -31,17 +31,10 @@ const UpdateNews = ({ visible, onClose, onSuccess, newsData }) => {
         title: newsData.title,
         excerpt: newsData.excerpt || "",
         content: newsData.content || "",
-        tags: newsData.tags || [], // Array cho Select tags
+        tags: newsData.tags || [],
         status: newsData.status || "draft",
+        image: newsData.image ? [{ uid: "-1", name: "current-image", status: "done", url: newsData.image }] : [],
       });
-      // Set initial fileList cho Upload (hiển thị ảnh hiện tại)
-      const initialFileList = newsData.image ? [{
-        uid: -1,
-        name: 'current-image',
-        status: 'done',
-        url: newsData.image,
-      }] : [];
-      form.setFieldValue('image', initialFileList);
       setImageFile(null);
       setLoading(false);
     } else {
@@ -52,7 +45,6 @@ const UpdateNews = ({ visible, onClose, onSuccess, newsData }) => {
   }, [visible, newsData, form]);
 
   const handleFinish = async (values) => {
-    // Validate required fields
     const trimmedTitle = values.title?.trim();
     const trimmedContent = values.content?.trim();
 
@@ -66,8 +58,6 @@ const UpdateNews = ({ visible, onClose, onSuccess, newsData }) => {
     }
 
     setLoading(true);
-
-    // Tạo FormData để gửi qua API (multipart/form-data cho ảnh nếu có thay đổi)
     const formData = new FormData();
     formData.append("title", trimmedTitle);
     formData.append("excerpt", values.excerpt?.trim() || "");
@@ -75,17 +65,15 @@ const UpdateNews = ({ visible, onClose, onSuccess, newsData }) => {
     formData.append("tags", Array.isArray(values.tags) ? values.tags.join(",") : (values.tags || ""));
     formData.append("status", values.status || "draft");
     if (imageFile) {
-      formData.append("image", imageFile); // Chỉ append nếu có file mới (thay thế ảnh cũ)
+      formData.append("image", imageFile);
     }
 
     try {
-      // Dispatch action để saga handle API call
       dispatch(actions.newsUpdateRequest(newsData._id, formData));
-      message.success("Cập nhật tin tức thành công!"); // Hoặc dùng toast từ saga
-      onSuccess && onSuccess(newsData); // Callback nếu cần refetch list
-      onClose(); // Đóng modal sau success
+      // message.success("Cập nhật tin tức thành công!");
+      if (onSuccess) onSuccess(newsData);
+      onClose();
     } catch (error) {
-      // Error đã handle trong saga (toast.error), nhưng có thể add local message nếu cần
       console.error("Update news error:", error);
       message.error("Cập nhật tin tức thất bại!");
     } finally {
@@ -110,8 +98,13 @@ const UpdateNews = ({ visible, onClose, onSuccess, newsData }) => {
       message.error("Kích thước file phải nhỏ hơn 2MB!");
       return Upload.LIST_IGNORE;
     }
-    setImageFile(file); // Set file mới để append vào FormData
-    return false; // Không auto upload, vì BE handle
+    setImageFile(file);
+    return false;
+  };
+
+  const handleRemoveImage = () => {
+    setImageFile(null);
+    form.setFieldsValue({ image: [] });
   };
 
   const uploadButton = (
@@ -178,11 +171,18 @@ const UpdateNews = ({ visible, onClose, onSuccess, newsData }) => {
                   name="title"
                   rules={[{ required: true, message: "Vui lòng nhập tiêu đề!" }]}
                 >
-                  <Input placeholder="Nhập tiêu đề tin tức" style={customStyles.input} />
+                  <Input placeholder="Nhập tiêu đề tin tức" style={customStyles.input} disabled={loading} />
                 </Form.Item>
 
                 <Form.Item label={<span style={customStyles.label}>Tóm tắt</span>} name="excerpt">
-                  <Input.TextArea rows={3} placeholder="Nhập tóm tắt ngắn gọn (tùy chọn)" style={{ borderRadius: 8 }} maxLength={200} showCount />
+                  <Input.TextArea
+                    rows={3}
+                    placeholder="Nhập tóm tắt ngắn gọn (tùy chọn)"
+                    style={{ borderRadius: 8 }}
+                    maxLength={200}
+                    showCount
+                    disabled={loading}
+                  />
                 </Form.Item>
 
                 <Form.Item
@@ -190,38 +190,66 @@ const UpdateNews = ({ visible, onClose, onSuccess, newsData }) => {
                   name="content"
                   rules={[{ required: true, message: "Vui lòng nhập nội dung!" }]}
                 >
-                  <Input.TextArea rows={6} placeholder="Nhập nội dung tin tức chi tiết" style={{ borderRadius: 8 }} maxLength={5000} showCount />
+                  <Input.TextArea
+                    rows={6}
+                    placeholder="Nhập nội dung tin tức chi tiết"
+                    style={{ borderRadius: 8 }}
+                    maxLength={5000}
+                    showCount
+                    disabled={loading}
+                  />
                 </Form.Item>
 
                 <Form.Item label={<span style={customStyles.label}>Tags</span>} name="tags">
                   <Select
                     mode="tags"
-                    placeholder="Nhập tags, nhấn Enter hoặc space để thêm (vd: tag1 tag2)"
+                    placeholder="Nhập tags, nhấn Enter hoặc space để thêm"
                     style={{ width: "100%" }}
-                    tokenSeparators={[' ', ',']}  // ← FIX: Thêm ' ' để tách bằng space, giữ ',' cho phẩy
+                    tokenSeparators={[" ", ","]}
                     suffixIcon={<TagsOutlined style={{ color: "#13C2C2" }} />}
+                    disabled={loading}
                   />
                 </Form.Item>
 
-                <Form.Item label={<span style={customStyles.label}>Hình ảnh</span>} name="image" valuePropName="fileList" getValueFromEvent={(e) => (e && e.fileList ? e.fileList : [])}>
-                  <Upload
-                    listType="picture-card"
-                    maxCount={1}
-                    beforeUpload={beforeUpload}
-                    onPreview={handlePreview}
-                    accept="image/*"
+                <div>
+                  <span style={customStyles.label}>Hình ảnh</span>
+                  <Form.Item
+                    name="image"
+                    valuePropName="fileList"
+                    getValueFromEvent={(e) => (e && e.fileList ? e.fileList : [])}
                   >
-                    {imageFile ? null : uploadButton}
-                  </Upload>
+                    <Upload
+                      listType="picture-card"
+                      maxCount={1}
+                      beforeUpload={beforeUpload}
+                      onPreview={handlePreview}
+                      accept="image/*"
+                      fileList={form.getFieldValue("image") || []}
+                      onRemove={handleRemoveImage}
+                      disabled={loading}
+                    >
+                      {(form.getFieldValue("image") || []).length < 1 ? uploadButton : null}
+                    </Upload>
+                  </Form.Item>
                   {newsData?.image && !imageFile && (
-                    <Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: 8 }}>
-                      Ảnh hiện tại: <a href={newsData.image} target="_blank" rel="noopener noreferrer">Xem</a>
+                    <Text type="secondary" style={{ fontSize: 12, display: "block", marginTop: 8 }}>
+                      Ảnh hiện tại: <a href={newsData.image} target="_blank" rel="noopener noreferrer">Xem</a>{" "}
+                      <Popconfirm
+                        title="Xóa ảnh hiện tại?"
+                        onConfirm={handleRemoveImage}
+                        okText="Xóa"
+                        cancelText="Hủy"
+                      >
+                        <Button type="link" icon={<DeleteOutlined />} size="small" danger>
+                          Xóa ảnh
+                        </Button>
+                      </Popconfirm>
                     </Text>
                   )}
-                </Form.Item>
+                </div>
 
                 <Form.Item label={<span style={customStyles.label}>Trạng thái</span>} name="status">
-                  <Select placeholder="Chọn trạng thái">
+                  <Select placeholder="Chọn trạng thái" disabled={loading}>
                     <Select.Option value="draft">Bản nháp</Select.Option>
                     <Select.Option value="published">Đã xuất bản</Select.Option>
                     <Select.Option value="archived">Đã lưu trữ</Select.Option>
@@ -232,8 +260,23 @@ const UpdateNews = ({ visible, onClose, onSuccess, newsData }) => {
 
                 <Form.Item style={{ marginBottom: 0 }}>
                   <Space style={{ width: "100%", justifyContent: "space-between" }}>
-                    <Button onClick={onClose} size="large" style={{ height: 44, borderRadius: 8, fontWeight: 500, minWidth: 120, borderColor: "#d9d9d9", color: "#666" }} disabled={loading}>Hủy bỏ</Button>
-                    <Button type="primary" htmlType="submit" icon={loading ? <LoadingOutlined spin /> : <EditOutlined />} size="large" style={{ ...customStyles.primaryButton, minWidth: 140 }} loading={loading} disabled={loading}>
+                    <Button
+                      onClick={onClose}
+                      size="large"
+                      style={{ height: 44, borderRadius: 8, fontWeight: 500, minWidth: 120, borderColor: "#d9d9d9", color: "#666" }}
+                      disabled={loading}
+                    >
+                      Hủy bỏ
+                    </Button>
+                    <Button
+                      type="primary"
+                      htmlType="submit"
+                      icon={loading ? <LoadingOutlined spin /> : <EditOutlined />}
+                      size="large"
+                      style={{ ...customStyles.primaryButton, minWidth: 140 }}
+                      loading={loading}
+                      disabled={loading}
+                    >
                       {loading ? "Đang cập nhật..." : "Lưu Thay Đổi"}
                     </Button>
                   </Space>
@@ -249,15 +292,15 @@ const UpdateNews = ({ visible, onClose, onSuccess, newsData }) => {
       </Modal>
 
       <style>{`
-                .ant-upload-select-picture-card { border: 2px dashed #13C2C2 !important; border-radius: 8px !important; background-color: #f8fdfd !important; }
-                .ant-upload-select-picture-card:hover { border-color: #0D364C !important; }
-                .ant-input:focus { border-color: #13C2C2 !important; box-shadow: 0 0 0 2px rgba(19, 194, 194, 0.1) !important; }
-                .ant-btn-primary:hover { background-color: #0D364C !important; border-color: #0D364C !important; }
-                .ant-modal-content { border-radius: 12px !important; }
-                .ant-card { border-radius: 8px !important; }
-                .ant-select-selector { border-radius: 8px !important; border-color: #d9d9d9 !important; }
-                .ant-select-focused:not(.ant-select-disabled).ant-select:not(.ant-select-customize-input) .ant-select-selector { border-color: #13C2C2 !important; box-shadow: 0 0 0 2px rgba(19, 194, 194, 0.1) !important; }
-            `}</style>
+        .ant-upload-select-picture-card { border: 2px dashed #13C2C2 !important; border-radius: 8px !important; background-color: #f8fdfd !important; }
+        .ant-upload-select-picture-card:hover { border-color: #0D364C !important; }
+        .ant-input:focus { border-color: #13C2C2 !important; box-shadow: 0 0 0 2px rgba(19, 194, 194, 0.1) !important; }
+        .ant-btn-primary:hover { background-color: #0D364C !important; border-color: #0D364C !important; }
+        .ant-modal-content { border-radius: 12px !important; }
+        .ant-card { border-radius: 8px !important; }
+        .ant-select-selector { border-radius: 8px !important; border-color: #d9d9d9 !important; }
+        .ant-select-focused:not(.ant-select-disabled).ant-select:not(.ant-select-customize-input) .ant-select-selector { border-color: #13C2C2 !important; box-shadow: 0 0 0 2px rgba(19, 194, 194, 0.1) !important; }
+      `}</style>
     </>
   );
 };

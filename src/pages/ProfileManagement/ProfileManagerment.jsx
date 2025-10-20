@@ -29,23 +29,12 @@ const ProfileManager = () => {
   const [editMode, setEditMode] = useState(false);
   const [avatarFile, setAvatarFile] = useState(null);
   const [avatarUrl, setAvatarUrl] = useState('');
-  const [form] = Form.useForm();
 
   useEffect(() => {
     dispatch(getProfileRequest());
     dispatch(clearProfileMessages());
   }, [dispatch]);
 
-  useEffect(() => {
-    if (user) {
-      setAvatarUrl(user.avatar || '');
-      form.setFieldsValue({
-        user_name: user.user_name,
-        phone: user.phone,
-        address: user.address,
-      });
-    }
-  }, [user, form]);
 
   useEffect(() => {
     if (updateSuccess && updateSuccess.data) {
@@ -83,40 +72,37 @@ const ProfileManager = () => {
 
   // Handle avatar upload
   const handleAvatarChange = (info) => {
-    if (info.file.status === 'uploading') {
-      return;
-    }
-    if (info.file.status === 'done' || info.fileList.length > 0) {
-      const file = info.file.originFileObj || info.file;
+    if (info.fileList.length > 0) {
+      const file = info.file
       setAvatarFile(file);
       const url = URL.createObjectURL(file);
       setAvatarUrl(url);
-
     }
   };
 
-  // Upload props
   const uploadProps = {
     name: 'avatar',
     listType: 'picture',
     showUploadList: false,
+    accept: "image/*",
     beforeUpload: (file) => {
-      const isJpgOrPng = file.type === 'image/jpeg' || file.type === 'image/png';
+      const isJpgOrPng =
+        file.type === 'image/jpeg' || file.type === 'image/png';
       if (!isJpgOrPng) {
         message.error('Chỉ có thể tải lên file JPG/PNG!');
-        return false;
+        return Upload.LIST_IGNORE;
+
       }
       const isLt3M = file.size / 1024 / 1024 < 3;
       if (!isLt3M) {
         message.error('Kích thước ảnh phải nhỏ hơn 3MB!');
-        return false;
+        return Upload.LIST_IGNORE;
       }
       message.success('Tải ảnh đại diện thành công!');
-      return true;
+      return false;
     },
     onChange: handleAvatarChange,
   };
-
   useEffect(() => {
     if (updateSuccess) {
       message.success("Cập nhật thành công!");
@@ -129,6 +115,7 @@ const ProfileManager = () => {
       message.error(error);
     }
   }, [updateSuccess, error]);
+
   const handleSubmit = async (values) => {
     const storedUser = JSON.parse(localStorage.getItem("user"));
     const userId = storedUser ? storedUser._id : null;
@@ -226,7 +213,7 @@ const ProfileManager = () => {
                         <div className="absolute -inset-4 bg-gradient-to-r from-[#0D364C] via-[#13C2C2] to-[#0D364C] rounded-full blur opacity-20 group-hover:opacity-30 animate-spin-slow"></div>
                         {/* Avatar or Upload */}
                         {editMode ? (
-                          <Upload {...uploadProps}>
+                          <Upload accept='image/*'  {...uploadProps}>
                             <div className="relative cursor-pointer">
                               <Avatar
                                 size={160}
@@ -372,7 +359,6 @@ const ProfileManager = () => {
 
 
                       <Form
-                        form={form}
                         layout="vertical"
                         onFinish={handleSubmit}
                         autoComplete="off"
@@ -436,7 +422,6 @@ const ProfileManager = () => {
                               setAvatarFile(null);
                               setAvatarUrl(user.avatar || "");
                               dispatch(clearProfileMessages());
-                              form.resetFields();
                             }}
                           >
                             Hủy

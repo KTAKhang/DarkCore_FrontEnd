@@ -40,6 +40,9 @@ import PrivateRoute from "../components/PrivateRouter";
 import CustomerLayout from "../layout/CustomerLayout";
 import DiscountListPage from "../pages/UserDiscount/DiscountListPage";
 import AdminDiscountPage from "../pages/DiscountManagement/AdminDiscountPage";
+import OrderReviewPage from "../pages/ProductReview/OrderReviewPage";
+import ProductReviewManagement from "../pages/ProductReview/ProductReviewManagement";
+import AdminProductReviewDetailPage from "../pages/ProductReview/AdminProductReviewDetailPage";
 
 
 
@@ -121,6 +124,7 @@ export const routes = [
         path: "orders",
         element: <OrderHistory />,
       },
+      { path: "review/:id", element: <OrderReviewPage /> },
     ],
   },
 
@@ -145,6 +149,8 @@ export const routes = [
       { path: "customer/:id", element: <CustomerDetail /> },
       { path: "order", element: <OrderManagement /> },
       { path: "profile", element: <ProfileManagement /> },
+      { path: "review", element: <ProductReviewManagement /> },
+      { path: "review/:id", element: <AdminProductReviewDetailPage /> },
       { path: "change-password", element: <UpdatePassword /> },
       { path: "news", element: <NewsManagement /> },
       { path: "discounts", element: <AdminDiscountPage /> },
