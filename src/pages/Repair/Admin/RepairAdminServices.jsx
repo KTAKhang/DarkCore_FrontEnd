@@ -1,14 +1,18 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { repairServiceListRequest, repairServiceCreateRequest, repairServiceUpdateRequest, repairServiceDeleteRequest } from "../../../redux/actions/repairServiceActions";
-import { Plus, Edit, Trash2, Package } from "lucide-react";
+import { Plus, Edit, Trash2, Package, ChevronLeft, ChevronRight } from "lucide-react";
 
 const RepairAdminServices = () => {
   const dispatch = useDispatch();
-  const list = useSelector(s => s?.repairService?.list) || { items: [], loading: false, error: null };
+  const list = useSelector(s => s?.repairService?.list) || { items: [], loading: false, error: null, pagination: null };
   const create = useSelector(s => s?.repairService?.create) || { loading: false };
   const update = useSelector(s => s?.repairService?.update) || { loading: false };
   const remove = useSelector(s => s?.repairService?.remove) || { loading: false };
+  
+  // State for pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(5);
   
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingService, setEditingService] = useState(null);
@@ -18,23 +22,81 @@ const RepairAdminServices = () => {
     basePrice: ''
   });
 
+  // Load data with pagination
+  const loadData = () => {
+    dispatch(repairServiceListRequest({ page: currentPage, limit: pageSize }));
+  };
+
   useEffect(() => {
-    dispatch(repairServiceListRequest());
-  }, [dispatch]);
+    loadData();
+  }, [currentPage]);
 
   // Refresh list after create/update/delete success
   useEffect(() => {
     if (create.success || update.success || remove.success) {
-      dispatch(repairServiceListRequest());
+      loadData();
     }
-  }, [create.success, update.success, remove.success, dispatch]);
+  }, [create.success, update.success, remove.success]);
 
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
+  const renderPagination = () => {
+    if (!list.pagination || list.pagination.totalPages <= 1) return null;
+
+    const { page, totalPages } = list.pagination;
+    const pages = [];
+    
+    // Show page numbers
+    for (let i = 1; i <= totalPages; i++) {
+      pages.push(
+        <button
+          key={i}
+          onClick={() => handlePageChange(i)}
+          className={`px-3 py-1 rounded-md text-sm ${
+            i === page
+              ? 'bg-blue-600 text-white'
+              : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
+          }`}
+        >
+          {i}
+        </button>
+      );
+    }
+
+    return (
+      <div className="flex items-center justify-between mt-4">
+        <div className="text-sm text-gray-700">
+          Hiển thị {((page - 1) * pageSize) + 1} - {Math.min(page * pageSize, list.pagination.total)} trong tổng số {list.pagination.total} dịch vụ
+        </div>
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={() => handlePageChange(page - 1)}
+            disabled={page <= 1}
+            className="p-2 rounded-md border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          {pages}
+          <button
+            onClick={() => handlePageChange(page + 1)}
+            disabled={page >= totalPages}
+            className="p-2 rounded-md border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    );
+  };
+//hàm xử lý khi nhấn nút thêm dịch vụ
   const handleAdd = () => {
     setShowAddForm(true);
     setEditingService(null);
     setFormData({ name: '', description: '', basePrice: '' });
   };
-
+//hàm xử lý khi nhấn nút sửa dịch vụ
   const handleEdit = (service) => {
     setEditingService(service);
     setFormData({
@@ -42,9 +104,10 @@ const RepairAdminServices = () => {
       description: service.description,
       basePrice: service.basePrice.toString()
     });
+    // hiện form thêm/sửa
     setShowAddForm(true);
   };
-
+//hàm xử lý khi nhấn nút submit trong form thêm/sửa dịch vụ
   const handleSubmit = (e) => {
     e.preventDefault();
     if (editingService) {
@@ -81,7 +144,7 @@ const RepairAdminServices = () => {
         {/* Header */}
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Repair Services</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Dịch vụ sửa chữa</h1>
             <p className="text-gray-600 mt-1">Quản lý các dịch vụ sửa chữa</p>
           </div>
           <button
@@ -228,6 +291,9 @@ const RepairAdminServices = () => {
             )}
           </div>
         )}
+        
+        {/* Pagination */}
+        {renderPagination()}
       </div>
     </div>
   );

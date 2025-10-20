@@ -47,7 +47,7 @@ export const repairRequestCancelSuccess = (id, message) => ({ type: REPAIR_REQUE
 export const repairRequestCancelFailure = (error) => ({ type: REPAIR_REQUEST_CANCEL_FAILURE, payload: error });
 
 export const repairRequestListAllRequest = (searchParams = {}) => ({ type: REPAIR_REQUEST_LIST_ALL_REQUEST, payload: searchParams });
-export const repairRequestListAllSuccess = (items) => ({ type: REPAIR_REQUEST_LIST_ALL_SUCCESS, payload: items });
+export const repairRequestListAllSuccess = (data, pagination) => ({ type: REPAIR_REQUEST_LIST_ALL_SUCCESS, payload: { data, pagination } });
 export const repairRequestListAllFailure = (error) => ({ type: REPAIR_REQUEST_LIST_ALL_FAILURE, payload: error });
 
 export const repairRequestAssignRequest = (id, technicianId) => ({ type: REPAIR_REQUEST_ASSIGN_REQUEST, payload: { id, technicianId } });
@@ -58,8 +58,8 @@ export const repairRequestStatusUpdateRequest = (id, status) => ({ type: REPAIR_
 export const repairRequestStatusUpdateSuccess = (item, message) => ({ type: REPAIR_REQUEST_STATUS_UPDATE_SUCCESS, payload: { item, message } });
 export const repairRequestStatusUpdateFailure = (error) => ({ type: REPAIR_REQUEST_STATUS_UPDATE_FAILURE, payload: error });
 
-export const repairRequestListAssignedRequest = () => ({ type: REPAIR_REQUEST_LIST_ASSIGNED_REQUEST });
-export const repairRequestListAssignedSuccess = (items) => ({ type: REPAIR_REQUEST_LIST_ASSIGNED_SUCCESS, payload: items });
+export const repairRequestListAssignedRequest = (query = {}) => ({ type: REPAIR_REQUEST_LIST_ASSIGNED_REQUEST, payload: query });
+export const repairRequestListAssignedSuccess = (data, pagination) => ({ type: REPAIR_REQUEST_LIST_ASSIGNED_SUCCESS, payload: { data, pagination } });
 export const repairRequestListAssignedFailure = (error) => ({ type: REPAIR_REQUEST_LIST_ASSIGNED_FAILURE, payload: error });
 
 export const repairRequestClearMessages = () => ({ type: REPAIR_REQUEST_CLEAR_MESSAGES });

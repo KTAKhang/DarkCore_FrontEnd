@@ -74,7 +74,7 @@ const Sidebar = ({ isFinance = false, isAdmin = false, isApprover = false, isCla
     },
 
     {
-      title: "Repair Service",
+      title: "Quản lý dịch vụ sửa chữa",
       path: "/admin/repair",
       icon: <ProjectOutlined />,
       color: "#13C2C2"
@@ -105,6 +105,12 @@ const Sidebar = ({ isFinance = false, isAdmin = false, isApprover = false, isCla
       path: "/admin/news",
       icon: <HomeOutlined />,
       color: "#FF9F43"
+    },
+    {
+      title: "Quản Lý Mã Giảm Giá",
+      path: "/admin/discounts",
+      icon: <DollarOutlined />,
+      color: "#00D2D3"
     },
   ];
 

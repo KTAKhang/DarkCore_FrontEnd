@@ -61,8 +61,13 @@ const apiStatusUpdate = async (id, status) => {
   return res.data;
 };
 
-const apiListAssigned = async () => {
-  const res = await axios.get(`${API_BASE_URL}/repair/api/repairs/assigned/me`, { headers: getAuthHeaders() });
+const apiListAssigned = async (query = {}) => {
+  const params = new URLSearchParams();
+  if (query.page) params.append('page', query.page);
+  if (query.limit) params.append('limit', query.limit);
+  
+  const url = `${API_BASE_URL}/repair/api/repairs/assigned/me${params.toString() ? '?' + params.toString() : ''}`;
+  const res = await axios.get(url, { headers: getAuthHeaders() });
   return res.data;
 };
 
@@ -123,6 +128,8 @@ function* listAllWorker(action) {
     
     params.append('username', searchParams.username || '');
     params.append('status', searchParams.status || '');
+    if (searchParams.page) params.append('page', searchParams.page);
+    if (searchParams.limit) params.append('limit', searchParams.limit);
     params.append('_t', Date.now());
     
     const url = `${API_BASE_URL}/repair/api/repairs?${params.toString()}`;
@@ -130,7 +137,17 @@ function* listAllWorker(action) {
     const data = res.data;
     
     if (data.status === "OK") {
-      yield put(repairRequestListAllSuccess(data.data || []));
+      // Handle both old format (array) and new format (object with repairs and pagination)
+      if (Array.isArray(data.data)) {
+        // Old format - just array of repairs
+        yield put(repairRequestListAllSuccess(data.data, null));
+      } else if (data.data && data.data.repairs) {
+        // New format - object with repairs and pagination
+        yield put(repairRequestListAllSuccess(data.data.repairs, data.data.pagination));
+      } else {
+        // Fallback
+        yield put(repairRequestListAllSuccess(data.data, null));
+      }
     } else {
       throw new Error(data.message || "Không thể tải danh sách yêu cầu");
     }
@@ -174,11 +191,23 @@ function* statusUpdateWorker(action) {
   }
 }
 
-function* listAssignedWorker() {
+function* listAssignedWorker(action) {
   try {
-    const data = yield call(apiListAssigned);
+    const query = action.payload || {};
+    const data = yield call(apiListAssigned, query);
+    
     if (data.status === "OK") {
-      yield put(repairRequestListAssignedSuccess(data.data || []));
+      // Handle both old format (array) and new format (object with repairs and pagination)
+      if (Array.isArray(data.data)) {
+        // Old format - just array of repairs
+        yield put(repairRequestListAssignedSuccess(data.data, null));
+      } else if (data.data && data.data.repairs) {
+        // New format - object with repairs and pagination
+        yield put(repairRequestListAssignedSuccess(data.data.repairs, data.data.pagination));
+      } else {
+        // Fallback
+        yield put(repairRequestListAssignedSuccess(data.data, null));
+      }
     } else {
       throw new Error(data.message || "Không thể tải danh sách được giao");
     }

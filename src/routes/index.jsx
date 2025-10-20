@@ -38,9 +38,12 @@ import ProfileManagement from "../pages/ProfileManagement/ProfileManagerment";
 import UpdatePassword from "../pages/ProfileManagement/UpdatePassword";
 import PrivateRoute from "../components/PrivateRouter";
 import CustomerLayout from "../layout/CustomerLayout";
+import DiscountListPage from "../pages/UserDiscount/DiscountListPage";
+import AdminDiscountPage from "../pages/DiscountManagement/AdminDiscountPage";
 import OrderReviewPage from "../pages/ProductReview/OrderReviewPage";
 import ProductReviewManagement from "../pages/ProductReview/ProductReviewManagement";
 import AdminProductReviewDetailPage from "../pages/ProductReview/AdminProductReviewDetailPage";
+
 
 
 export const routes = [
@@ -95,6 +98,12 @@ export const routes = [
     element: <NewsPage />,
   },
 
+  // THÊM: Trang mã giảm giá cho user (public)
+  {
+    path: "/discounts",
+    element: <DiscountListPage />,
+  },
+
   // Khu vực quản trị
   {
     path: "/customer",
@@ -144,6 +153,7 @@ export const routes = [
       { path: "review/:id", element: <AdminProductReviewDetailPage /> },
       { path: "change-password", element: <UpdatePassword /> },
       { path: "news", element: <NewsManagement /> },
+      { path: "discounts", element: <AdminDiscountPage /> },
     ],
   },
 

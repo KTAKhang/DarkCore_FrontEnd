@@ -11,7 +11,7 @@ const RepairRequestPage = () => {
   const navigate = useNavigate();
   const servicesState = useSelector(state => state?.repairService?.list) || { items: [], loading: false, error: null };
   const createState = useSelector(state => state?.repairRequest?.create) || { item: null, loading: false, error: null, message: null };
-
+  //set giá trị mặc định cho form
   const [form, setForm] = useState({
     deviceName: "Laptop",
     deviceBrand: "",
@@ -23,8 +23,9 @@ const RepairRequestPage = () => {
   });
 
   const [showError, setShowError] = useState(false);
-  const isSubmitting = useRef(false); // Thêm flag để track submit
-
+  //flag để track submit
+  const isSubmitting = useRef(false);
+// tính tổng tiền dựa trên dịch vụ đã chọn
   const totalPrice = useMemo(() => {
     const map = new Map(servicesState.items.map(s => [s._id, s]));
     return (form.services || []).reduce((sum, id) => sum + (map.get(id)?.basePrice || 0), 0);
@@ -59,13 +60,13 @@ const RepairRequestPage = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
+
     // Validate form
     if (!form.deviceBrand || !form.deviceModel || !form.description || !form.appointmentDate || form.services.length === 0) {
       setShowError(true);
       return;
     }
-    
+
     // Set flag trước khi dispatch
     isSubmitting.current = true;
     dispatch(repairRequestCreateRequest(form));
@@ -109,24 +110,24 @@ const RepairRequestPage = () => {
                 <label className="block text-sm text-gray-600 mb-1">
                   Thương hiệu <span className="text-red-500">*</span>
                 </label>
-                <input 
-                  name="deviceBrand" 
-                  value={form.deviceBrand} 
-                  onChange={handleChange} 
+                <input
+                  name="deviceBrand"
+                  value={form.deviceBrand}
+                  onChange={handleChange}
                   className={`w-full border rounded-lg px-3 py-2 ${showError && !form.deviceBrand ? 'border-red-500' : ''}`}
-                  placeholder="VD: Dell, Asus..." 
+                  placeholder="VD: Dell, Asus..."
                 />
               </div>
               <div>
                 <label className="block text-sm text-gray-600 mb-1">
                   Model <span className="text-red-500">*</span>
                 </label>
-                <input 
-                  name="deviceModel" 
-                  value={form.deviceModel} 
-                  onChange={handleChange} 
+                <input
+                  name="deviceModel"
+                  value={form.deviceModel}
+                  onChange={handleChange}
                   className={`w-full border rounded-lg px-3 py-2 ${showError && !form.deviceModel ? 'border-red-500' : ''}`}
-                  placeholder="VD: XPS 13..." 
+                  placeholder="VD: XPS 13..."
                 />
               </div>
               <div>
@@ -139,13 +140,13 @@ const RepairRequestPage = () => {
               <label className="block text-sm text-gray-600 mb-1">
                 Mô tả lỗi <span className="text-red-500">*</span>
               </label>
-              <textarea 
-                name="description" 
-                value={form.description} 
-                onChange={handleChange} 
-                rows={4} 
+              <textarea
+                name="description"
+                value={form.description}
+                onChange={handleChange}
+                rows={4}
                 className={`w-full border rounded-lg px-3 py-2 ${showError && !form.description ? 'border-red-500' : ''}`}
-                placeholder="Máy bị..." 
+                placeholder="Máy bị..."
               />
             </div>
 
@@ -153,11 +154,11 @@ const RepairRequestPage = () => {
               <label className="block text-sm text-gray-600 mb-1">
                 Ngày hẹn <span className="text-red-500">*</span>
               </label>
-              <input 
-                type="datetime-local" 
-                name="appointmentDate" 
-                value={form.appointmentDate} 
-                onChange={handleChange} 
+              <input
+                type="datetime-local"
+                name="appointmentDate"
+                value={form.appointmentDate}
+                onChange={handleChange}
                 className={`w-full border rounded-lg px-3 py-2 ${showError && !form.appointmentDate ? 'border-red-500' : ''}`}
               />
             </div>
@@ -183,8 +184,8 @@ const RepairRequestPage = () => {
               <div className="text-2xl font-bold text-blue-600">{new Intl.NumberFormat('vi-VN').format(totalPrice)}₫</div>
             </div>
 
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               disabled={createState.loading}
               className="mt-6 w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
             >

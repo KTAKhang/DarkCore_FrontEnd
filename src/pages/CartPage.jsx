@@ -11,6 +11,11 @@ import {
     cartClearRequest,
     cartClearMessage
 } from '../redux/actions/cartActions';
+import {
+    discountApplyRequest,
+    discountClearApplied,
+    discountClearMessages
+} from '@/redux/actions/discountActions';
 
 const CartPage = () => {
     const navigate = useNavigate(); // Khởi tạo hook useNavigate để điều hướng
@@ -18,9 +23,9 @@ const CartPage = () => {
 
     // Lấy state từ Redux store (cart, loading, error)
     const { cart, loading, error } = useSelector((state) => state.cart || {});
-    const [searchTerm, setSearchTerm] = useState(''); // State để lưu giá trị tìm kiếm
-    const [couponCode, setCouponCode] = useState(''); // State để lưu mã giảm giá
-
+    const { appliedDiscount, applying, error: discountError } = useSelector((state) => state.discount || {});
+    const [searchTerm, setSearchTerm] = useState('');
+    const [couponCode, setCouponCode] = useState('');
     // Debug log trạng thái ban đầu
     useEffect(() => {
         console.log('CartPage state:', { cart, loading, error }); // Ghi log trạng thái Redux để debug
@@ -43,7 +48,13 @@ const CartPage = () => {
         }
     }, [error, dispatch]); // Chạy lại khi error hoặc dispatch thay đổi
 
-    // Hàm định dạng giá tiền sang định dạng VND
+    useEffect(() => {
+        if (discountError) {
+            console.log('CartPage discount error:', discountError);
+            dispatch(discountClearMessages());
+        }
+    }, [discountError, dispatch]);
+  
     const formatPrice = (price) => {
         return new Intl.NumberFormat('vi-VN').format(price) + '₫'; // Định dạng giá với dấu ₫
     };
@@ -55,28 +66,66 @@ const CartPage = () => {
 
     // Cập nhật số lượng sản phẩm
     const updateQuantity = (productId, change) => {
-        const item = cart?.items?.find((i) => i.productId === productId); // Tìm sản phẩm trong giỏ hàng
-        if (!item) return; // Thoát nếu không tìm thấy sản phẩm
-        const newQuantity = Math.max(1, item.quantity + change); // Đảm bảo số lượng không nhỏ hơn 1
-        console.log('CartPage: Updating quantity', { productId, newQuantity }); // Ghi log khi cập nhật số lượng
-        dispatch(cartUpdateRequest(productId, newQuantity)); // Dispatch action cập nhật số lượng
+        // Kiểm tra nếu có mã giảm giá đã áp dụng
+        if (appliedDiscount) {
+            toast.warning('Vui lòng gỡ mã giảm giá để thay đổi số lượng giỏ hàng');
+            return;
+        }
+        
+        const item = cart?.items?.find((i) => i.productId === productId);
+        if (!item) return;
+        const newQuantity = Math.max(1, item.quantity + change);
+        console.log('CartPage: Updating quantity', { productId, newQuantity });
+        dispatch(cartUpdateRequest(productId, newQuantity));
     };
 
     // Xóa sản phẩm khỏi giỏ hàng
     const removeItem = (productId) => {
-        console.log('CartPage: Removing item', { productId }); // Ghi log khi xóa sản phẩm
-        dispatch(cartRemoveRequest(productId)); // Dispatch action xóa sản phẩm
+        // Kiểm tra nếu có mã giảm giá đã áp dụng
+        if (appliedDiscount) {
+            toast.warning('Vui lòng gỡ mã giảm giá để thay đổi số lượng giỏ hàng');
+            return;
+        }
+        
+        console.log('CartPage: Removing item', { productId });
+        dispatch(cartRemoveRequest(productId));
     };
 
     // Xóa toàn bộ giỏ hàng
     const clearCart = () => {
-        console.log('CartPage: Clearing cart'); // Ghi log khi xóa toàn bộ giỏ hàng
-        dispatch(cartClearRequest()); // Dispatch action xóa giỏ hàng
+        // Kiểm tra nếu có mã giảm giá đã áp dụng
+        if (appliedDiscount) {
+            toast.warning('Vui lòng gỡ mã giảm giá để thay đổi số lượng giỏ hàng');
+            return;
+        }
+        
+        console.log('CartPage: Clearing cart');
+        dispatch(cartClearRequest());
     };
 
-    // Tính tổng số lượng sản phẩm trong giỏ
-    const totalItems = cart?.items?.reduce((sum, item) => sum + item.quantity, 0) || 0; // Tổng số lượng sản phẩm
+    //xử lý áp dụng mã giảm giá
+    const handleApplyDiscount = () => {
+        if (!couponCode.trim()) {
+            toast.error('Vui lòng nhập mã giảm giá');
+            return;
+        }
+        
+        const orderTotal = calculateSubtotal();
+        if (orderTotal === 0) {
+            toast.error('Giỏ hàng trống, không thể áp dụng mã giảm giá');
+            return;
+        }
+        
+        console.log('CartPage: Applying discount', { code: couponCode, orderTotal });
+        dispatch(discountApplyRequest(couponCode.trim().toUpperCase(), orderTotal));
+    };
 
+    const handleRemoveDiscount = () => {
+        dispatch(discountClearApplied());
+        setCouponCode('');
+    };
+
+    const totalItems = cart?.items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
     // Debug log trước khi render
     console.log('CartPage render:', { loading, cartItems: cart?.items, totalItems }); // Ghi log trạng thái trước render
 
@@ -147,7 +196,7 @@ const CartPage = () => {
                                                                     <button
                                                                         onClick={() => updateQuantity(item.productId, -1)}
                                                                         disabled={loading || item.quantity <= 1}
-                                                                        className="w-10 h-10 flex items-center justify-center hover:bg-gray-50 transition-colors disabled:opacity-50"
+                                                                        className={`w-10 h-10 flex items-center justify-center hover:bg-gray-50 transition-colors disabled:opacity-50 ${appliedDiscount ? 'opacity-50 cursor-not-allowed' : ''}`}
                                                                     >
                                                                         <Minus className="w-4 h-4 text-gray-600" />
                                                                     </button>
@@ -155,7 +204,7 @@ const CartPage = () => {
                                                                     <button
                                                                         onClick={() => updateQuantity(item.productId, 1)}
                                                                         disabled={loading}
-                                                                        className="w-10 h-10 flex items-center justify-center hover:bg-gray-50 transition-colors disabled:opacity-50"
+                                                                        className={`w-10 h-10 flex items-center justify-center hover:bg-gray-50 transition-colors disabled:opacity-50 ${appliedDiscount ? 'opacity-50 cursor-not-allowed' : ''}`}
                                                                     >
                                                                         <Plus className="w-4 h-4 text-gray-600" />
                                                                     </button>
@@ -163,7 +212,7 @@ const CartPage = () => {
                                                                 <button
                                                                     onClick={() => removeItem(item.productId)}
                                                                     disabled={loading}
-                                                                    className="w-10 h-10 flex items-center justify-center text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                                                                    className={`w-10 h-10 flex items-center justify-center text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 ${appliedDiscount ? 'opacity-50 cursor-not-allowed' : ''}`}
                                                                 >
                                                                     <Trash2 className="w-4 h-4" />
                                                                 </button>
@@ -191,7 +240,7 @@ const CartPage = () => {
                                     <button
                                         onClick={clearCart}
                                         disabled={loading}
-                                        className="flex items-center gap-2 text-red-600 hover:text-red-700 transition-colors disabled:opacity-50"
+                                        className={`flex items-center gap-2 text-red-600 hover:text-red-700 transition-colors disabled:opacity-50 ${appliedDiscount ? 'opacity-50 cursor-not-allowed' : ''}`}
                                     >
                                         <Trash2 className="w-4 h-4" />
                                         Xóa tất cả
@@ -206,6 +255,21 @@ const CartPage = () => {
                                             <span className="text-gray-600">Tạm tính:</span>
                                             <span className="font-medium">{formatPrice(calculateSubtotal())}</span>
                                         </div>
+                                        
+                                        {/* Discount Section */}
+                                        {appliedDiscount && (
+                                            <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                                                <div className="flex justify-between items-center mb-2">
+                                                    <span className="text-green-700 font-medium">Giảm giá ({appliedDiscount.code}):</span>
+                                                    <span className="text-green-600 font-bold">-{formatPrice(appliedDiscount.discountAmount)}</span>
+                                                </div>
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-green-700 font-medium">Tổng sau giảm:</span>
+                                                    <span className="text-green-600 font-bold">{formatPrice(appliedDiscount.totalAfterDiscount)}</span>
+                                                </div>
+                                            </div>
+                                        )}
+                                        
                                         <div className="flex justify-between">
                                             <span className="text-gray-600">Phí vận chuyển:</span>
                                             <span className="font-medium">Miễn phí</span>
@@ -218,7 +282,7 @@ const CartPage = () => {
                                             <div className="flex justify-between items-center">
                                                 <span className="text-lg font-bold text-gray-900">Tổng cộng:</span>
                                                 <span className="text-2xl font-bold text-red-600">
-                                                    {formatPrice(calculateSubtotal())}
+                                                    {formatPrice(appliedDiscount ? appliedDiscount.totalAfterDiscount : calculateSubtotal())}
                                                 </span>
                                             </div>
                                         </div>
@@ -237,20 +301,45 @@ const CartPage = () => {
                                             Mua trước trả sau
                                         </button>
                                     </div>
+                                    {/* Phần áp dụng mã giảm giá */}
                                     <div className="mt-6 pt-6 border-t border-gray-200">
                                         <h3 className="font-bold text-gray-900 mb-3">Ưu đãi & Khuyến mãi</h3>
-                                        <div className="flex gap-2">
-                                            <input
-                                                type="text"
-                                                placeholder="Nhập mã giảm giá"
-                                                value={couponCode}
-                                                onChange={(e) => setCouponCode(e.target.value)}
-                                                className="flex-1 px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                                            />
-                                            <button className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium whitespace-nowrap">
-                                                Áp dụng
-                                            </button>
-                                        </div>
+                                        {appliedDiscount ? (
+                                            <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <span className="text-green-700 font-medium">Mã đã áp dụng:</span>
+                                                    <span className="text-green-600 font-bold">{appliedDiscount.code}</span>
+                                                </div>
+                                                <div className="flex items-center justify-between mb-3">
+                                                    <span className="text-green-700 text-sm">Giảm {appliedDiscount.discountPercent}%</span>
+                                                    <span className="text-green-600 font-bold">-{formatPrice(appliedDiscount.discountAmount)}</span>
+                                                </div>
+                                                <button
+                                                    onClick={handleRemoveDiscount}
+                                                    className="w-full bg-red-100 text-red-700 px-3 py-2 rounded-lg hover:bg-red-200 transition-colors text-sm font-medium"
+                                                >
+                                                    Xóa mã giảm giá
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <div className="flex gap-2">
+                                                <input
+                                                    type="text"
+                                                    placeholder="Nhập mã giảm giá"
+                                                    value={couponCode}
+                                                    onChange={(e) => setCouponCode(e.target.value)}
+                                                    className="flex-1 px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                                                    disabled={applying}
+                                                />
+                                                <button 
+                                                    onClick={handleApplyDiscount}
+                                                    disabled={applying || !couponCode.trim()}
+                                                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium whitespace-nowrap disabled:opacity-50"
+                                                >
+                                                    {applying ? 'Đang áp dụng...' : 'Áp dụng'}
+                                                </button>
+                                            </div>
+                                        )}
                                     </div>
                                     <div className="mt-6 pt-6 border-t border-gray-200">
                                         <div className="flex items-center gap-3 text-sm text-gray-600">

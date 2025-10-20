@@ -111,7 +111,7 @@ const RepairAdminRequestDetail = () => {
         {/* Header */}
         <div className="flex items-center space-x-4">
           <button
-            onClick={() => navigate('/admin/repairs')}
+            onClick={() => navigate('/admin/repair/requests')}
             className="flex items-center text-gray-600 hover:text-gray-900"
           >
             <ArrowLeft className="h-5 w-5 mr-2" />
@@ -179,7 +179,7 @@ const RepairAdminRequestDetail = () => {
               </div>
               <div className="space-y-2">
                 <button onClick={() => handleStatus("in-progress")} className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center justify-center">
-                  <Wrench className="h-4 w-4 mr-2" /> Chuyển in-progress
+                  <Wrench className="h-4 w-4 mr-2" /> Chuyển đang xử lý
                 </button>
                 <button onClick={() => handleStatus("completed")} className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center justify-center">
                   <CheckCircle className="h-4 w-4 mr-2" /> Hoàn thành

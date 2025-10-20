@@ -11,12 +11,6 @@ const RepairStaffSidebar = ({ isOpen }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { logout } = useAuth();
-
-  const handleLogout = () => {
-    logout();
-    navigate('/');
-  };
-
   const staffMenuItems = [
     {
       title: "Dashboard",
@@ -29,7 +23,7 @@ const RepairStaffSidebar = ({ isOpen }) => {
       icon: <ClipboardList className="w-5 h-5" />,
     },
     {
-      title: "Repair Service",
+      title: "Quản lý dịch vụ sửa chữa",
       path: "/staff/services",
       icon: <Wrench className="w-5 h-5" />,
     }
@@ -57,27 +51,15 @@ const RepairStaffSidebar = ({ isOpen }) => {
             <Link
               key={idx}
               to={item.path}
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                location.pathname === item.path
+              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${location.pathname === item.path
                   ? 'bg-blue-600 text-white'
                   : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-              }`}
+                }`}
             >
               {item.icon}
               <span className="font-medium">{item.title}</span>
             </Link>
           ))}
-        </div>
-
-        {/* Logout Button */}
-        <div className="mt-8">
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-red-600 hover:text-white transition-colors"
-          >
-            <LogOut className="w-5 h-5" />
-            <span className="font-medium">Đăng xuất</span>
-          </button>
         </div>
       </div>
     </div>

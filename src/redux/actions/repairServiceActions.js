@@ -24,8 +24,8 @@ export const REPAIR_SERVICE_DELETE_FAILURE = "REPAIR_SERVICE_DELETE_FAILURE";
 export const REPAIR_SERVICE_CLEAR_MESSAGES = "REPAIR_SERVICE_CLEAR_MESSAGES";
 
 // Action creators
-export const repairServiceListRequest = () => ({ type: REPAIR_SERVICE_LIST_REQUEST });
-export const repairServiceListSuccess = (items) => ({ type: REPAIR_SERVICE_LIST_SUCCESS, payload: items });
+export const repairServiceListRequest = (query = {}) => ({ type: REPAIR_SERVICE_LIST_REQUEST, payload: query });
+export const repairServiceListSuccess = (data, pagination) => ({ type: REPAIR_SERVICE_LIST_SUCCESS, payload: { data, pagination } });
 export const repairServiceListFailure = (error) => ({ type: REPAIR_SERVICE_LIST_FAILURE, payload: error });
 
 export const repairServiceCreateRequest = (payload) => ({ type: REPAIR_SERVICE_CREATE_REQUEST, payload });
