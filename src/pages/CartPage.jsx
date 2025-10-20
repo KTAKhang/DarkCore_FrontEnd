@@ -67,6 +67,12 @@ const CartPage = () => {
     };
 
     const updateQuantity = (productId, change) => {
+        // Kiểm tra nếu có mã giảm giá đã áp dụng
+        if (appliedDiscount) {
+            toast.warning('Vui lòng gỡ mã giảm giá để thay đổi số lượng giỏ hàng');
+            return;
+        }
+        
         const item = cart?.items?.find((i) => i.productId === productId);
         if (!item) return;
         const newQuantity = Math.max(1, item.quantity + change);
@@ -75,11 +81,23 @@ const CartPage = () => {
     };
 
     const removeItem = (productId) => {
+        // Kiểm tra nếu có mã giảm giá đã áp dụng
+        if (appliedDiscount) {
+            toast.warning('Vui lòng gỡ mã giảm giá để thay đổi số lượng giỏ hàng');
+            return;
+        }
+        
         console.log('CartPage: Removing item', { productId });
         dispatch(cartRemoveRequest(productId));
     };
 
     const clearCart = () => {
+        // Kiểm tra nếu có mã giảm giá đã áp dụng
+        if (appliedDiscount) {
+            toast.warning('Vui lòng gỡ mã giảm giá để thay đổi số lượng giỏ hàng');
+            return;
+        }
+        
         console.log('CartPage: Clearing cart');
         dispatch(cartClearRequest());
     };
@@ -178,7 +196,7 @@ const CartPage = () => {
                                                                     <button
                                                                         onClick={() => updateQuantity(item.productId, -1)}
                                                                         disabled={loading || item.quantity <= 1}
-                                                                        className="w-10 h-10 flex items-center justify-center hover:bg-gray-50 transition-colors disabled:opacity-50"
+                                                                        className={`w-10 h-10 flex items-center justify-center hover:bg-gray-50 transition-colors disabled:opacity-50 ${appliedDiscount ? 'opacity-50 cursor-not-allowed' : ''}`}
                                                                     >
                                                                         <Minus className="w-4 h-4 text-gray-600" />
                                                                     </button>
@@ -186,7 +204,7 @@ const CartPage = () => {
                                                                     <button
                                                                         onClick={() => updateQuantity(item.productId, 1)}
                                                                         disabled={loading}
-                                                                        className="w-10 h-10 flex items-center justify-center hover:bg-gray-50 transition-colors disabled:opacity-50"
+                                                                        className={`w-10 h-10 flex items-center justify-center hover:bg-gray-50 transition-colors disabled:opacity-50 ${appliedDiscount ? 'opacity-50 cursor-not-allowed' : ''}`}
                                                                     >
                                                                         <Plus className="w-4 h-4 text-gray-600" />
                                                                     </button>
@@ -194,7 +212,7 @@ const CartPage = () => {
                                                                 <button
                                                                     onClick={() => removeItem(item.productId)}
                                                                     disabled={loading}
-                                                                    className="w-10 h-10 flex items-center justify-center text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                                                                    className={`w-10 h-10 flex items-center justify-center text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 ${appliedDiscount ? 'opacity-50 cursor-not-allowed' : ''}`}
                                                                 >
                                                                     <Trash2 className="w-4 h-4" />
                                                                 </button>
@@ -222,7 +240,7 @@ const CartPage = () => {
                                     <button
                                         onClick={clearCart}
                                         disabled={loading}
-                                        className="flex items-center gap-2 text-red-600 hover:text-red-700 transition-colors disabled:opacity-50"
+                                        className={`flex items-center gap-2 text-red-600 hover:text-red-700 transition-colors disabled:opacity-50 ${appliedDiscount ? 'opacity-50 cursor-not-allowed' : ''}`}
                                     >
                                         <Trash2 className="w-4 h-4" />
                                         Xóa tất cả
