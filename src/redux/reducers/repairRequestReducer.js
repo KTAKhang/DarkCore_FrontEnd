@@ -27,8 +27,8 @@ const initialState = {
   create: { item: null, loading: false, error: null, message: null },
   update: { item: null, loading: false, error: null, message: null },
   cancel: { loading: false, error: null, message: null },
-  listAll: { items: [], loading: false, error: null },
-  listAssigned: { items: [], loading: false, error: null },
+  listAll: { items: [], loading: false, error: null, pagination: null },
+  listAssigned: { items: [], loading: false, error: null, pagination: null },
   assign: { loading: false, error: null, message: null },
   statusUpdate: { loading: false, error: null, message: null },
 };
@@ -59,14 +59,14 @@ export default function repairRequestReducer(state = initialState, action) {
     case REPAIR_REQUEST_LIST_ALL_REQUEST:
       return { ...state, listAll: { ...state.listAll, loading: true, error: null } };
     case REPAIR_REQUEST_LIST_ALL_SUCCESS:
-      return { ...state, listAll: { items: action.payload || [], loading: false, error: null } };
+      return { ...state, listAll: { items: action.payload.data || [], loading: false, error: null, pagination: action.payload.pagination || null } };
     case REPAIR_REQUEST_LIST_ALL_FAILURE:
       return { ...state, listAll: { ...state.listAll, loading: false, error: action.payload } };
 
     case REPAIR_REQUEST_LIST_ASSIGNED_REQUEST:
       return { ...state, listAssigned: { ...state.listAssigned, loading: true, error: null } };
     case REPAIR_REQUEST_LIST_ASSIGNED_SUCCESS:
-      return { ...state, listAssigned: { items: action.payload || [], loading: false, error: null } };
+      return { ...state, listAssigned: { items: action.payload.data || [], loading: false, error: null, pagination: action.payload.pagination || null } };
     case REPAIR_REQUEST_LIST_ASSIGNED_FAILURE:
       return { ...state, listAssigned: { ...state.listAssigned, loading: false, error: action.payload } };
 

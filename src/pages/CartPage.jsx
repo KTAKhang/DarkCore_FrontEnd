@@ -83,7 +83,8 @@ const CartPage = () => {
         console.log('CartPage: Clearing cart');
         dispatch(cartClearRequest());
     };
-//
+
+    //xử lý áp dụng mã giảm giá
     const handleApplyDiscount = () => {
         if (!couponCode.trim()) {
             toast.error('Vui lòng nhập mã giảm giá');
@@ -282,6 +283,7 @@ const CartPage = () => {
                                             Mua trước trả sau
                                         </button>
                                     </div>
+                                    {/* Phần áp dụng mã giảm giá */}
                                     <div className="mt-6 pt-6 border-t border-gray-200">
                                         <h3 className="font-bold text-gray-900 mb-3">Ưu đãi & Khuyến mãi</h3>
                                         {appliedDiscount ? (

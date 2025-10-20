@@ -75,7 +75,17 @@ function* fetchDiscountsSaga(action) {
     console.log("✅ API response:", response);
     
     if (response.status === "OK") {
-      yield put(discountListSuccess(response.data, response.pagination));
+      // Handle both old format (array) and new format (object with discounts and pagination)
+      if (Array.isArray(response.data)) {
+        // Old format - just array of discounts
+        yield put(discountListSuccess(response.data, null));
+      } else if (response.data && response.data.discounts) {
+        // New format - object with discounts and pagination
+        yield put(discountListSuccess(response.data.discounts, response.data.pagination));
+      } else {
+        // Fallback
+        yield put(discountListSuccess(response.data, null));
+      }
     } else {
       yield put(discountListFailed(response.message || "Lỗi khi tải danh sách mã giảm giá"));
     }
@@ -113,7 +123,6 @@ function* createDiscountSaga(action) {
     
     if (response.status === "OK") {
       yield put(discountCreateSuccess(response.data));
-      toast.success("Mã giảm giá đã được tạo thành công");
     } else {
       yield put(discountCreateFailed(response.message || "Lỗi khi tạo mã giảm giá"));
       toast.error(response.message || "Lỗi khi tạo mã giảm giá");
@@ -133,7 +142,6 @@ function* updateDiscountSaga(action) {
     
     if (response.status === "OK") {
       yield put(discountUpdateSuccess(response.data));
-      toast.success("Mã giảm giá đã được cập nhật thành công");
     } else {
       yield put(discountUpdateFailed(response.message || "Lỗi khi cập nhật mã giảm giá"));
       toast.error(response.message || "Lỗi khi cập nhật mã giảm giá");
@@ -152,7 +160,6 @@ function* deactivateDiscountSaga(action) {
     
     if (response.status === "OK") {
       yield put(discountDeactivateSuccess(response.data));
-      toast.success("Mã giảm giá đã được vô hiệu hóa");
     } else {
       yield put(discountDeactivateFailed(response.message || "Lỗi khi vô hiệu hóa mã giảm giá"));
       toast.error(response.message || "Lỗi khi vô hiệu hóa mã giảm giá");
@@ -171,7 +178,6 @@ function* applyDiscountSaga(action) {
     
     if (response.status === "OK") {
       yield put(discountApplySuccess(response.data));
-      toast.success("Mã giảm giá đã được áp dụng thành công");
     } else {
       yield put(discountApplyFailed(response.message || "Lỗi khi áp dụng mã giảm giá"));
       toast.error(response.message || "Lỗi khi áp dụng mã giảm giá");

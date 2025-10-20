@@ -12,7 +12,12 @@ import {
   DollarSign,
   Clock,
   CheckCircle,
-  XCircle
+  XCircle,
+  ChevronLeft,
+  ChevronRight,
+  Filter,
+  SortAsc,
+  SortDesc
 } from 'lucide-react';
 import {
   discountListRequest,
@@ -23,15 +28,51 @@ import DiscountModal from '@/components/DiscountModal';
 
 const AdminDiscountPage = () => {
   const dispatch = useDispatch();
-  const { items, loadingList, error, success, deactivating } = useSelector((state) => state.discount);
+  const { items, loadingList, error, success, deactivating, pagination } = useSelector((state) => state.discount);
+  
+  // State for pagination, sort, and filter
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(10);
+  const [sortBy, setSortBy] = useState('createdAt');
+  const [sortOrder, setSortOrder] = useState('desc');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
+  
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingDiscount, setEditingDiscount] = useState(null);
   const [viewingDiscount, setViewingDiscount] = useState(null);
 
+  // Load data with current filters
+  const loadData = () => {
+    const queryParams = {
+      page: currentPage,
+      limit: pageSize,
+      sortBy,
+      sortOrder,
+      ...(searchTerm && { code: searchTerm }),
+      ...(statusFilter !== 'all' && { status: statusFilter })
+    };
+    
+    dispatch(discountListRequest(queryParams));
+  };
+
   useEffect(() => {
-    dispatch(discountListRequest());
-  }, [dispatch]);
+    loadData();
+  }, [currentPage, sortBy, sortOrder, statusFilter]);
+
+  // Debounced search effect
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (searchTerm !== '') {
+        setCurrentPage(1); // Reset to first page when searching
+        loadData();
+      } else {
+        loadData();
+      }
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm]);
 
   useEffect(() => {
     if (error) {
@@ -77,15 +118,43 @@ const AdminDiscountPage = () => {
     setIsModalOpen(true);
   };
 
+  const handleSort = (field) => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(field);
+      setSortOrder('asc');
+    }
+    setCurrentPage(1);
+  };
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
+  const handleFilterChange = (filterType, value) => {
+    if (filterType === 'status') {
+      setStatusFilter(value);
+    }
+    setCurrentPage(1);
+  };
+
+  const clearFilters = () => {
+    setStatusFilter('all');
+    setSearchTerm('');
+    setCurrentPage(1);
+  };
+
+  const getSortIcon = (field) => {
+    if (sortBy !== field) return null;
+    return sortOrder === 'asc' ? <SortAsc className="w-4 h-4" /> : <SortDesc className="w-4 h-4" />;
+  };
+
   const handleDeactivate = (discount) => {
     if (window.confirm(`Bạn có chắc chắn muốn vô hiệu hóa mã "${discount.code}"?`)) {
       dispatch(discountDeactivateRequest(discount._id));
     }
   };
-
-  const filteredDiscounts = items.filter(discount =>
-    discount.code.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -98,7 +167,8 @@ const AdminDiscountPage = () => {
 
         {/* Actions */}
         <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-          <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+          {/* Search and Create */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center mb-4">
             <div className="flex-1 max-w-md">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -119,6 +189,59 @@ const AdminDiscountPage = () => {
               Tạo mã giảm giá
             </button>
           </div>
+
+          {/* Filters and Sort */}
+          <div className="flex flex-wrap gap-4 items-center">
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4 text-gray-500" />
+              <span className="text-sm font-medium text-gray-700">Bộ lọc:</span>
+            </div>
+            
+            {/* Status Filter */}
+            <select
+              value={statusFilter}
+              onChange={(e) => handleFilterChange('status', e.target.value)}
+              className="px-3 py-1 border border-gray-200 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="all">Tất cả trạng thái</option>
+              <option value="active">Đang hoạt động</option>
+              <option value="expired">Đã hết hạn</option>
+              <option value="upcoming">Sắp diễn ra</option>
+              <option value="inactive">Không hoạt động</option>
+            </select>
+
+            {/* Sort Options */}
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-gray-700">Sắp xếp:</span>
+              <select
+                value={`${sortBy}-${sortOrder}`}
+                onChange={(e) => {
+                  const [field, order] = e.target.value.split('-');
+                  setSortBy(field);
+                  setSortOrder(order);
+                  setCurrentPage(1);
+                }}
+                className="px-3 py-1 border border-gray-200 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="createdAt-desc">Mới nhất</option>
+                <option value="createdAt-asc">Cũ nhất</option>
+                <option value="code-asc">Mã A-Z</option>
+                <option value="code-desc">Mã Z-A</option>
+                <option value="discountPercent-desc">% giảm cao nhất</option>
+                <option value="discountPercent-asc">% giảm thấp nhất</option>
+                <option value="startDate-desc">Ngày bắt đầu mới nhất</option>
+                <option value="startDate-asc">Ngày bắt đầu cũ nhất</option>
+              </select>
+            </div>
+
+            {/* Clear Filters */}
+            <button
+              onClick={clearFilters}
+              className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors"
+            >
+              Xóa bộ lọc
+            </button>
+          </div>
         </div>
 
         {/* Loading */}
@@ -136,20 +259,50 @@ const AdminDiscountPage = () => {
               <table className="w-full">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Mã giảm giá
+                    <th 
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                      onClick={() => handleSort('code')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Mã giảm giá
+                        {getSortIcon('code')}
+                      </div>
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Phần trăm
+                    <th 
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                      onClick={() => handleSort('discountPercent')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Phần trăm
+                        {getSortIcon('discountPercent')}
+                      </div>
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Đơn tối thiểu
+                    <th 
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                      onClick={() => handleSort('minOrderValue')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Đơn tối thiểu
+                        {getSortIcon('minOrderValue')}
+                      </div>
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Giới hạn tối đa
+                    <th 
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                      onClick={() => handleSort('maxDiscountAmount')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Giới hạn tối đa
+                        {getSortIcon('maxDiscountAmount')}
+                      </div>
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Thời gian
+                    <th 
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                      onClick={() => handleSort('startDate')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Thời gian
+                        {getSortIcon('startDate')}
+                      </div>
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Trạng thái
@@ -160,7 +313,7 @@ const AdminDiscountPage = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredDiscounts.map((discount) => (
+                  {items.map((discount) => (
                     <tr key={discount._id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
@@ -245,26 +398,90 @@ const AdminDiscountPage = () => {
                 </tbody>
               </table>
             </div>
+          </div>
+        )}
 
-            {filteredDiscounts.length === 0 && (
-              <div className="text-center py-12">
-                <div className="text-6xl mb-4">🎫</div>
+        {/* Empty State */}
+        {!loadingList && items.length === 0 && (
+          <div className="bg-white rounded-xl shadow-sm">
+            <div className="text-center py-12">
+              <div className="text-6xl mb-4">🎫</div>
                 <h3 className="text-xl font-medium text-gray-900 mb-2">
-                  {searchTerm ? 'Không tìm thấy mã giảm giá' : 'Chưa có mã giảm giá nào'}
+                  {searchTerm || statusFilter !== 'all' ? 'Không tìm thấy mã giảm giá' : 'Chưa có mã giảm giá nào'}
                 </h3>
                 <p className="text-gray-600 mb-4">
-                  {searchTerm ? 'Thử tìm kiếm với từ khóa khác' : 'Tạo mã giảm giá đầu tiên để bắt đầu'}
+                  {searchTerm || statusFilter !== 'all' ? 'Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm' : 'Tạo mã giảm giá đầu tiên để bắt đầu'}
                 </p>
-                {!searchTerm && (
-                  <button
-                    onClick={handleCreate}
-                    className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-                  >
-                    Tạo mã giảm giá
-                  </button>
-                )}
+                {!searchTerm && statusFilter === 'all' && (
+                <button
+                  onClick={handleCreate}
+                  className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Tạo mã giảm giá
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Pagination */}
+        {!loadingList && pagination && pagination.total > 0 && (
+          <div className="bg-white rounded-xl shadow-sm mt-4 px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-gray-700">
+                Hiển thị {((currentPage - 1) * pageSize) + 1} đến {Math.min(currentPage * pageSize, pagination.total)} trong tổng số {pagination.total} mã giảm giá
               </div>
-            )}
+              
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1 text-sm border border-gray-200 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  Trước
+                </button>
+                
+                {/* Page Numbers */}
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (pagination.totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= pagination.totalPages - 2) {
+                      pageNum = pagination.totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+                    
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => handlePageChange(pageNum)}
+                        className={`px-3 py-1 text-sm border rounded-md ${
+                          currentPage === pageNum
+                            ? 'bg-blue-600 text-white border-blue-600'
+                            : 'border-gray-200 hover:bg-gray-50'
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+                </div>
+                
+                <button
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === pagination.totalPages}
+                  className="px-3 py-1 text-sm border border-gray-200 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                >
+                  Sau
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
@@ -282,7 +499,7 @@ const AdminDiscountPage = () => {
             setIsModalOpen(false);
             setEditingDiscount(null);
             setViewingDiscount(null);
-            dispatch(discountListRequest());
+            loadData();
           }}
         />
       </div>

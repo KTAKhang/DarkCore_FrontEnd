@@ -25,8 +25,13 @@ function getAuthHeaders() {
   return headers;
 }
 
-const apiList = async () => {
-  const res = await axios.get(`${API_BASE_URL}/repair/api/services`, { headers: getAuthHeaders() });
+const apiList = async (query = {}) => {
+  const params = new URLSearchParams();
+  if (query.page) params.append('page', query.page);
+  if (query.limit) params.append('limit', query.limit);
+  
+  const url = `${API_BASE_URL}/repair/api/services${params.toString() ? '?' + params.toString() : ''}`;
+  const res = await axios.get(url, { headers: getAuthHeaders() });
   return res.data;
 };
 
@@ -45,11 +50,22 @@ const apiDelete = async (id) => {
   return res.data;
 };
 
-function* listWorker() {
+function* listWorker(action) {
   try {
-    const data = yield call(apiList);
+    const query = action.payload || {};
+    const data = yield call(apiList, query);
     if (data.status === "OK") {
-      yield put(repairServiceListSuccess(data.data || []));
+      // Handle both old format (array) and new format (object with services and pagination)
+      if (Array.isArray(data.data)) {
+        // Old format - just array of services
+        yield put(repairServiceListSuccess(data.data, null));
+      } else if (data.data && data.data.services) {
+        // New format - object with services and pagination
+        yield put(repairServiceListSuccess(data.data.services, data.data.pagination));
+      } else {
+        // Fallback
+        yield put(repairServiceListSuccess(data.data, null));
+      }
     } else {
       throw new Error(data.message || "Không thể tải danh sách dịch vụ sửa chữa");
     }

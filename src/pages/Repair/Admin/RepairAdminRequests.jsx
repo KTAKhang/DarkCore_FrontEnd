@@ -2,31 +2,104 @@ import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { repairRequestListAllRequest } from "../../../redux/actions/repairRequestActions";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const RepairAdminRequests = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const state = useSelector(s => s?.repairRequest?.listAll) || { items: [], loading: false, error: null };
+  const state = useSelector(s => s?.repairRequest?.listAll) || { items: [], loading: false, error: null, pagination: null };
+  
+  // State for pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(5);
+  
   //khởi tạo searchparams rỗng với 2 trường username và status  
   const [searchParams, setSearchParams] = useState({
     username: '',
     status: ''
   });
+
+  // Load data with current filters and pagination
+  const loadData = () => {
+    const params = {
+      ...searchParams,
+      page: currentPage,
+      limit: pageSize
+    };
+    dispatch(repairRequestListAllRequest(params));
+  };
+
+  useEffect(() => {
+    loadData();
+  }, [currentPage]);
+
   // dispatch lại action với params hiện tại khi nhấn nút tìm kiếm với searchParams hiện tại
   const handleSearch = () => {
-    dispatch(repairRequestListAllRequest(searchParams));
+    setCurrentPage(1); // Reset to first page when searching
+    loadData();
   };
+  
   // reset filter và gọi lại repairRequestListAllRequest với params rỗng để list lại toàn bộ request
   const handleReset = () => {
     //reset params về rỗng và gọi lại action
     const resetParams = { username: '', status: '' };
     setSearchParams(resetParams);
-    dispatch(repairRequestListAllRequest(resetParams));
+    setCurrentPage(1);
+    dispatch(repairRequestListAllRequest({ ...resetParams, page: 1, limit: pageSize }));
   };
 
-  useEffect(() => {
-    dispatch(repairRequestListAllRequest());
-  }, [dispatch]);
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
+  const renderPagination = () => {
+    if (!state.pagination || state.pagination.totalPages <= 1) return null;
+
+    const { page, totalPages } = state.pagination;
+    const pages = [];
+    
+    // Show page numbers
+    for (let i = 1; i <= totalPages; i++) {
+      pages.push(
+        <button
+          key={i}
+          onClick={() => handlePageChange(i)}
+          className={`px-3 py-1 rounded-md text-sm ${
+            i === page
+              ? 'bg-blue-600 text-white'
+              : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
+          }`}
+        >
+          {i}
+        </button>
+      );
+    }
+
+    return (
+      <div className="flex items-center justify-between mt-4">
+        <div className="text-sm text-gray-700">
+          Hiển thị {((page - 1) * pageSize) + 1} - {Math.min(page * pageSize, state.pagination.total)} trong tổng số {state.pagination.total} yêu cầu
+        </div>
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={() => handlePageChange(page - 1)}
+            disabled={page <= 1}
+            className="p-2 rounded-md border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          {pages}
+          <button
+            onClick={() => handlePageChange(page + 1)}
+            disabled={page >= totalPages}
+            className="p-2 rounded-md border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    );
+  };
   // map trạng thái
   const STATUS_MAP = {
     'waiting': 'Đang chờ xử lý',
@@ -129,6 +202,9 @@ const RepairAdminRequests = () => {
           </tbody>
         </table>
       </div>
+      
+      {/* Pagination */}
+      {renderPagination()}
     </div>
   );
 };
