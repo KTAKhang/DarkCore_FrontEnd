@@ -153,10 +153,7 @@ const NewsPage = () => {
                                                                 )
                                                                 : "N/A"}
                                                         </span>
-                                                        <span>
-                                                            <EyeOutlined className="mr-1" />
-                                                            {news.views || 0} lượt xem
-                                                        </span>
+
                                                     </div>
                                                 </div>
                                             </Card>
@@ -256,8 +253,8 @@ const NewsPage = () => {
                                 {selectedNews.createdAt
                                     ? new Date(selectedNews.createdAt).toLocaleDateString("vi-VN")
                                     : "N/A"}{" "}
-                                | <EyeOutlined className="ml-1 mr-1" />
-                                {selectedNews.views || 0} lượt xem
+                                {/* | <EyeOutlined className="ml-1 mr-1" />
+                                {selectedNews.views || 0} lượt xem */}
                             </Text>
 
                             <Paragraph className="text-gray-700 text-base leading-relaxed whitespace-pre-line">

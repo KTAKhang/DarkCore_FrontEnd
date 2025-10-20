@@ -476,7 +476,7 @@ const NewsManagement = () => {
                 title={
                     <Space>
                         <Avatar style={{ backgroundColor: "#13C2C2" }} icon={<AppstoreOutlined />} />
-                        <Title level={3} style={{ margin: 0, color: "#0D364C" }}>Quản lý News</Title>
+                        <Title level={3} style={{ margin: 0, color: "#0D364C" }}>Quản lý Tin Tức</Title>
                     </Space>
                 }
             >
@@ -517,6 +517,7 @@ const NewsManagement = () => {
                         {/* SỬA: Xóa title options, giữ newest/oldest/views-desc, cập nhật computed value */}
                         <Select
                             value={(() => {
+                                // if (sort.sortBy === "createdAt" && sort.sortOrder === "desc") return "default";
                                 if (sort.sortBy === "createdAt" && sort.sortOrder === "desc") return "newest";
                                 if (sort.sortBy === "createdAt" && sort.sortOrder === "asc") return "oldest";
                                 if (sort.sortBy === "views" && sort.sortOrder === "desc") return "views-desc";
@@ -528,7 +529,7 @@ const NewsManagement = () => {
                             placeholder="Sắp xếp"
                             suffixIcon={<FilterOutlined style={{ color: "#13C2C2" }} />}
                         >
-                            <Select.Option value="default">Mặc định</Select.Option>
+                            {/* <Select.Option value="default">Mặc định</Select.Option> */}
                             <Select.Option value="newest">Mới nhất</Select.Option>
                             <Select.Option value="oldest">Cũ nhất</Select.Option>
                             <Select.Option value="views-desc">Xem nhiều nhất</Select.Option>  {/* Giữ: Option views */}

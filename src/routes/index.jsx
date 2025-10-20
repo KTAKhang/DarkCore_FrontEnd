@@ -33,12 +33,14 @@ import ShowAllProduct from "../pages/CustomerVIew/ShowAllProduct";
 import ProductDetail from "../pages/CustomerVIew/ProductDetail";
 import WishlistPage from "../pages/CustomerVIew/WishlistPage";
 import OrderHistory from "../pages/CustomerVIew/OrderHistory";
+import OrdersPage from "../pages/CustomerVIew/OrdersPage";
 import NewsPage from "../pages/CustomerVIew/NewsPage";
 import ProfileManagement from "../pages/ProfileManagement/ProfileManagerment";
 import UpdatePassword from "../pages/ProfileManagement/UpdatePassword";
+import PaymentResultPage from "../pages/PaymentResultPage";
 import PrivateRoute from "../components/PrivateRouter";
 import CustomerLayout from "../layout/CustomerLayout";
-
+import CheckoutPage from "../pages/CheckoutPage";
 
 
 export const routes = [
@@ -93,6 +95,27 @@ export const routes = [
     element: <NewsPage />,
   },
 
+  // Trang thanh toán
+  {
+    path: "/checkout",
+    element: (
+      <PrivateRoute requiredRole="customer">
+        <CheckoutPage />
+      </PrivateRoute>
+    ),
+  },
+
+  // Trang kết quả thanh toán
+  {
+    path: "/payment-result",
+    element: <PaymentResultPage />,
+  },
+  // Route tương thích ngược cho VNPay redirect cũ
+  {
+    path: "/payment/result",
+    element: <PaymentResultPage />,
+  },
+
   // Khu vực quản trị
   {
     path: "/customer",
@@ -111,7 +134,7 @@ export const routes = [
       },
       {
         path: "orders",
-        element: <OrderHistory />,
+        element: <OrdersPage />,
       },
     ],
   },
