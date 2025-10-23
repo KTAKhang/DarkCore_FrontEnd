@@ -15,7 +15,7 @@ import {
 } from "../actions/repairServiceActions";
 
 const initialState = {
-  list: { items: [], loading: false, error: null },
+  list: { items: [], loading: false, error: null, pagination: null },
   create: { loading: false, error: null, message: null },
   update: { loading: false, error: null, message: null },
   remove: { loading: false, error: null, message: null },
@@ -26,7 +26,7 @@ export default function repairServiceReducer(state = initialState, action) {
     case REPAIR_SERVICE_LIST_REQUEST:
       return { ...state, list: { ...state.list, loading: true, error: null } };
     case REPAIR_SERVICE_LIST_SUCCESS:
-      return { ...state, list: { items: action.payload || [], loading: false, error: null } };
+      return { ...state, list: { items: action.payload.data || [], loading: false, error: null, pagination: action.payload.pagination || null } };
     case REPAIR_SERVICE_LIST_FAILURE:
       return { ...state, list: { ...state.list, loading: false, error: action.payload } };
 

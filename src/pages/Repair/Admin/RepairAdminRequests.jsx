@@ -2,35 +2,121 @@ import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { repairRequestListAllRequest } from "../../../redux/actions/repairRequestActions";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const RepairAdminRequests = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const state = useSelector(s => s?.repairRequest?.listAll) || { items: [], loading: false, error: null };
+  const state = useSelector(s => s?.repairRequest?.listAll) || { items: [], loading: false, error: null, pagination: null };
   
+  // State for pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(5);
+  
+  //khởi tạo searchparams rỗng với 2 trường username và status  
   const [searchParams, setSearchParams] = useState({
     username: '',
     status: ''
   });
 
-  const handleSearch = () => {
-    dispatch(repairRequestListAllRequest(searchParams));
-  };
-
-  const handleReset = () => {
-    const resetParams = { username: '', status: '' };
-    setSearchParams(resetParams);
-    dispatch(repairRequestListAllRequest(resetParams));
+  // Load data with current filters and pagination
+  const loadData = () => {
+    const params = {
+      ...searchParams,
+      page: currentPage,
+      limit: pageSize
+    };
+    dispatch(repairRequestListAllRequest(params));
   };
 
   useEffect(() => {
-    dispatch(repairRequestListAllRequest());
-  }, [dispatch]);
+    loadData();
+  }, [currentPage]);
+
+  // dispatch lại action với params hiện tại khi nhấn nút tìm kiếm với searchParams hiện tại
+  const handleSearch = () => {
+    setCurrentPage(1); // Reset to first page when searching
+    loadData();
+  };
+  
+  // reset filter và gọi lại repairRequestListAllRequest với params rỗng để list lại toàn bộ request
+  const handleReset = () => {
+    //reset params về rỗng và gọi lại action
+    const resetParams = { username: '', status: '' };
+    setSearchParams(resetParams);
+    setCurrentPage(1);
+    dispatch(repairRequestListAllRequest({ ...resetParams, page: 1, limit: pageSize }));
+  };
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
+  const renderPagination = () => {
+    if (!state.pagination || state.pagination.totalPages <= 1) return null;
+
+    const { page, totalPages } = state.pagination;
+    const pages = [];
+    
+    // Show page numbers
+    for (let i = 1; i <= totalPages; i++) {
+      pages.push(
+        <button
+          key={i}
+          onClick={() => handlePageChange(i)}
+          className={`px-3 py-1 rounded-md text-sm ${
+            i === page
+              ? 'bg-blue-600 text-white'
+              : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
+          }`}
+        >
+          {i}
+        </button>
+      );
+    }
+
+    return (
+      <div className="flex items-center justify-between mt-4">
+        <div className="text-sm text-gray-700">
+          Hiển thị {((page - 1) * pageSize) + 1} - {Math.min(page * pageSize, state.pagination.total)} trong tổng số {state.pagination.total} yêu cầu
+        </div>
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={() => handlePageChange(page - 1)}
+            disabled={page <= 1}
+            className="p-2 rounded-md border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          {pages}
+          <button
+            onClick={() => handlePageChange(page + 1)}
+            disabled={page >= totalPages}
+            className="p-2 rounded-md border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    );
+  };
+  // map trạng thái
+  const STATUS_MAP = {
+    'waiting': 'Đang chờ xử lý',
+    'in-progress': 'Đang xử lý',
+    'completed': 'Hoàn thành'
+  };
+
+  const STATUS_COLORS = {
+    'waiting': 'bg-yellow-100 text-yellow-800',
+    'in-progress': 'bg-blue-100 text-blue-800',
+    'completed': 'bg-green-100 text-green-800'
+  };
 
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-4">Danh sách yêu cầu sửa chữa</h1>
-      
+
       {/* Search and Filter Section */}
       <div className="bg-white rounded-lg border p-4 mb-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
@@ -40,16 +126,16 @@ const RepairAdminRequests = () => {
               type="text"
               placeholder="Nhập tên khách lại hoặc email..."
               value={searchParams.username}
-              onChange={(e) => setSearchParams({...searchParams, username: e.target.value})}
+              onChange={(e) => setSearchParams({ ...searchParams, username: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Lọc theo trạng thái</label>
             <select
               value={searchParams.status}
-              onChange={(e) => setSearchParams({...searchParams, status: e.target.value})}
+              onChange={(e) => setSearchParams({ ...searchParams, status: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">Tất cả trạng thái</option>
@@ -59,7 +145,7 @@ const RepairAdminRequests = () => {
               <option value="canceled">Đã hủy</option>
             </select>
           </div>
-          
+
           <div className="flex gap-2">
             <button
               onClick={handleSearch}
@@ -76,7 +162,7 @@ const RepairAdminRequests = () => {
           </div>
         </div>
       </div>
-      
+
       {state.loading && <div className="text-center py-4">Đang tải...</div>}
       {state.error && <div className="text-red-600 bg-red-50 p-3 rounded-md mb-4">{state.error}</div>}
       {!state.loading && !state.error && (!state.items || state.items.length === 0) && (
@@ -90,7 +176,7 @@ const RepairAdminRequests = () => {
               <th className="p-3">Thiết bị</th>
               <th className="p-3">Dịch vụ</th>
               <th className="p-3">Trạng thái</th>
-              <th className="p-3">Kỹ thuật</th>
+              <th className="p-3">Kỹ thuật viên</th>
               <th className="p-3">Ước tính</th>
               <th className="p-3">Hành động</th>
             </tr>
@@ -102,18 +188,23 @@ const RepairAdminRequests = () => {
                 <td className="p-3">{item.deviceBrand} {item.deviceModel}</td>
                 <td className="p-3">{(item.services || []).map(s => s.name).join(", ")}</td>
                 <td className="p-3">
-                  <span className="px-2 py-1 rounded text-xs bg-gray-100">{item.status}</span>
+                  <span className={`px-2 py-1 rounded text-xs ${STATUS_COLORS[item.status] || 'bg-gray-100'}`}>
+                    {STATUS_MAP[item.status] || item.status}
+                  </span>
                 </td>
                 <td className="p-3">{item.assignedTechnician?.user_name || '-'}</td>
                 <td className="p-3 text-blue-600 font-semibold">{new Intl.NumberFormat('vi-VN').format(item.estimatedCost)}₫</td>
                 <td className="p-3 space-x-2">
-                  <button onClick={() => navigate(`/admin/repair/requests/${item._id}`)} className="border px-3 py-1 rounded hover:bg-gray-50">Detail</button>
+                  <button onClick={() => navigate(`/admin/repair/requests/${item._id}`)} className="border px-3 py-1 rounded hover:bg-gray-50">Chi tiết</button>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+      
+      {/* Pagination */}
+      {renderPagination()}
     </div>
   );
 };

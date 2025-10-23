@@ -73,6 +73,7 @@ const ProfileManager = () => {
   // Handle avatar upload
   const handleAvatarChange = (info) => {
     if (info.fileList.length > 0) {
+      const file = info.file
       setAvatarFile(file);
       const url = URL.createObjectURL(file);
       setAvatarUrl(url);

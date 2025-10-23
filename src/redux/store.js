@@ -8,7 +8,6 @@ import staffReducer from "./reducers/staffReducer";
 import categoryHomeReducer from "./reducers/categoryHomeReducer";
 import productHomeReducer from "./reducers/productHomeReducer";
 import profileReducer from "./reducers/profileReducer";
-
 import customerReducer from "./reducers/customerReducer";
 import cartReducer from "./reducers/cartReducer";
 import orderReducer from "./reducers/orderReducer";
@@ -17,8 +16,10 @@ import newsReducer from "./reducers/newsReducer";
 import repairServiceReducer from "./reducers/repairServiceReducer";
 import repairRequestReducer from "./reducers/repairRequestReducer";
 import contactRequestReducer from "./reducers/contactReducer";
-
+import discountReducer from "./reducers/discountReducer";
+import reviewReducer from "./reducers/reviewReducer";
 import rootSaga from "./sagas/rootSaga";
+
 const rootReducer = combineReducers({
   auth: authReducer,
   category: categoryReducer,
@@ -35,6 +36,8 @@ const rootReducer = combineReducers({
   repairService: repairServiceReducer,
   repairRequest: repairRequestReducer,
   contact: contactRequestReducer,
+  discount: discountReducer,
+  review: reviewReducer,
 });
 
 const sagaMiddleware = createSagaMiddleware();

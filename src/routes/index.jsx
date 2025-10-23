@@ -43,7 +43,11 @@ import PrivateRoute from "../components/PrivateRouter";
 import CustomerLayout from "../layout/CustomerLayout";
 import ContactPage from "../pages/CustomerVIew/ContactPage";
 import ContactHistory from "../pages/CustomerVIew/ContactHistory";
-
+import DiscountListPage from "../pages/UserDiscount/DiscountListPage";
+import AdminDiscountPage from "../pages/DiscountManagement/AdminDiscountPage";
+import OrderReviewPage from "../pages/ProductReview/OrderReviewPage";
+import ProductReviewManagement from "../pages/ProductReview/ProductReviewManagement";
+import AdminProductReviewDetailPage from "../pages/ProductReview/AdminProductReviewDetailPage";
 
 
 export const routes = [
@@ -103,6 +107,12 @@ export const routes = [
   },
   
 
+  // THÊM: Trang mã giảm giá cho user (public)
+  {
+    path: "/discounts",
+    element: <DiscountListPage />,
+  },
+
   // Khu vực quản trị
   {
     path: "/customer",
@@ -126,7 +136,8 @@ export const routes = [
       {
         path: "contact/history",
         element: <ContactHistory />,
-      }
+      },
+      { path: "review/:id", element: <OrderReviewPage /> },
     ],
   },
 
@@ -151,9 +162,12 @@ export const routes = [
       { path: "customer/:id", element: <CustomerDetail /> },
       { path: "order", element: <OrderManagement /> },
       { path: "profile", element: <ProfileManagement /> },
+      { path: "review", element: <ProductReviewManagement /> },
+      { path: "review/:id", element: <AdminProductReviewDetailPage /> },
       { path: "change-password", element: <UpdatePassword /> },
       { path: "news", element: <NewsManagement /> },
       { path: "contact", element: <ContactManagement /> },
+      { path: "discounts", element: <AdminDiscountPage /> },
     ],
   },
 

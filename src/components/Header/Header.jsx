@@ -74,6 +74,9 @@ const Header = ({ searchTerm, setSearchTerm }) => {
                         <Link to="/news" className="text-gray-700 hover:text-blue-600">
                             Tin Tức
                         </Link>
+                        <Link to="/discounts" className="text-gray-700 hover:text-blue-600">
+                            Mã giảm giá
+                        </Link>
                         <Link to="/about" className="text-gray-700 hover:text-blue-600">
                             Về chúng tôi
                         </Link>
