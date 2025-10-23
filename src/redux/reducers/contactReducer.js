@@ -33,12 +33,12 @@ const initialState = {
   current: null,
   replies: [],
   stats: { total: 0, pending: 0, resolved: 0, closed: 0 },
-  pagination: { page: 1, limit: 5 },
+  pagination: { page: 1, limit: 5, total: 0 },
   loadingList: false,
   loadingStats: false,
   creating: false,
   replying: false,
-  updating: false, // <-- đổi tên từ updatingStatus
+  updating: false,
   deleting: false,
   error: null,
 };
@@ -56,9 +56,9 @@ const contactReducer = (state = initialState, action) => {
         loadingList: false,
         list: action.payload.data,
         pagination: {
-          page: action.payload.page || 1,
-          limit: action.payload.limit || 5,
-          total: action.payload.total || 0,
+          page: action.payload.data.page || 1, // ✅ Sửa: action.payload.data.page
+          limit: state.pagination.limit, // ✅ Giữ nguyên limit từ state
+          total: action.payload.data.total || 0, // ✅ Sửa: action.payload.data.total
         },
         error: null,
       };

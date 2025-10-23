@@ -1,4 +1,3 @@
-import React from "react";
 import PropTypes from "prop-types";
 import { Modal, Descriptions, Tag, Typography, Space, Image, Divider, Empty } from "antd";
 import {
@@ -70,24 +69,24 @@ const ContactDetailModel = ({ visible, onClose, contactData }) => {
       children: <Tag color="#13C2C2">{contactData.reason || "Không có lý do"}</Tag>,
       span: 1,
     },
-    {
-      key: "priority",
-      label: <Text strong style={{ color: "#0D364C" }}>Mức độ ưu tiên</Text>,
-      children: (
-        <Tag
-          color={
-            contactData.priority === "High"
-              ? "red"
-              : contactData.priority === "Medium"
-              ? "orange"
-              : "green"
-          }
-        >
-          {contactData.priority}
-        </Tag>
-      ),
-      span: 1,
-    },
+    // {
+    //   key: "priority",
+    //   label: <Text strong style={{ color: "#0D364C" }}>Mức độ ưu tiên</Text>,
+    //   children: (
+    //     <Tag
+    //       color={
+    //         contactData.priority === "High"
+    //           ? "red"
+    //           : contactData.priority === "Medium"
+    //           ? "orange"
+    //           : "green"
+    //       }
+    //     >
+    //       {contactData.priority}
+    //     </Tag>
+    //   ),
+    //   span: 1,
+    // },
     {
       key: "status",
       label: <Text strong style={{ color: "#0D364C" }}>Trạng thái</Text>,
@@ -124,45 +123,45 @@ const ContactDetailModel = ({ visible, onClose, contactData }) => {
       ),
       span: 3,
     },
-    {
-      key: "attachments",
-      label: <Text strong style={{ color: "#0D364C" }}>Tệp đính kèm</Text>,
-      children:
-        contactData.attachments && contactData.attachments.length > 0 ? (
-          <Space wrap>
-            {contactData.attachments.map((file, i) => (
-              <a
-                key={i}
-                href={file.url || file}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ color: "#13C2C2" }}
-              >
-                📎 {file.originalName || `File ${i + 1}`}
-              </a>
-            ))}
-          </Space>
-        ) : (
-          <Text type="secondary">Không có tệp đính kèm</Text>
-        ),
-      span: 3,
-    },
-    {
-      key: "image",
-      label: <Text strong style={{ color: "#0D364C" }}>Hình ảnh</Text>,
-      children: contactData.image ? (
-        <Image
-          src={contactData.image}
-          width={200}
-          height={150}
-          preview={{ mask: "Xem ảnh" }}
-          style={{ borderRadius: 8, objectFit: "cover" }}
-        />
-      ) : (
-        <Text type="secondary">Không có hình ảnh</Text>
-      ),
-      span: 3,
-    },
+    // {
+    //   key: "attachments",
+    //   label: <Text strong style={{ color: "#0D364C" }}>Tệp đính kèm</Text>,
+    //   children:
+    //     contactData.attachments && contactData.attachments.length > 0 ? (
+    //       <Space wrap>
+    //         {contactData.attachments.map((file, i) => (
+    //           <a
+    //             key={i}
+    //             href={file.url || file}
+    //             target="_blank"
+    //             rel="noopener noreferrer"
+    //             style={{ color: "#13C2C2" }}
+    //           >
+    //             📎 {file.originalName || `File ${i + 1}`}
+    //           </a>
+    //         ))}
+    //       </Space>
+    //     ) : (
+    //       <Text type="secondary">Không có tệp đính kèm</Text>
+    //     ),
+    //   span: 3,
+    // },
+    // {
+    //   key: "image",
+    //   label: <Text strong style={{ color: "#0D364C" }}>Hình ảnh</Text>,
+    //   children: contactData.image ? (
+    //     <Image
+    //       src={contactData.image}
+    //       width={200}
+    //       height={150}
+    //       preview={{ mask: "Xem ảnh" }}
+    //       style={{ borderRadius: 8, objectFit: "cover" }}
+    //     />
+    //   ) : (
+    //     <Text type="secondary">Không có hình ảnh</Text>
+    //   ),
+    //   span: 3,
+    // },
     {
       key: "createdAt",
       label: <Text strong style={{ color: "#0D364C" }}>Ngày tạo</Text>,

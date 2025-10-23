@@ -44,15 +44,15 @@ const ContactHistory = () => {
     return configs[status] || configs.Pending;
   };
 
-  const getPriorityColor = (priority) => {
-    const colors = {
-      Low: "text-green-600",
-      Medium: "text-yellow-600",
-      High: "text-orange-600",
-      Urgent: "text-red-600"
-    };
-    return colors[priority] || colors.Medium;
-  };
+  // const getPriorityColor = (priority) => {
+  //   const colors = {
+  //     Low: "text-green-600",
+  //     Medium: "text-yellow-600",
+  //     High: "text-orange-600",
+  //     Urgent: "text-red-600"
+  //   };
+  //   return colors[priority] || colors.Medium;
+  // };
 
   if (loadingList) {
     return (
@@ -129,11 +129,11 @@ const ContactHistory = () => {
                             <Clock className="w-4 h-4" />
                             <span>{new Date(contact.createdAt).toLocaleString("vi-VN")}</span>
                           </div>
-                          <div className={`font-medium ${getPriorityColor(contact.priority)}`}>
+                          {/* <div className={`font-medium ${getPriorityColor(contact.priority)}`}>
                             {contact.priority === "Low" ? "Thấp" : 
                              contact.priority === "Medium" ? "Trung bình" :
                              contact.priority === "High" ? "Cao" : "Khẩn cấp"}
-                          </div>
+                          </div> */}
                           {hasReplies && (
                             <div className="flex items-center gap-1 text-blue-600 font-medium">
                               <MessageSquare className="w-4 h-4" />

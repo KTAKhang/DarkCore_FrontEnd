@@ -40,14 +40,14 @@ const { Title, Text } = Typography;
 const STATUS_COLORS = {
   Pending: "warning",
   Resolved: "success",
-  Closed: "error",
+  // Closed: "error",
 };
 
-const PRIORITY_COLORS = {
-  High: "red",
-  Medium: "orange",
-  Low: "green",
-};
+// const PRIORITY_COLORS = {
+//   High: "red",
+//   Medium: "orange",
+//   Low: "green",
+// };
 
 const ContactManagement = () => {
   const dispatch = useDispatch();
@@ -60,14 +60,12 @@ const ContactManagement = () => {
     priority: "all",
   });
   const [pagination, setPagination] = useState({ current: 1, pageSize: 5 });
-  const [sort, setSort] = useState({ sortBy: "createdAt", sortOrder: "desc" });
   const [isViewModalVisible, setIsViewModalVisible] = useState(false);
   const [isUpdateModalVisible, setIsUpdateModalVisible] = useState(false);
   const [selectedContact, setSelectedContact] = useState(null);
 
   const filtersRef = useRef(filters);
   const paginationRef = useRef(pagination);
-  const sortRef = useRef(sort);
 
   useEffect(() => {
     filtersRef.current = filters;
@@ -75,31 +73,29 @@ const ContactManagement = () => {
   useEffect(() => {
     paginationRef.current = pagination;
   }, [pagination]);
-  useEffect(() => {
-    sortRef.current = sort;
-  }, [sort]);
 
   // ================= Fetch contacts =================
   const fetchContacts = useCallback(
     (params = {}) => {
       const query = {
-        page: pagination.current,
-        limit: pagination.pageSize,
-        sortBy: sortRef.current.sortBy,
-        order: sortRef.current.sortOrder,
+        page: paginationRef.current.current,
+        limit: paginationRef.current.pageSize,
         ...params,
       };
-      const userRole = "admin"; // hoặc lấy từ Redux state
-      if (userRole !== "admin") {
-        if (filtersRef.current.status !== "all") query.status = filtersRef.current.status;
-        if (filtersRef.current.priority !== "all") query.priority = filtersRef.current.priority;
+      
+      // ✅ Apply filter status regardless of role
+      if (filtersRef.current.status !== "all") {
+        query.status = filtersRef.current.status;
+      }
+      if (filtersRef.current.priority !== "all") {
+        query.priority = filtersRef.current.priority;
       }
 
       if (filtersRef.current.searchText.trim()) query.search = filtersRef.current.searchText.trim();
       console.log("🚀 Fetch Contacts Query:", query);
       dispatch(contactListRequest(query));
     },
-    [dispatch, pagination.current, pagination.pageSize]
+    [dispatch]
   );
 
   // ================= Fetch stats =================
@@ -112,7 +108,12 @@ const ContactManagement = () => {
   useEffect(() => {
     fetchStats();
     fetchContacts({ page: 1 });
-  }, [fetchContacts, fetchStats]);
+  }, []);
+
+  // ================= Handle pagination change =================
+  useEffect(() => {
+    fetchContacts({ page: pagination.current, limit: pagination.pageSize });
+  }, [pagination.current, pagination.pageSize]);
 
   // ================= Handle filters =================
   useEffect(() => {
@@ -121,7 +122,7 @@ const ContactManagement = () => {
       fetchContacts({ page: 1 });
     }, 500);
     return () => clearTimeout(timeout);
-  }, [filters, fetchContacts]);
+  }, [filters]);
 
   // ================= Refresh =================
   const handleRefresh = useCallback(() => {
@@ -211,18 +212,19 @@ const ContactManagement = () => {
         key: "reason",
         render: (reason) => <Tag color="#13C2C2">{reason}</Tag>,
       },
-      {
-        title: "Độ ưu tiên",
-        dataIndex: "priority",
-        key: "priority",
-        render: (priority) => (
-          <Tag color={PRIORITY_COLORS[priority] || "default"}>{priority}</Tag>
-        ),
-      },
+      // {
+      //   title: "Độ ưu tiên",
+      //   dataIndex: "priority",
+      //   key: "priority",
+      //   render: (priority) => (
+      //     <Tag color={PRIORITY_COLORS[priority] || "default"}>{priority}</Tag>
+      //   ),
+      // },
       {
         title: "Trạng thái",
         dataIndex: "status",
         key: "status",
+        // ✅ Removed sorter to disable sorting
         render: (status) => (
           <Badge
             status={STATUS_COLORS[status] || "default"}
@@ -288,7 +290,7 @@ const ContactManagement = () => {
 
   // ================= Table pagination =================
   const tablePagination = useMemo(() => {
-    const effectiveTotal = apiPagination?.total || 0; // Sử dụng total thực tế từ API
+    const effectiveTotal = apiPagination?.total || 0;
     console.log("🚀 tablePagination:", {
       current: apiPagination?.page || pagination.current,
       pageSize: pagination.pageSize,
@@ -300,20 +302,19 @@ const ContactManagement = () => {
       pageSize: pagination.pageSize,
       total: effectiveTotal,
       showSizeChanger: true,
-      showQuickJumper: true,
-      pageSizeOptions: ["5", "10"],
+      pageSizeOptions: ["5", "10", "20"],
+      showTotal: (total, range) => `${range[0]}-${range[1]} của ${total} contact`,
       onChange: (page, pageSize) => {
         console.log("🚀 Pagination changed:", { page, pageSize });
+        // ✅ Chỉ update state, không gọi fetchContacts ở đây
         setPagination({ current: page, pageSize });
-        fetchContacts({ page, limit: pageSize });
       },
       onShowSizeChange: (current, size) => {
         console.log("🚀 PageSize changed:", { current, size });
         setPagination({ current: 1, pageSize: size });
-        fetchContacts({ page: 1, limit: size });
       },
     };
-  }, [apiPagination, pagination, fetchContacts]);
+  }, [apiPagination, pagination]);
 
   // ================= Sync pagination with API =================
   useEffect(() => {
@@ -376,9 +377,9 @@ const ContactManagement = () => {
             <Select.Option value="all">Tất cả</Select.Option>
             <Select.Option value="Pending">Pending</Select.Option>
             <Select.Option value="Resolved">Resolved</Select.Option>
-            <Select.Option value="Closed">Closed</Select.Option>
+            {/* <Select.Option value="Closed">Closed</Select.Option> */}
           </Select>
-          <Select
+          {/* <Select
             value={filters.priority}
             onChange={(val) => setFilters((prev) => ({ ...prev, priority: val }))}
             style={{ width: 150 }}
@@ -388,7 +389,7 @@ const ContactManagement = () => {
             <Select.Option value="High">Cao</Select.Option>
             <Select.Option value="Medium">Trung bình</Select.Option>
             <Select.Option value="Low">Thấp</Select.Option>
-          </Select>
+          </Select> */}
         </Space>
 
         <Spin spinning={loadingList}>
@@ -398,18 +399,7 @@ const ContactManagement = () => {
             dataSource={contactItems}
             pagination={tablePagination}
             locale={{ emptyText: "Không có liên hệ nào" }}
-            onChange={(pagination, filters, sorter) => {
-              if (sorter?.field) {
-                const sortOrder = sorter.order === "ascend" ? "asc" : "desc";
-                setSort({ sortBy: sorter.field, sortOrder });
-                fetchContacts({
-                  page: pagination.current,
-                  limit: pagination.pageSize,
-                  sortBy: sorter.field,
-                  order: sortOrder,
-                });
-              }
-            }}
+            // ✅ Removed onChange handler to disable sorting
           />
 
         </Spin>

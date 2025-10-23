@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Modal, Form, Select, Input, Button, Upload, Space, Tag, message } from "antd";
-import { PaperClipOutlined, CloseOutlined } from "@ant-design/icons";
+// import { PaperClipOutlined, CloseOutlined } from "@ant-design/icons";
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -48,21 +48,21 @@ const ContactUpdateModal = ({ visible, contactData, onClose, onSubmit, loading }
     onClose();
   };
 
-  const handleUpload = ({ file }) => {
-    // Giả lập upload - trong thực tế bạn cần upload lên Cloudinary
-    const newAttachment = {
-      url: URL.createObjectURL(file),
-      publicId: `temp_${Date.now()}`,
-      originalName: file.name,
-    };
-    setAttachments([...attachments, newAttachment]);
-    message.success(`${file.name} đã được thêm`);
-    return false; // Ngăn upload tự động
-  };
+  // const handleUpload = ({ file }) => {
+  //   // Giả lập upload - trong thực tế bạn cần upload lên Cloudinary
+  //   const newAttachment = {
+  //     url: URL.createObjectURL(file),
+  //     publicId: `temp_${Date.now()}`,
+  //     originalName: file.name,
+  //   };
+  //   setAttachments([...attachments, newAttachment]);
+  //   message.success(`${file.name} đã được thêm`);
+  //   return false; // Ngăn upload tự động
+  // };
 
-  const removeAttachment = (index) => {
-    setAttachments(attachments.filter((_, i) => i !== index));
-  };
+  // const removeAttachment = (index) => {
+  //   setAttachments(attachments.filter((_, i) => i !== index));
+  // };
 
   return (
     <Modal
@@ -133,7 +133,7 @@ const ContactUpdateModal = ({ visible, contactData, onClose, onSubmit, loading }
         </Form.Item> */}
 
         {/* Attachments */}
-        <Form.Item label="Đính kèm file">
+        {/* <Form.Item label="Đính kèm file">
           <Upload
             beforeUpload={handleUpload}
             showUploadList={false}
@@ -158,7 +158,7 @@ const ContactUpdateModal = ({ visible, contactData, onClose, onSubmit, loading }
               ))}
             </div>
           )}
-        </Form.Item>
+        </Form.Item> */}
 
         {/* Info Box */}
         {/* <div

@@ -101,7 +101,7 @@ const ContactPage = () => {
             </select>
           </div>
 
-          <div className="mb-4">
+          {/* <div className="mb-4">
             <label className="block text-sm text-gray-600 mb-1">
               Mức độ ưu tiên
             </label>
@@ -115,7 +115,7 @@ const ContactPage = () => {
               <option value="Medium">Trung bình</option>
               <option value="Low">Thấp</option>
             </select>
-          </div>
+          </div> */}
 
           <div className="mb-4">
             <label className="block text-sm text-gray-600 mb-1">
