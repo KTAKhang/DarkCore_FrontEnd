@@ -14,7 +14,9 @@ import {
   RightOutlined,
   PlusOutlined,
   ProjectOutlined,
-  MenuOutlined
+  MenuOutlined,
+  MessageOutlined,
+  ReadOutlined
 } from '@ant-design/icons';
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
@@ -103,15 +105,21 @@ const Sidebar = ({ isFinance = false, isAdmin = false, isApprover = false, isCla
     {
       title: "Quản Lý News",
       path: "/admin/news",
-      icon: <HomeOutlined />,
+      icon: <ReadOutlined  />,
       color: "#FF9F43"
     },
     {
+      title: "Quản Lý Liên Hệ",
+      path: "/admin/contact",
+      icon: <MessageOutlined  />,
+      color: "#FF6B6B"
+    }
       title: "Quản Lý Mã Giảm Giá",
       path: "/admin/discounts",
       icon: <DollarOutlined />,
       color: "#00D2D3"
     },
+
   ];
 
 

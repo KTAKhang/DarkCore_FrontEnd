@@ -15,6 +15,7 @@ import favoriteReducer from "./reducers/favoriteReducer";
 import newsReducer from "./reducers/newsReducer";
 import repairServiceReducer from "./reducers/repairServiceReducer";
 import repairRequestReducer from "./reducers/repairRequestReducer";
+import contactRequestReducer from "./reducers/contactReducer";
 import discountReducer from "./reducers/discountReducer";
 import reviewReducer from "./reducers/reviewReducer";
 import rootSaga from "./sagas/rootSaga";
@@ -34,9 +35,9 @@ const rootReducer = combineReducers({
   news: newsReducer,
   repairService: repairServiceReducer,
   repairRequest: repairRequestReducer,
+  contact: contactRequestReducer,
   discount: discountReducer,
   review: reviewReducer,
-
 });
 
 const sagaMiddleware = createSagaMiddleware();
