@@ -96,7 +96,7 @@ function* getProductReviewsSaga(action) {
         q.append("limit", params.limit ? String(params.limit) : "5");
         if (params.sortBy) q.append("sortBy", params.sortBy);
 
-        const response = yield call(() => apiCall("get", `/review/product/${productId}?${q.toString()}`));
+        const response = yield call(() => apiCall("get", `/review-guest/product/${productId}?${q.toString()}`));
         if (response && response.success === true) {
             yield put(getProductReviewsSuccess(response));
         } else {

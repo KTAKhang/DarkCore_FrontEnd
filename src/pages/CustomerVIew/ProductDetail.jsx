@@ -360,7 +360,6 @@ export default function ProductDetail() {
                                         <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="border border-gray-300 rounded-lg px-3 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-8">
                                             <option value="newest">Mới nhất</option>
                                             <option value="oldest">Cũ nhất</option>
-                                            <option value="lowest">Điểm thấp nhất</option>
                                         </select>
                                     </div>
                                 </div>

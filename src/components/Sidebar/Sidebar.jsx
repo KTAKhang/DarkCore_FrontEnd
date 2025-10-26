@@ -83,7 +83,7 @@ const Sidebar = ({ isFinance = false, isAdmin = false, isApprover = false, isCla
       color: "#54A0FF"
     },
     {
-      title: "Quản Lý Đánh giá",
+      title: "Quản Lý Đánh Giá",
       path: "/admin/review",
       icon: <ProfileOutlined />,
       color: "#FF9F43"

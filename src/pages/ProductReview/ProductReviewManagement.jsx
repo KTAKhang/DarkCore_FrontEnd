@@ -223,18 +223,6 @@ const ProductReviewManagement = () => {
                         <Text strong style={{ color: "#0D364C", display: "block" }}>
                             {record.productName}
                         </Text>
-                        <Text
-                            type="secondary"
-                            style={{ fontSize: 12, cursor: "pointer" }}
-                            onClick={() => {
-                                navigator.clipboard.writeText(record._id);
-                                message.success("Đã copy ID vào clipboard");
-                            }}
-                            title={`Click để copy ID: ${record._id}`}
-                        >
-
-                            ID: {record._id.slice(0, 5)}
-                        </Text>
                     </div>
                 </Space>
             ),
