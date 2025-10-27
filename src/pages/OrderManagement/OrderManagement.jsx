@@ -323,7 +323,6 @@ const OrderManagement = () => {
    */
   const handleUpdateSuccess = useCallback((updated) => {
     if (!updated?._id) return;
-    
     dispatch(orderUpdateStatusRequest(updated._id, {
       orderStatusId: updated.orderStatusId,
       note: updated.notes,
@@ -585,7 +584,7 @@ const OrderManagement = () => {
         <div style={{ marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16 }}>
           <Space size="middle" style={{ flex: 1, flexWrap: "wrap" }}>
             <Input.Search 
-              placeholder="Tìm kiếm theo mã đơn hàng, tên khách hàng..." 
+              placeholder="Tìm kiếm theo tên khách hàng..." 
               value={filters.searchText} 
               onChange={(e) => setFilters(prev => ({ ...prev, searchText: e.target.value }))} 
               style={{ width: 320, maxWidth: "100%" }} 
@@ -719,11 +718,11 @@ const OrderManagement = () => {
       {/* Modal cập nhật đơn hàng */}
       {selectedOrder && (
         <UpdateOrder 
-          visible={isUpdateModalVisible} 
           orderData={selectedOrder} 
+          visible={isUpdateModalVisible} 
           onClose={() => { 
-            setIsUpdateModalVisible(false); 
             setSelectedOrder(null); 
+            setIsUpdateModalVisible(false); 
           }} 
           onSuccess={handleUpdateSuccess} 
         />

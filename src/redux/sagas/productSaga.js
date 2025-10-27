@@ -1,6 +1,5 @@
 import { call, put, takeLatest } from "redux-saga/effects";
 import apiClient from "../../utils/axiosConfigNoCredentials";
-import { toast } from "react-toastify";
 import {
   PRODUCT_LIST_REQUEST,
   productListSuccess,
@@ -23,22 +22,14 @@ import {
 } from "../actions/productActions";
 
 
-// Helper function để xử lý lỗi và hiển thị toast
+// Helper function để xử lý lỗi - chỉ log, không hiển thị toast
 const handleError = (error) => {
   console.log('🔍 ProductSaga handleError:', error.response?.status, error.response?.data);
   
   const errorMessage = error.response?.data?.message || error.message;
   
-  // Không hiển thị toast cho 401 vì axios interceptor đã xử lý
-  if (error.response?.status === 401) {
-    console.log('🚫 401 error handled by axios interceptor');
-    return errorMessage;
-  } else if (error.response?.status === 403) {
-    console.log('🚫 403 error - access denied');
-    toast.error("Không có quyền truy cập. Vui lòng kiểm tra lại quyền của bạn!");
-  } else {
-    toast.error(errorMessage);
-  }
+  // Chỉ log lỗi, không hiển thị toast để tránh spam thông báo
+  console.log('🚫 Error occurred:', errorMessage);
   
   return errorMessage;
 };
@@ -235,7 +226,6 @@ function* createWorker(action) {
     
     if (data.status === "OK") {
       yield put(productCreateSuccess(data.data, data.message));
-      toast.success(data.message || "Sản phẩm đã được tạo thành công");
     } else {
       // Backend trả về lỗi với message chi tiết
       throw new Error(data.message || "Tạo sản phẩm thất bại");
@@ -253,7 +243,6 @@ function* updateWorker(action) {
     const data = yield call(apiUpdate, id, payload);
     if (data.status === "OK") {
       yield put(productUpdateSuccess(data.data, data.message));
-      toast.success(data.message || "Sản phẩm đã được cập nhật thành công");
     } else {
       // Backend trả về lỗi với message chi tiết
       throw new Error(data.message || "Cập nhật sản phẩm thất bại");
@@ -271,7 +260,6 @@ function* deleteWorker(action) {
     const data = yield call(apiDelete, id);
     if (data.status === "OK") {
       yield put(productDeleteSuccess(id, data.message));
-      toast.success(data.message || "Sản phẩm đã được xóa thành công");
     } else {
       // Backend trả về lỗi với message chi tiết
       throw new Error(data.message || "Xóa sản phẩm thất bại");
