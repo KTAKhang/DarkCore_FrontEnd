@@ -95,14 +95,9 @@ const OrderManagement = () => {
     // Thêm filter theo trạng thái nếu có
     if (currentFilters.status !== "all") query.status = currentFilters.status;
     
-    // Thêm tìm kiếm nếu có - gửi nhiều parameters để backend có thể xử lý
+    // Thêm tìm kiếm nếu có - backend hỗ trợ search theo receiverName
     if (currentFilters.searchText.trim()) {
-      const searchTerm = currentFilters.searchText.trim();
-      query.keyword = searchTerm;
-      query.search = searchTerm;
-      query.q = searchTerm;
-      query.customerName = searchTerm;
-      query.orderNumber = searchTerm;
+      query.search = currentFilters.searchText.trim();
     }
     
     dispatch(orderListRequest(query));

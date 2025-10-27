@@ -241,10 +241,10 @@ const ViewOrderDetail = ({ visible, onClose, orderData, loading = false }) => {
 
   // Customer information
   const customerItems = [
-    createItem("receiverName", "Tên khách hàng", <Text strong>{orderData.receiverName || orderData.customer?.name || orderData.customerName || "N/A"}</Text>),
-    createItem("customerEmail", "Email", <Text>{orderData.customer?.email || orderData.customerEmail || "N/A"}</Text>),
-    createItem("receiverPhone", "Số điện thoại", <Text>{orderData.receiverPhone || orderData.customer?.phone || orderData.customerPhone || "N/A"}</Text>),
-    createItem("receiverAddress", "Địa chỉ giao hàng", <Text>{orderData.receiverAddress || orderData.shippingAddress || "N/A"}</Text>),
+    createItem("receiverName", "Tên khách hàng", <Text strong>{orderData.receiverName || orderData.userId?.user_name || orderData.customer?.name || orderData.customerName || "N/A"}</Text>),
+    createItem("customerEmail", "Email", <Text>{orderData.userId?.email || orderData.customer?.email || orderData.customerEmail || "N/A"}</Text>),
+    createItem("receiverPhone", "Số điện thoại", <Text>{orderData.receiverPhone || orderData.userId?.phone || orderData.customer?.phone || orderData.customerPhone || "N/A"}</Text>),
+    createItem("receiverAddress", "Địa chỉ giao hàng", <Text>{orderData.receiverAddress || orderData.userId?.address || orderData.shippingAddress || "N/A"}</Text>),
   ];
 
   try {
