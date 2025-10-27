@@ -38,7 +38,6 @@ import {
   productCreateRequest,
   productUpdateRequest,
   productStatsRequest,
-  productClearMessages,
 } from "../../redux/actions/productActions";
 import { categoryListRequest } from "../../redux/actions/categoryActions";
 
@@ -46,7 +45,7 @@ const { Title, Text } = Typography;
 
 const ProductManagement = () => {
   const dispatch = useDispatch();
-  const { items: productItems, stats, pagination: apiPagination, loadingList, loadingStats, creating, updating, deleting, error } = useSelector((state) => state.product);
+  const { items: productItems, stats, pagination: apiPagination, loadingList, loadingStats, creating, updating, deleting } = useSelector((state) => state.product);
   const { items: categoryItems } = useSelector((state) => state.category);
   
   // Simplified state management
@@ -107,6 +106,7 @@ const ProductManagement = () => {
     dispatch(productStatsRequest());
     dispatch(categoryListRequest({ page: 1, limit: 100, status: "active" }));
   }, [dispatch, fetchProducts]);
+
 
   // Handle filter changes with debounce for search
   const [isInitialLoad, setIsInitialLoad] = useState(true);
@@ -462,21 +462,6 @@ const ProductManagement = () => {
           </Space>
         </div>
 
-        {/* Error and Success Messages */}
-        {error && (
-          <Alert
-            message={error}
-            type="error"
-            showIcon
-            closable
-            onClose={() => dispatch(productClearMessages())}
-            style={{ 
-              marginBottom: 16, 
-              borderColor: "#ff4d4f", 
-              backgroundColor: "#fff2f0"
-            }}
-          />
-        )}
         
         {/* Removed success message alert - using toast notification instead */}
 
