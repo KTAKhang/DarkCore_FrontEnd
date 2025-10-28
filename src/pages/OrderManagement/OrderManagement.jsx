@@ -11,7 +11,6 @@ import {
   Statistic,
   Row,
   Col,
-  Badge,
   Avatar,
   Tooltip,
   Spin,
@@ -450,14 +449,9 @@ const OrderManagement = () => {
       render: (status) => {
         const config = getStatusConfig(status);
         return (
-          <Badge
-            status={status === "delivered" || status === "completed" ? "success" : status === "cancelled" ? "error" : "processing"}
-            text={
-              <Tag color={config.color} style={{ borderRadius: 16, fontWeight: 500, padding: "4px 12px" }} icon={config.icon}>
-                {config.text}
-              </Tag>
-            }
-          />
+          <Tag color={config.color} style={{ borderRadius: 16, fontWeight: 500, padding: "4px 12px" }} icon={config.icon}>
+            {config.text}
+          </Tag>
         );
       },
     },

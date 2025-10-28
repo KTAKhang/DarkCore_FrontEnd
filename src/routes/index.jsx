@@ -48,6 +48,9 @@ import AdminDiscountPage from "../pages/DiscountManagement/AdminDiscountPage";
 import OrderReviewPage from "../pages/ProductReview/OrderReviewPage";
 import ProductReviewManagement from "../pages/ProductReview/ProductReviewManagement";
 import AdminProductReviewDetailPage from "../pages/ProductReview/AdminProductReviewDetailPage";
+import AboutUsManagement from "../pages/AboutUsManagement/AboutUsManagerment";
+import ShowAboutUs from "../pages/CustomerVIew/ShowAboutUs";
+import FoundersManagement from "../pages/FoundersManagement/FoundersManagement";
 
 
 export const routes = [
@@ -104,6 +107,10 @@ export const routes = [
   {
     path: "/contact",
     element: <ContactPage />,
+  },
+  {
+    path: "/about",
+    element: <ShowAboutUs />,
   },
   
 
@@ -168,6 +175,8 @@ export const routes = [
       { path: "news", element: <NewsManagement /> },
       { path: "contact", element: <ContactManagement /> },
       { path: "discounts", element: <AdminDiscountPage /> },
+      { path: "about-us", element: <AboutUsManagement /> },
+      { path: "founders", element: <FoundersManagement /> },
     ],
   },
 

@@ -42,6 +42,12 @@ apiClient.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
       console.log('📤 Request sent with token:', token ? `${token.substring(0, 20)}...` : 'no token');
     }
+    
+    // If sending FormData, remove Content-Type header to let axios set it automatically
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type'];
+    }
+    
     return config;
   },
   (error) => {

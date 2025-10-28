@@ -11,7 +11,6 @@ import {
   Statistic,
   Row,
   Col,
-  Badge,
   Avatar,
   Tooltip,
   Spin,
@@ -317,14 +316,9 @@ const ProductManagement = () => {
       dataIndex: "status",
       key: "status",
       render: (status) => (
-        <Badge
-          status={status ? "success" : "error"}
-          text={
-            <Tag color={status ? "#52c41a" : "#ff4d4f"} style={{ borderRadius: 16, fontWeight: 500, padding: "4px 12px" }}>
-              {status ? "Hiển thị" : "Ẩn"}
-            </Tag>
-          }
-        />
+        <Tag color={status ? "#52c41a" : "#ff4d4f"} style={{ borderRadius: 16, fontWeight: 500, padding: "4px 12px" }}>
+          {status ? "Hiển thị" : "Ẩn"}
+        </Tag>
       ),
     },
     {
