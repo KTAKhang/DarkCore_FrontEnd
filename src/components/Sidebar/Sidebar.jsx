@@ -1,4 +1,4 @@
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import {
   HomeOutlined,
   AppstoreOutlined,
@@ -6,31 +6,21 @@ import {
   UserOutlined,
   ShoppingCartOutlined,
   ProfileOutlined,
-  FileTextOutlined,
-  CheckCircleOutlined,
   DollarOutlined,
-  LogoutOutlined,
-  DownOutlined,
-  RightOutlined,
-  PlusOutlined,
   ProjectOutlined,
-  MenuOutlined,
   MessageOutlined,
-  ReadOutlined
+  ReadOutlined,
+  InfoCircleOutlined,
+  TeamOutlined
 } from '@ant-design/icons';
 import { useState, useRef, useEffect } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSidebar } from '../../contexts/SidebarContext';
 import PropTypes from 'prop-types';
 
-const Sidebar = ({ isFinance = false, isAdmin = false, isApprover = false, isClaimer = false }) => {
-  const [isClaimsOpen, setIsClaimsOpen] = useState(false);
-  const [isWarehouseOpen, setIsWarehouseOpen] = useState(false);
+const Sidebar = ({ isAdmin = false }) => {
   const location = useLocation();
-  const navigate = useNavigate();
-  const { logout } = useAuth();
-  const sidebarContext = useSidebar ? useSidebar() : {};
+  const sidebarContext = useSidebar();
   const isOpen = typeof sidebarContext.isOpen !== 'undefined'
     ? sidebarContext.isOpen
     : true;
@@ -38,11 +28,6 @@ const Sidebar = ({ isFinance = false, isAdmin = false, isApprover = false, isCla
 
   const prevIsOpen = useRef(isOpen);
   useEffect(() => { prevIsOpen.current = isOpen; }, [isOpen]);
-
-  const handleLogout = () => {
-    logout();
-    navigate('/');
-  };
 
   // ✅ Fixed syntax here (added missing `{`)
   const adminMenuItems = [
@@ -111,6 +96,18 @@ const Sidebar = ({ isFinance = false, isAdmin = false, isApprover = false, isCla
       path: "/admin/discounts",
       icon: <DollarOutlined />,
       color: "#00D2D3"
+    },
+    {
+      title: "Quản Lý About Us",
+      path: "/admin/about-us",
+      icon: <InfoCircleOutlined />,
+      color: "#06D6A0"
+    },
+    {
+      title: "Quản Lý Founders",
+      path: "/admin/founders",
+      icon: <TeamOutlined />,
+      color: "#EE5A6F"
     }
   ];
 
@@ -250,10 +247,7 @@ const Sidebar = ({ isFinance = false, isAdmin = false, isApprover = false, isCla
 };
 
 Sidebar.propTypes = {
-  isFinance: PropTypes.bool,
   isAdmin: PropTypes.bool,
-  isApprover: PropTypes.bool,
-  isClaimer: PropTypes.bool,
 };
 
 export default Sidebar;

@@ -1,5 +1,5 @@
-import { useState, useMemo, useRef, useEffect } from "react";
-import { Menu, Search, Bell, Settings, User, LogOut, ChevronDown } from "lucide-react";
+import { useState, useMemo, useRef } from "react";
+import { Menu, Settings, User, LogOut, ChevronDown } from "lucide-react";
 import { useSidebar } from '../../contexts/SidebarContext';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from "react-redux";
@@ -8,10 +8,6 @@ import { logoutRequest } from "../../redux/actions/authActions";
 const Navbar = () => {
   const { toggleSidebar } = useSidebar();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const [searchValue, setSearchValue] = useState("");
-  const [notifications] = useState(3); // Mock notification count
-  const [userData, setUserData] = useState(null);
   const avatarBtnRef = useRef();
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -45,10 +41,6 @@ const Navbar = () => {
     navigate("/");
   };
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    console.log("Search for:", searchValue);
-  };
 
   const handleLogout = () => {
     const confirmed = window.confirm("Bạn có chắc chắn muốn đăng xuất?");

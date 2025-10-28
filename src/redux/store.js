@@ -18,6 +18,8 @@ import repairRequestReducer from "./reducers/repairRequestReducer";
 import contactRequestReducer from "./reducers/contactReducer";
 import discountReducer from "./reducers/discountReducer";
 import reviewReducer from "./reducers/reviewReducer";
+import aboutReducer from "./reducers/aboutReducer";
+import founderReducer from "./reducers/founderReducer";
 import rootSaga from "./sagas/rootSaga";
 
 const rootReducer = combineReducers({
@@ -38,6 +40,8 @@ const rootReducer = combineReducers({
   contact: contactRequestReducer,
   discount: discountReducer,
   review: reviewReducer,
+  about: aboutReducer,
+  founder: founderReducer,
 });
 
 const sagaMiddleware = createSagaMiddleware();

@@ -16,6 +16,8 @@ import repairRequestSaga from "./repairRequestSaga";
 import contactSaga from "./contactSaga";
 import discountSaga from "./discountSaga";
 import reviewSaga from "./reviewSaga";
+import aboutSaga from "./aboutSaga";
+import founderSaga from "./founderSaga";
 export default function* rootSaga() {
   try {
     yield all([
@@ -36,6 +38,8 @@ export default function* rootSaga() {
       contactSaga(),
       discountSaga(),
       reviewSaga(),
+      aboutSaga(),
+      founderSaga(),
     ]);
   } catch (error) {
     console.error("🔴 rootSaga ERROR:", error);
