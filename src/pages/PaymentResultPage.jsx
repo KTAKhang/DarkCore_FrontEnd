@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { toast } from 'react-toastify';
-import { CheckCircle, XCircle, Clock, ArrowLeft } from 'lucide-react';
+import { CheckCircle, XCircle, Clock } from 'lucide-react';
 import { cartClearRequest } from '../redux/actions/cartActions';
+import apiClient from '../utils/axiosConfig';
 
 const PaymentResultPage = () => {
   const navigate = useNavigate();
@@ -12,72 +13,125 @@ const PaymentResultPage = () => {
   const [loading, setLoading] = useState(true);
   const [paymentResult, setPaymentResult] = useState(null);
 
-  useEffect(() => {
-    handlePaymentResult();
-  }, []);
-
-  const handlePaymentResult = async () => {
+  const handlePaymentResult = useCallback(async () => {
     try {
       setLoading(true);
       
       // Lấy thông tin từ URL params
       const vnp_ResponseCode = searchParams.get('vnp_ResponseCode');
       const vnp_TransactionStatus = searchParams.get('vnp_TransactionStatus');
-      const vnp_TxnRef = searchParams.get('vnp_TxnRef');
       const vnp_Amount = searchParams.get('vnp_Amount');
-      const vnp_OrderInfo = searchParams.get('vnp_OrderInfo');
+      const vnp_TxnRef = searchParams.get('vnp_TxnRef');
       
-      // Lấy thông tin order từ localStorage
-      const pendingOrder = JSON.parse(localStorage.getItem('pendingOrder') || '{}');
+      console.log('🔍 VNPay callback params:', { 
+        vnp_ResponseCode, 
+        vnp_TransactionStatus, 
+        vnp_Amount,
+        vnp_TxnRef 
+      });
       
       let result = {
         success: false,
         message: '',
-        orderId: vnp_TxnRef || pendingOrder.orderId,
-        orderNumber: pendingOrder.orderNumber,
-        amount: vnp_Amount ? parseInt(vnp_Amount) / 100 : pendingOrder.amount
+        orderId: null,
+        orderNumber: null,
+        amount: vnp_Amount ? parseInt(vnp_Amount) / 100 : 0
       };
       
       if (vnp_ResponseCode === '00' && vnp_TransactionStatus === '00') {
-        // Thanh toán thành công - chỉ xóa giỏ hàng
-        result.success = true;
-        result.message = 'Thanh toán thành công! Đơn hàng đã được xác nhận.';
+        // ✅ THANH TOÁN THÀNH CÔNG - TẠO ORDER
+        console.log('✅ Payment successful, creating order...');
         
-        // Xóa giỏ hàng sau khi thanh toán thành công
-        dispatch(cartClearRequest());
-
-        // Xóa thông tin pending order
-        localStorage.removeItem('pendingOrder');
-
-        toast.success('Thanh toán thành công! Đơn hàng đã được xác nhận.');
+        // Lấy thông tin đơn hàng từ localStorage
+        const pendingOrderData = JSON.parse(localStorage.getItem('pendingOrderData') || '{}');
+        
+        if (!pendingOrderData || !pendingOrderData.userId || !pendingOrderData.items) {
+          throw new Error('Không tìm thấy thông tin đơn hàng. Vui lòng thử lại.');
+        }
+        
+        console.log('📦 Creating order with data:', pendingOrderData);
+        
+        try {
+          // ✅ Gọi API createOrderFromPayment với đầy đủ thông tin VNPay
+          const orderPayload = {
+            ...pendingOrderData,
+            txnRef: vnp_TxnRef,
+            vnpayData: {
+              vnp_ResponseCode,
+              vnp_TransactionStatus,
+              vnp_Amount: parseInt(vnp_Amount) / 100
+            }
+          };
+          
+          console.log('📦 Creating order with payload:', orderPayload);
+          
+          const { data: orderResponse } = await apiClient.post('/payment/create-order', orderPayload);
+          
+          if (orderResponse.status === 'OK' && orderResponse.data) {
+            console.log('✅ Order created successfully:', orderResponse.data);
+            
+            result.success = true;
+            result.message = 'Thanh toán thành công! Đơn hàng đã được tạo.';
+            result.orderId = orderResponse.data._id;
+            result.orderNumber = orderResponse.data.orderNumber;
+            result.amount = orderResponse.data.totalPrice;
+            
+            // Xóa giỏ hàng sau khi tạo order thành công
+            dispatch(cartClearRequest());
+            
+            // Xóa thông tin pending
+            localStorage.removeItem('pendingOrderData');
+            localStorage.removeItem('pendingCheckout');
+            
+            toast.success('Thanh toán và tạo đơn hàng thành công!');
+          } else {
+            throw new Error(orderResponse.message || 'Không thể tạo đơn hàng');
+          }
+        } catch (orderError) {
+          console.error('❌ Error creating order:', orderError);
+          const errorMsg = orderError.response?.data?.message || orderError.message || 'Không thể tạo đơn hàng';
+          
+          result.success = false;
+          result.message = `Thanh toán thành công nhưng không thể tạo đơn hàng: ${errorMsg}`;
+          
+          toast.error(result.message);
+        }
       } else if (vnp_ResponseCode === '24') {
         // Người dùng hủy thanh toán
         result.success = false;
-        result.message = 'Bạn đã hủy thanh toán. Đơn hàng vẫn được tạo với trạng thái chờ thanh toán.';
+        result.message = 'Bạn đã hủy thanh toán. Vui lòng thử lại nếu muốn đặt hàng.';
         
-        toast.warning('Bạn đã hủy thanh toán. Vui lòng thanh toán lại nếu muốn.');
+        toast.warning('Bạn đã hủy thanh toán.');
       } else {
         // Thanh toán thất bại
         result.success = false;
-        result.message = 'Thanh toán thất bại. Vui lòng thử lại.';
+        result.message = `Thanh toán thất bại (Mã lỗi: ${vnp_ResponseCode}). Vui lòng thử lại.`;
         
         toast.error('Thanh toán thất bại. Vui lòng thử lại.');
       }
 
       setPaymentResult(result);
     } catch (error) {
-      console.error('Error handling payment result:', error);
+      console.error('❌ Error handling payment result:', error);
+      const errorMsg = error.message || 'Có lỗi xảy ra khi xử lý kết quả thanh toán.';
+      
       setPaymentResult({
         success: false,
-        message: 'Có lỗi xảy ra khi xử lý kết quả thanh toán.',
+        message: errorMsg,
         orderId: null,
         orderNumber: null,
         amount: 0
       });
+      
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }
-  };
+  }, [searchParams, dispatch]);
+
+  useEffect(() => {
+    handlePaymentResult();
+  }, [handlePaymentResult]);
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('vi-VN').format(price) + '₫';
@@ -146,6 +200,15 @@ const PaymentResultPage = () => {
           {/* Actions */}
           <div className="p-8 border-t border-gray-100 bg-gray-50">
             <div className="flex flex-col sm:flex-row gap-4">
+              {paymentResult?.success && (
+                <button
+                  onClick={() => navigate('/customer/orders')}
+                  className="flex-1 bg-green-600 text-white py-3 px-6 rounded-lg hover:bg-green-700 transition-colors font-medium"
+                >
+                  Xem đơn hàng
+                </button>
+              )}
+              
               <button
                 onClick={() => navigate('/')}
                 className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors font-medium"
@@ -155,10 +218,10 @@ const PaymentResultPage = () => {
               
               {!paymentResult?.success && (
                 <button
-                  onClick={() => navigate('/customer/checkout')}
+                  onClick={() => navigate('/customer/cart')}
                   className="flex-1 bg-orange-600 text-white py-3 px-6 rounded-lg hover:bg-orange-700 transition-colors font-medium"
                 >
-                  Thanh toán lại
+                  Quay lại giỏ hàng
                 </button>
               )}
             </div>
