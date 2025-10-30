@@ -111,6 +111,24 @@ const AboutUsForm = ({ initialData, onSubmit, loading }) => {
   }, [initialData, form]);
 
   const handleSubmit = (values) => {
+    // Validate Logo - Bắt buộc phải có logo (file mới hoặc logo cũ)
+    if (!logoFile && !initialData?.logo) {
+      message.error("Vui lòng tải lên logo cho cửa hàng!");
+      return;
+    }
+
+    // Validate Core Values
+    if (coreValues.length > 0) {
+      const invalidCoreValues = coreValues.filter(
+        (value) => !value.title || !value.description
+      );
+      
+      if (invalidCoreValues.length > 0) {
+        message.error("Vui lòng điền đầy đủ Tiêu đề và Mô tả cho tất cả Giá trị cốt lõi!");
+        return;
+      }
+    }
+
     const payload = {
       ...values,
       coreValues,
@@ -186,7 +204,13 @@ const AboutUsForm = ({ initialData, onSubmit, loading }) => {
             </Col>
           </Row>
 
-          <Form.Item label="Logo">
+          <Form.Item 
+            label={
+              <span>
+                Logo <Text type="danger">*</Text>
+              </span>
+            }
+          >
             <Upload
               listType="picture-card"
               maxCount={1}
@@ -210,11 +234,16 @@ const AboutUsForm = ({ initialData, onSubmit, loading }) => {
               {(!logoFile && (!initialData?.logo || logoRemoved)) && (
                 <div>
                   <UploadOutlined style={{ fontSize: 24, color: "#13C2C2" }} />
-                  <div style={{ marginTop: 8, color: "#13C2C2" }}>Tải logo lên</div>
+                  <div style={{ marginTop: 8, color: "#13C2C2" }}>Tải logo lên (bắt buộc)</div>
                   <div style={{ color: "#999", fontSize: 12, marginTop: 4 }}>PNG, JPG tối đa 5MB</div>
                 </div>
               )}
             </Upload>
+            {!logoFile && !initialData?.logo && (
+              <Text type="danger" style={{ fontSize: 12 }}>
+                Logo là bắt buộc. Vui lòng tải lên logo cho cửa hàng.
+              </Text>
+            )}
           </Form.Item>
           
           <Modal
@@ -293,26 +322,43 @@ const AboutUsForm = ({ initialData, onSubmit, loading }) => {
                 >
                   <Row gutter={16}>
                     <Col xs={24} md={8}>
-                      <Input
-                        placeholder="Tiêu đề"
-                        value={value.title}
-                        onChange={(e) => updateCoreValue(index, "title", e.target.value)}
-                      />
+                      <Space direction="vertical" style={{ width: "100%" }} size={4}>
+                        <Text type="secondary" style={{ fontSize: 12 }}>
+                          Tiêu đề <Text type="danger">*</Text>
+                        </Text>
+                        <Input
+                          placeholder="Nhập tiêu đề (bắt buộc)"
+                          value={value.title}
+                          onChange={(e) => updateCoreValue(index, "title", e.target.value)}
+                          status={!value.title ? "error" : ""}
+                        />
+                      </Space>
                     </Col>
                     <Col xs={24} md={8}>
-                      <Input
-                        placeholder="Icon URL"
-                        value={value.icon}
-                        onChange={(e) => updateCoreValue(index, "icon", e.target.value)}
-                      />
+                      <Space direction="vertical" style={{ width: "100%" }} size={4}>
+                        <Text type="secondary" style={{ fontSize: 12 }}>
+                          Icon URL (tùy chọn)
+                        </Text>
+                        <Input
+                          placeholder="Nhập URL icon"
+                          value={value.icon}
+                          onChange={(e) => updateCoreValue(index, "icon", e.target.value)}
+                        />
+                      </Space>
                     </Col>
                     <Col xs={24} md={8}>
-                      <TextArea
-                        rows={2}
-                        placeholder="Mô tả"
-                        value={value.description}
-                        onChange={(e) => updateCoreValue(index, "description", e.target.value)}
-                      />
+                      <Space direction="vertical" style={{ width: "100%" }} size={4}>
+                        <Text type="secondary" style={{ fontSize: 12 }}>
+                          Mô tả <Text type="danger">*</Text>
+                        </Text>
+                        <TextArea
+                          rows={2}
+                          placeholder="Nhập mô tả (bắt buộc)"
+                          value={value.description}
+                          onChange={(e) => updateCoreValue(index, "description", e.target.value)}
+                          status={!value.description ? "error" : ""}
+                        />
+                      </Space>
                     </Col>
                   </Row>
                 </Card>
