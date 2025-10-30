@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { X, Package, Truck, CheckCircle, Clock, User, CreditCard, MapPin, Phone, XCircle } from 'lucide-react';
 
-const OrderHistoryDetails = ({ isOpen, onClose, order }) => {
+const OrderHistoryDetails = ({ isOpen, onClose, order, loading = false }) => {
   // Close modal on ESC key press
   useEffect(() => {
     const handleEsc = (e) => {
@@ -15,6 +15,10 @@ const OrderHistoryDetails = ({ isOpen, onClose, order }) => {
   }, [isOpen, onClose]);
 
   if (!isOpen || !order) return null;
+
+  // Debug log to see the order data structure
+  console.log("🔍 OrderHistoryDetails - order:", order);
+  console.log("🔍 OrderHistoryDetails - orderDetails:", order.orderDetails);
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('vi-VN').format(price) + '₫';
@@ -126,9 +130,18 @@ const OrderHistoryDetails = ({ isOpen, onClose, order }) => {
       onClick={handleOverlayClick}
     >
       <div 
-        className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+        className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col relative"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Loading Overlay */}
+        {loading && (
+          <div className="absolute inset-0 bg-white bg-opacity-75 z-10 flex items-center justify-center rounded-xl">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <p className="text-gray-600">Đang tải chi tiết đơn hàng...</p>
+            </div>
+          </div>
+        )}
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div>
@@ -196,10 +209,10 @@ const OrderHistoryDetails = ({ isOpen, onClose, order }) => {
             <div className="bg-white border border-gray-200 rounded-lg p-6">
               <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
                 <Package className="w-5 h-5 text-blue-600" />
-                Sản phẩm đã đặt ({order.orderDetails?.length || 0} sản phẩm)
+                Sản phẩm đã đặt ({(order.orderDetails || order.orderdetails || []).length || 0} sản phẩm)
               </h3>
               <div className="space-y-4">
-                {(order.orderDetails || []).map((item, index) => (
+                {(order.orderDetails || order.orderdetails || []).map((item, index) => (
                   <div key={index} className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
                     <img
                       src={getValidImageUrl(item)}
@@ -247,21 +260,21 @@ const OrderHistoryDetails = ({ isOpen, onClose, order }) => {
                       <User className="w-4 h-4" />
                       Người nhận:
                     </p>
-                    <p className="text-gray-900 font-medium">{order.receiverName || 'N/A'}</p>
+                    <p className="text-gray-900 font-medium">{order.receiverName || order.userId?.user_name || order.customer?.name || 'N/A'}</p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-600 mb-1 flex items-center gap-2">
                       <Phone className="w-4 h-4" />
                       Số điện thoại:
                     </p>
-                    <p className="text-gray-900 font-medium">{order.receiverPhone || 'N/A'}</p>
+                    <p className="text-gray-900 font-medium">{order.receiverPhone || order.userId?.phone || order.customer?.phone || 'N/A'}</p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-600 mb-1 flex items-center gap-2">
                       <MapPin className="w-4 h-4" />
                       Địa chỉ:
                     </p>
-                    <p className="text-gray-900 font-medium">{order.receiverAddress || 'N/A'}</p>
+                    <p className="text-gray-900 font-medium">{order.receiverAddress || 'Địa chỉ chưa được cung cấp'}</p>
                   </div>
                 </div>
               </div>
@@ -351,6 +364,7 @@ OrderHistoryDetails.propTypes = {
   isOpen: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
   order: PropTypes.object,
+  loading: PropTypes.bool,
 };
 
 export default OrderHistoryDetails;
