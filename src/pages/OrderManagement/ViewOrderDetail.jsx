@@ -1,5 +1,5 @@
 import PropTypes from "prop-types";
-import { Modal, Descriptions, Tag, Typography, Card, Row, Col, Divider, Table, Space, Spin } from "antd";
+import { Modal, Descriptions, Tag, Typography, Card, Row, Col, Divider, Table, Space } from "antd";
 import { 
   CheckCircleOutlined, 
   ClockCircleOutlined, 
@@ -12,7 +12,7 @@ import {
 
 const { Text } = Typography;
 
-const ViewOrderDetail = ({ visible, onClose, orderData, loading = false }) => {
+const ViewOrderDetail = ({ visible, onClose, orderData }) => {
   if (!orderData) return null;
   
   // Safety check to ensure orderData is valid
@@ -232,19 +232,18 @@ const ViewOrderDetail = ({ visible, onClose, orderData, loading = false }) => {
         {statusConfig.text}
       </Tag>
     ),
-    createItem("totalPrice", "Tổng tiền", <Text style={styles.totalAmount}>{(orderData.totalPrice || orderData.totalAmount || 0).toLocaleString("vi-VN")}đ</Text>),
+    createItem("totalAmount", "Tổng tiền", <Text style={styles.totalAmount}>{(orderData.totalAmount || orderData.totalPrice || 0).toLocaleString("vi-VN")}đ</Text>),
     createItem("paymentMethod", "Phương thức thanh toán", <Tag color="#0D364C" style={{ borderRadius: 16, fontWeight: 500, padding: "4px 12px" }} icon={<CreditCardOutlined />}>{getPaymentMethodText(orderData.paymentMethod)}</Tag>),
-    createItem("paymentStatus", "Trạng thái thanh toán", <Tag color={orderData.paymentStatus === 'paid' ? '#52c41a' : '#faad14'}>{orderData.paymentStatus || 'pending'}</Tag>),
     createItem("createdAt", "Ngày tạo", <Text style={styles.createdAt}>{formatDateTime(orderData.createdAt)}</Text>),
     createItem("updatedAt", "Cập nhật gần nhất", <Text style={styles.updatedAt}>{formatDateTime(orderData.updatedAt)}</Text>),
   ];
 
   // Customer information
   const customerItems = [
-    createItem("receiverName", "Tên khách hàng", <Text strong>{orderData.receiverName || orderData.userId?.user_name || orderData.customer?.name || orderData.customerName || "N/A"}</Text>),
-    createItem("customerEmail", "Email", <Text>{orderData.userId?.email || orderData.customer?.email || orderData.customerEmail || "N/A"}</Text>),
-    createItem("receiverPhone", "Số điện thoại", <Text>{orderData.receiverPhone || orderData.userId?.phone || orderData.customer?.phone || orderData.customerPhone || "N/A"}</Text>),
-    createItem("receiverAddress", "Địa chỉ giao hàng", <Text>{orderData.receiverAddress || orderData.userId?.address || orderData.shippingAddress || "N/A"}</Text>),
+    createItem("customerName", "Tên khách hàng", <Text strong>{orderData.customer?.name || orderData.customerName || "N/A"}</Text>),
+    createItem("customerEmail", "Email", <Text>{orderData.customer?.email || orderData.customerEmail || "N/A"}</Text>),
+    createItem("customerPhone", "Số điện thoại", <Text>{orderData.customer?.phone || orderData.customerPhone || "N/A"}</Text>),
+    createItem("shippingAddress", "Địa chỉ giao hàng", <Text>{orderData.shippingAddress || orderData.receiverAddress || "N/A"}</Text>),
   ];
 
   try {
@@ -262,21 +261,20 @@ const ViewOrderDetail = ({ visible, onClose, orderData, loading = false }) => {
         width={900}
         style={{ top: 20 }}
       >
-        <Spin spinning={loading} tip="Đang tải chi tiết đơn hàng...">
-          <div style={{ maxHeight: "70vh", overflowY: "auto" }}>
-            {/* Order Information */}
-            <Card 
-              title={
-                <Space>
-                  <FileTextOutlined style={{ color: "#13C2C2" }} />
-                  <span>Thông tin Đơn hàng</span>
-                </Space>
-              }
-              style={{ marginBottom: 16, borderRadius: 8 }}
-              size="small"
-            >
-              <Descriptions bordered column={2} items={orderItems} size="small" />
-            </Card>
+        <div style={{ maxHeight: "70vh", overflowY: "auto" }}>
+          {/* Order Information */}
+          <Card 
+            title={
+              <Space>
+                <FileTextOutlined style={{ color: "#13C2C2" }} />
+                <span>Thông tin Đơn hàng</span>
+              </Space>
+            }
+            style={{ marginBottom: 16, borderRadius: 8 }}
+            size="small"
+          >
+            <Descriptions bordered column={2} items={orderItems} size="small" />
+          </Card>
 
           {/* Customer Information */}
           <Card 
@@ -319,7 +317,7 @@ const ViewOrderDetail = ({ visible, onClose, orderData, loading = false }) => {
                 <Space size="large">
                   <Text strong style={{ fontSize: 16 }}>Tổng cộng:</Text>
                   <Text strong style={styles.totalAmount}>
-                    {(orderData.totalPrice || orderData.totalAmount || 0).toLocaleString("vi-VN")}đ
+                    {(orderData.totalAmount || orderData.totalPrice || 0).toLocaleString("vi-VN")}đ
                   </Text>
                 </Space>
               </Col>
@@ -352,8 +350,7 @@ const ViewOrderDetail = ({ visible, onClose, orderData, loading = false }) => {
               )}
             </Card>
           )}
-          </div>
-        </Spin>
+        </div>
       </Modal>
     );
   } catch (error) {
@@ -379,7 +376,6 @@ ViewOrderDetail.propTypes = {
   visible: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
   orderData: PropTypes.object,
-  loading: PropTypes.bool,
 };
 
 export default ViewOrderDetail;

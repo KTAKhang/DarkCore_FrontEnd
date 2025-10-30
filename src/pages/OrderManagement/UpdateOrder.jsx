@@ -1,37 +1,23 @@
 import { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import { useDispatch, useSelector } from "react-redux";
-import { Form, Button, Card, Modal, Select, Typography, Space, Divider, message } from "antd";
+import { Form, Button, Card, Modal, Select, Typography, Space, Divider, Input, message } from "antd";
 import { EditOutlined, FileTextOutlined, CheckCircleOutlined, ClockCircleOutlined, CloseCircleOutlined, ShoppingCartOutlined } from "@ant-design/icons";
 import { orderStatusesRequest } from "../../redux/actions/orderActions";
 
 const { Title, Text } = Typography;
+const { TextArea } = Input;
 
-/**
- * Component Modal Cập nhật Đơn hàng
- * Cho phép cập nhật trạng thái đơn hàng theo luồng nghiệp vụ
- * 
- * @param {boolean} visible - Trạng thái hiển thị modal
- * @param {function} onClose - Callback khi đóng modal
- * @param {function} onSuccess - Callback khi cập nhật thành công
- * @param {object} orderData - Dữ liệu đơn hàng cần cập nhật
- */
 const UpdateOrder = ({ visible, onClose, onSuccess, orderData }) => {
   const dispatch = useDispatch();
-  // Lấy danh sách trạng thái đơn hàng từ Redux store
   const { statuses } = useSelector((state) => state.order);
-  const [form] = Form.useForm(); // Form instance để quản lý form
-  const [isSubmitting, setIsSubmitting] = useState(false); // Trạng thái đang submit
-  const [selectedStatus, setSelectedStatus] = useState(orderData?.status || "pending"); // Trạng thái đang được chọn
+  const [form] = Form.useForm();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedStatus, setSelectedStatus] = useState(orderData?.status || "pending");
 
-  /**
-   * Effect: Khởi tạo form khi modal mở
-   * - Tải danh sách trạng thái nếu chưa có
-   * - Set giá trị mặc định cho form
-   */
   useEffect(() => {
     if (visible) {
-      // Tải danh sách trạng thái nếu chưa có
+      // Load order statuses if not already loaded
       if (!statuses || statuses.length === 0) {
         dispatch(orderStatusesRequest());
       }
@@ -44,55 +30,39 @@ const UpdateOrder = ({ visible, onClose, onSuccess, orderData }) => {
           orderStatusId: orderData.orderStatusId
         });
         
-        // Set giá trị mặc định cho form
         form.setFieldsValue({
           status: orderData.status,
+          notes: orderData.notes || "",
+          shippingNotes: orderData.shippingNotes || "",
         });
         setSelectedStatus(orderData.status);
       }
     }
   }, [visible, orderData, form, statuses, dispatch]);
 
-  /**
-   * Helper: Lấy icon tương ứng với tên trạng thái
-   * @param {string} statusName - Tên trạng thái (pending, confirmed, ...)
-   * @returns {ReactElement} Icon component
-   */
+  // Convert backend statuses to status options
   const getStatusIcon = (statusName) => {
     const iconMap = {
-      pending: <ClockCircleOutlined style={{ color: "#faad14" }} />,
-      confirmed: <CheckCircleOutlined style={{ color: "#1890ff" }} />,
-      processing: <ShoppingCartOutlined style={{ color: "#722ed1" }} />,
-      shipped: <ShoppingCartOutlined style={{ color: "#1890ff" }} />,
-      delivered: <CheckCircleOutlined style={{ color: "#52c41a" }} />,
+      pending: <ClockCircleOutlined style={{ color: "#faad14" }} />,          // vàng
+      processing: <ShoppingCartOutlined style={{ color: "#1890ff" }} />,    // xanh nước biển
+      delivered: <CheckCircleOutlined style={{ color: "#52c41a" }} />,      // xanh lá
       cancelled: <CloseCircleOutlined style={{ color: "#ff4d4f" }} />,
       returned: <CloseCircleOutlined style={{ color: "#fa8c16" }} />
     };
     return iconMap[statusName] || <ClockCircleOutlined style={{ color: "#faad14" }} />;
   };
 
-  /**
-   * Helper: Lấy màu sắc tương ứng với tên trạng thái
-   * @param {string} statusName - Tên trạng thái
-   * @returns {string} Mã màu hex
-   */
   const getStatusColor = (statusName) => {
     const colorMap = {
-      pending: "#faad14",
-      confirmed: "#1890ff",
-      processing: "#722ed1",
-      shipped: "#1890ff",
-      delivered: "#52c41a",
+      pending: "#faad14",          // vàng
+      processing: "#1890ff",      // xanh nước biển
+      delivered: "#52c41a",       // xanh lá
       cancelled: "#ff4d4f",
       returned: "#fa8c16"
     };
     return colorMap[statusName] || "#faad14";
   };
 
-  /**
-   * Chuyển đổi danh sách trạng thái từ backend thành options cho Select
-   * Bao gồm: value, label, icon, description, color, id
-   */
   const statusOptions = (statuses || []).map(status => ({
     value: status.name,
     label: status.description || status.name,
@@ -102,22 +72,16 @@ const UpdateOrder = ({ visible, onClose, onSuccess, orderData }) => {
     id: status._id
   }));
 
-  /**
-   * Handler: Xử lý khi submit form cập nhật đơn hàng
-   * - Tìm statusId từ trạng thái đã chọn
-   * - Tạo payload và gọi callback onSuccess
-   */
   const handleFinish = async (values) => {
-    if (isSubmitting) return; // Tránh submit nhiều lần
-    
+    if (isSubmitting) return;
     try {
       setIsSubmitting(true);
 
-      // Tìm ID của trạng thái đã chọn
+      // Find the status ID for the selected status name
       const selectedStatusOption = statusOptions.find(option => option.value === values.status);
       const statusId = selectedStatusOption?.id || orderData?.statusId || orderData?.orderStatusId?._id || orderData?.orderStatusId;
       
-      // Nếu chưa tìm thấy statusId, tìm trong mảng statuses
+      // If no statusId found, try to find from statuses array
       let finalStatusId = statusId;
       if (!finalStatusId && statuses && statuses.length > 0) {
         const matchingStatus = statuses.find(status => status.name === values.status);
@@ -126,7 +90,6 @@ const UpdateOrder = ({ visible, onClose, onSuccess, orderData }) => {
         }
       }
       
-      // Debug log để kiểm tra dữ liệu
       console.log("🔍 UpdateOrder - handleFinish:", {
         selectedStatus: values.status,
         selectedStatusOption,
@@ -136,14 +99,14 @@ const UpdateOrder = ({ visible, onClose, onSuccess, orderData }) => {
         allStatusOptions: statusOptions
       });
 
-      // Tạo payload để gửi lên API
       const payload = {
         _id: orderData?._id,
-        orderStatusId: finalStatusId, // ID của trạng thái mới
-        status: values.status, // Tên trạng thái (để tham khảo)
+        orderStatusId: finalStatusId, // Send the final status ID
+        status: values.status, // Keep the status name for reference
+        notes: (values.notes || "").trim(),
+        shippingNotes: (values.shippingNotes || "").trim(),
       };
 
-      // Gọi callback onSuccess để parent component xử lý
       onSuccess && onSuccess(payload);
       setIsSubmitting(false);
     } catch (error) {
@@ -153,7 +116,6 @@ const UpdateOrder = ({ visible, onClose, onSuccess, orderData }) => {
     }
   };
 
-  // Custom styles cho các components trong modal
   const customStyles = {
     card: { borderRadius: 8, border: "none", boxShadow: "none" },
     primaryButton: { backgroundColor: "#13C2C2", borderColor: "#13C2C2", height: 44, borderRadius: 8, fontWeight: 600, fontSize: 16 },
@@ -163,41 +125,21 @@ const UpdateOrder = ({ visible, onClose, onSuccess, orderData }) => {
     divider: { borderColor: "#13C2C2", opacity: 0.3 },
   };
 
-  // Lấy thông tin của trạng thái hiện đang được chọn trong form
+  // Get current status info
   const currentStatus = statusOptions.find(option => option.value === selectedStatus);
-  
-  // Lấy danh sách các trạng thái tiếp theo hợp lệ
-  // Sử dụng trạng thái thực tế của đơn hàng (orderData.status) thay vì selectedStatus
-  // để đảm bảo logic đúng khi user thay đổi lựa chọn nhưng chưa submit
-  const nextStatuses = getNextStatuses(orderData?.status || "pending");
+  const nextStatuses = getNextStatuses(selectedStatus);
 
-  /**
-   * Function: Xác định các trạng thái tiếp theo hợp lệ dựa trên trạng thái hiện tại
-   * 
-   * Luồng chính: pending → confirmed → processing → shipped → delivered
-   * Luồng phụ: 
-   * - pending → cancelled (hủy đơn khi chưa xác nhận)
-   * - delivered → returned (trả hàng sau khi đã giao)
-   * 
-   * @param {string} currentStatus - Trạng thái hiện tại của đơn hàng
-   * @returns {Array} Danh sách các trạng thái tiếp theo hợp lệ
-   */
+  // Function to determine valid next statuses
   function getNextStatuses(currentStatus) {
-    // Định nghĩa luồng chuyển trạng thái theo quy định nghiệp vụ
     const statusFlow = {
-      pending: ["confirmed", "cancelled"],
-      confirmed: ["processing"],
-      processing: ["shipped"],
-      shipped: ["delivered"],
-      delivered: ["returned"],
-      cancelled: [], // Trạng thái kết thúc - không thể chuyển sang trạng thái khác
-      returned: [] // Trạng thái kết thúc - không thể chuyển sang trạng thái khác
+      pending: ["confirmed", "cancelled"],  // Khách đặt xong là chờ xác nhận --> xác nhận hoặc hủy
+      confirmed: ["processing", "cancelled"], // Đã xác nhận --> chuyển đang xử lý hoặc hủy
+      processing: ["shipped", "cancelled"],   // Đang xử lý --> sang đang giao hoặc hủy
+      shipped: ["delivered", "cancelled"],    // Đang giao --> đã giao hoặc hủy
+      delivered: [],                             // Không chuyển đi đâu nữa
+      cancelled: ["pending"]                   // Có thể khôi phục
     };
-    
-    // Filter ra các trạng thái hợp lệ: 
-    // - Các trạng thái trong luồng tiếp theo
-    // - Trạng thái hiện tại (cho phép giữ nguyên)
-    return statusOptions.filter(option => 
+    return statusOptions.filter(option =>
       statusFlow[currentStatus]?.includes(option.value) || option.value === currentStatus
     );
   }
@@ -208,14 +150,13 @@ const UpdateOrder = ({ visible, onClose, onSuccess, orderData }) => {
       title={null} 
       onCancel={onClose} 
       footer={null} 
-      destroyOnClose // Xóa form khi đóng modal
+      destroyOnClose 
       width={600} 
       styles={{ body: { padding: 0 }, header: { display: "none" } }}
     >
       <Card style={customStyles.card}>
         <div style={{ padding: "8px 0" }}>
           <Space direction="vertical" size="large" style={{ width: "100%" }}>
-            {/* Header: Icon và tiêu đề modal */}
             <div style={{ textAlign: "center" }}>
               <div style={{ width: 60, height: 60, backgroundColor: "#0D364C", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
                 <EditOutlined style={{ fontSize: 24, color: "white" }} />
@@ -226,7 +167,7 @@ const UpdateOrder = ({ visible, onClose, onSuccess, orderData }) => {
 
             <Divider style={customStyles.divider} />
 
-            {/* Thông tin đơn hàng đang cập nhật */}
+            {/* Order Info */}
             <Card size="small" style={{ backgroundColor: "#f8fdfd", border: "1px solid #13C2C220" }}>
               <Space direction="vertical" size="small" style={{ width: "100%" }}>
                 <Text strong style={{ color: "#0D364C", fontSize: 14 }}>
@@ -237,14 +178,12 @@ const UpdateOrder = ({ visible, onClose, onSuccess, orderData }) => {
                   Khách hàng: {orderData?.customer?.name || "N/A"}
                 </Text>
                 <Text style={{ color: "#666", fontSize: 13 }}>
-                  Tổng tiền: {(orderData?.totalPrice || orderData?.totalAmount || 0).toLocaleString("vi-VN")}đ
+                  Tổng tiền: {(orderData?.totalAmount || 0).toLocaleString("vi-VN")}đ
                 </Text>
               </Space>
             </Card>
 
-            {/* Form cập nhật trạng thái */}
             <Form form={form} layout="vertical" onFinish={handleFinish} size="large">
-              {/* Select chọn trạng thái mới */}
               <Form.Item 
                 label={
                   <Space>
@@ -258,10 +197,9 @@ const UpdateOrder = ({ visible, onClose, onSuccess, orderData }) => {
                 <Select 
                   placeholder="Chọn trạng thái đơn hàng" 
                   style={customStyles.input}
-                  onChange={(value) => setSelectedStatus(value)} // Cập nhật selectedStatus khi thay đổi
+                  onChange={(value) => setSelectedStatus(value)}
                   optionLabelProp="label"
                 >
-                  {/* Hiển thị các trạng thái hợp lệ với icon và description */}
                   {nextStatuses.map((option) => (
                     <Select.Option key={option.value} value={option.value} label={option.label}>
                       <Space>
@@ -276,7 +214,7 @@ const UpdateOrder = ({ visible, onClose, onSuccess, orderData }) => {
                 </Select>
               </Form.Item>
 
-              {/* Thông báo thay đổi trạng thái (hiển thị khi user chọn trạng thái mới) */}
+              {/* Status change info */}
               {currentStatus && selectedStatus !== orderData?.status && (
                 <Card size="small" style={{ backgroundColor: "#fff7e6", border: "1px solid #faad14" }}>
                   <Space>
@@ -289,12 +227,46 @@ const UpdateOrder = ({ visible, onClose, onSuccess, orderData }) => {
                 </Card>
               )}
 
+              <Form.Item 
+                label={
+                  <Space>
+                    <FileTextOutlined style={{ color: "#13C2C2" }} />
+                    <span style={customStyles.label}>Ghi chú đơn hàng</span>
+                  </Space>
+                } 
+                name="notes"
+              >
+                <TextArea 
+                  rows={3} 
+                  placeholder="Nhập ghi chú về đơn hàng (tuỳ chọn)" 
+                  style={{ borderRadius: 8 }} 
+                  maxLength={500} 
+                  showCount 
+                />
+              </Form.Item>
+              
+              <Form.Item 
+                label={
+                  <Space>
+                    <ShoppingCartOutlined style={{ color: "#13C2C2" }} />
+                    <span style={customStyles.label}>Ghi chú giao hàng</span>
+                  </Space>
+                } 
+                name="shippingNotes"
+              >
+                <TextArea 
+                  rows={3} 
+                  placeholder="Nhập ghi chú về giao hàng (tuỳ chọn)" 
+                  style={{ borderRadius: 8 }} 
+                  maxLength={500} 
+                  showCount 
+                />
+              </Form.Item>
+
               <Divider style={customStyles.divider} />
 
-              {/* Buttons: Hủy bỏ và Cập nhật */}
               <Form.Item style={{ marginBottom: 0 }}>
                 <Space style={{ width: "100%", justifyContent: "space-between" }}>
-                  {/* Button Hủy bỏ */}
                   <Button 
                     onClick={onClose} 
                     size="large" 
@@ -303,7 +275,6 @@ const UpdateOrder = ({ visible, onClose, onSuccess, orderData }) => {
                   >
                     Hủy bỏ
                   </Button>
-                  {/* Button Cập nhật (submit form) */}
                   <Button 
                     type="primary" 
                     htmlType="submit" 
@@ -325,12 +296,11 @@ const UpdateOrder = ({ visible, onClose, onSuccess, orderData }) => {
   );
 };
 
-// PropTypes validation
 UpdateOrder.propTypes = {
-  visible: PropTypes.bool.isRequired, // Trạng thái hiển thị modal
-  onClose: PropTypes.func.isRequired, // Callback khi đóng modal
-  onSuccess: PropTypes.func, // Callback khi cập nhật thành công
-  orderData: PropTypes.object, // Dữ liệu đơn hàng
+  visible: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  onSuccess: PropTypes.func,
+  orderData: PropTypes.object,
 };
 
 export default UpdateOrder;
