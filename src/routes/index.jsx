@@ -53,6 +53,8 @@ import CreateAboutUs from "../pages/AboutUsManagement/CreateAboutUs";
 import UpdateAboutUs from "../pages/AboutUsManagement/UpdateAboutUs";
 import ShowAboutUs from "../pages/CustomerVIew/ShowAboutUs";
 import FoundersManagement from "../pages/FoundersManagement/FoundersManagement";
+import CheckoutPage from "../pages/CheckoutPage";
+import PaymentResultPage from "../pages/PaymentResultPage";
 
 
 export const routes = [
@@ -115,6 +117,11 @@ export const routes = [
     element: <ShowAboutUs />,
   },
   
+  // Route public cho payment result (VNPay callback)
+  {
+    path: "/payment-result",
+    element: <PaymentResultPage />,
+  },
 
   // THÊM: Trang mã giảm giá cho user (public)
   {
@@ -141,6 +148,14 @@ export const routes = [
       {
         path: "orders",
         element: <OrderHistory />,
+      },
+      {
+        path: "checkout",
+        element: <CheckoutPage />,
+      },
+      {
+        path: "payment-result",
+        element: <PaymentResultPage />,
       },
       {
         path: "contact/history",
