@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import { Minus, Plus, Trash2, ArrowLeft, Shield, Truck, Headphones } from 'lucide-react';
 import Header from '../components/Header/Header';
+import apiClient from '../utils/axiosConfig';
 import {
     cartGetRequest,
     cartUpdateRequest,
@@ -20,6 +21,7 @@ import {
 const CartPage = () => {
     const navigate = useNavigate(); // Khởi tạo hook useNavigate để điều hướng
     const dispatch = useDispatch(); // Khởi tạo hook useDispatch để dispatch action
+    const [checkoutLoading, setCheckoutLoading] = useState(false);
 
     // Lấy state từ Redux store (cart, loading, error)
     const { cart, loading, error } = useSelector((state) => state.cart || {});
@@ -54,7 +56,7 @@ const CartPage = () => {
             dispatch(discountClearMessages());
         }
     }, [discountError, dispatch]);
-  
+
     const formatPrice = (price) => {
         return new Intl.NumberFormat('vi-VN').format(price) + '₫'; // Định dạng giá với dấu ₫
     };
@@ -64,6 +66,14 @@ const CartPage = () => {
         return cart?.items?.reduce((total, item) => total + item.price * item.quantity, 0) || 0; // Tính tổng giá (giá * số lượng)
     };
 
+    // Tính tổng tiền cuối cùng sau khi áp dụng giảm giá (nếu có)
+    const calculateTotal = () => {
+        if (appliedDiscount && typeof appliedDiscount.totalAfterDiscount === 'number') {
+            return appliedDiscount.totalAfterDiscount;
+        }
+        return calculateSubtotal();
+    };
+
     // Cập nhật số lượng sản phẩm
     const updateQuantity = (productId, change) => {
         // Kiểm tra nếu có mã giảm giá đã áp dụng
@@ -71,7 +81,7 @@ const CartPage = () => {
             toast.warning('Vui lòng gỡ mã giảm giá để thay đổi số lượng giỏ hàng');
             return;
         }
-        
+
         const item = cart?.items?.find((i) => i.productId === productId);
         if (!item) return;
         const newQuantity = Math.max(1, item.quantity + change);
@@ -86,7 +96,7 @@ const CartPage = () => {
             toast.warning('Vui lòng gỡ mã giảm giá để thay đổi số lượng giỏ hàng');
             return;
         }
-        
+
         console.log('CartPage: Removing item', { productId });
         dispatch(cartRemoveRequest(productId));
     };
@@ -98,7 +108,7 @@ const CartPage = () => {
             toast.warning('Vui lòng gỡ mã giảm giá để thay đổi số lượng giỏ hàng');
             return;
         }
-        
+
         console.log('CartPage: Clearing cart');
         dispatch(cartClearRequest());
     };
@@ -109,13 +119,13 @@ const CartPage = () => {
             toast.error('Vui lòng nhập mã giảm giá');
             return;
         }
-        
+
         const orderTotal = calculateSubtotal();
         if (orderTotal === 0) {
             toast.error('Giỏ hàng trống, không thể áp dụng mã giảm giá');
             return;
         }
-        
+
         console.log('CartPage: Applying discount', { code: couponCode, orderTotal });
         dispatch(discountApplyRequest(couponCode.trim().toUpperCase(), orderTotal));
     };
@@ -128,6 +138,80 @@ const CartPage = () => {
     const totalItems = cart?.items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
     // Debug log trước khi render
     console.log('CartPage render:', { loading, cartItems: cart?.items, totalItems }); // Ghi log trạng thái trước render
+
+    const handleCheckout = async () => {
+        console.log('🔥 handleCheckout triggered');
+        if (!cart?.items || cart.items.length === 0) {
+            toast.error("Giỏ hàng trống");
+            return;
+        }
+        const storedUser = JSON.parse(localStorage.getItem("user"));
+        const userId = storedUser?._id;
+        if (!userId) {
+            toast.error("Vui lòng đăng nhập để thanh toán");
+            navigate("/login");
+            return;
+        }
+        try {
+            setCheckoutLoading(true);
+            const subtotal = calculateSubtotal();
+            const totalPrice = calculateTotal();
+            const discountAmount = appliedDiscount ? appliedDiscount.discountAmount : 0;
+            const totalQuantity = cart.items.reduce((sum, i) => sum + i.quantity, 0);
+            const receiverName = storedUser?.user_name || storedUser?.fullName || storedUser?.name || "";
+            const receiverPhone = storedUser?.phone || "";
+            const receiverAddress = storedUser?.address || storedUser?.shippingAddress || "";
+            const finalReceiverName = receiverName || storedUser?.email || "Khách hàng";
+            const finalReceiverPhone = receiverPhone || "0123456789";
+            const finalReceiverAddress = receiverAddress || "Địa chỉ chưa được cung cấp";
+            const items = cart.items.map(item => ({
+                productId: item.productId || item._id,
+                quantity: item.quantity || 1
+            }));
+            const { data } = await apiClient.post('/order/orders', {
+                userId,
+                items,
+                receiverName: finalReceiverName.trim(),
+                receiverPhone: finalReceiverPhone.trim(),
+                receiverAddress: finalReceiverAddress.trim(),
+                paymentMethod: 'e_wallet',
+                note: "Đơn hàng từ giỏ hàng",
+                shippingFee: 0,
+                discount: discountAmount
+            });
+            if (data.status !== "OK") {
+                throw new Error(data.message || "Không tạo được đơn hàng");
+            }
+            localStorage.setItem('pendingOrder', JSON.stringify({
+                orderId: data.data._id,
+                amount: data.data.totalPrice,
+                orderNumber: data.data.orderNumber,
+                customerInfo: {
+                    fullName: finalReceiverName,
+                    phone: finalReceiverPhone,
+                    address: finalReceiverAddress
+                }
+            }));
+            navigate("/customer/checkout", {
+                state: {
+                    orderId: data.data._id,
+                    amount: data.data.totalPrice,
+                    orderNumber: data.data.orderNumber,
+                    totalQuantity,
+                    customerInfo: {
+                        fullName: finalReceiverName,
+                        phone: finalReceiverPhone,
+                        address: finalReceiverAddress
+                    }
+                }
+            });
+        } catch (error) {
+            const errorMessage = error.response?.data?.message || error.message || "Không thể tạo đơn hàng";
+            toast.error(errorMessage);
+        } finally {
+            setCheckoutLoading(false);
+        }
+    };
 
     return (
         <>
@@ -255,7 +339,7 @@ const CartPage = () => {
                                             <span className="text-gray-600">Tạm tính:</span>
                                             <span className="font-medium">{formatPrice(calculateSubtotal())}</span>
                                         </div>
-                                        
+
                                         {/* Discount Section */}
                                         {appliedDiscount && (
                                             <div className="bg-green-50 border border-green-200 rounded-lg p-3">
@@ -269,7 +353,7 @@ const CartPage = () => {
                                                 </div>
                                             </div>
                                         )}
-                                        
+
                                         <div className="flex justify-between">
                                             <span className="text-gray-600">Phí vận chuyển:</span>
                                             <span className="font-medium">Miễn phí</span>
@@ -289,10 +373,11 @@ const CartPage = () => {
                                     </div>
                                     <div className="space-y-3">
                                         <button
-                                            className="w-full bg-blue-600 text-white py-4 rounded-lg hover:bg-blue-700 transition-colors font-bold disabled:opacity-50"
-                                            disabled={loading || !cart?.items?.length}
+                                            onClick={handleCheckout}
+                                            className="w-full bg-blue-600 text-white py-4 rounded-lg hover:bg-blue-700 transition-colors font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                                            disabled={checkoutLoading || loading || !cart?.items?.length}
                                         >
-                                            Thanh toán ngay
+                                            {checkoutLoading ? 'Đang tạo đơn hàng...' : 'Thanh toán ngay'}
                                         </button>
                                         <button
                                             className="w-full border border-gray-300 text-gray-700 py-3 rounded-lg hover:bg-gray-50 transition-colors font-medium disabled:opacity-50"
@@ -331,13 +416,15 @@ const CartPage = () => {
                                                     className="flex-1 px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                                                     disabled={applying}
                                                 />
-                                                <button 
+                                                <button
                                                     onClick={handleApplyDiscount}
                                                     disabled={applying || !couponCode.trim()}
                                                     className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium whitespace-nowrap disabled:opacity-50"
                                                 >
                                                     {applying ? 'Đang áp dụng...' : 'Áp dụng'}
+
                                                 </button>
+                                                {/* Nút thanh toán đã có ở trên phần Tổng kết đơn hàng */}
                                             </div>
                                         )}
                                     </div>
