@@ -204,7 +204,8 @@ function* deleteAboutWorker() {
   try {
     const data = yield call(apiDeleteAbout);
     if (data.status === "OK") {
-      yield put(aboutDeleteSuccess(data.message));
+      // Hard delete - backend không trả về data
+      yield put(aboutDeleteSuccess(null, data.message));
       toast.success(data.message || "Xóa thông tin About Us thành công!");
     } else {
       throw new Error(data.message || "Xóa thông tin About Us thất bại");

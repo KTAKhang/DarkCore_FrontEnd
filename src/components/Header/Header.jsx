@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { logoutRequest } from "../../redux/actions/authActions";
-import { useAboutUs } from "../../hooks/useAboutUs";
 import { LogOut, Settings, User, Clock, Package } from "lucide-react";
 import PropTypes from "prop-types";
 
@@ -14,9 +13,6 @@ const Header = ({ searchTerm, setSearchTerm }) => {
 
     // Lấy cart state từ Redux store
     const { cart } = useSelector((state) => state.cart || {});
-    
-    // Sử dụng hook để lấy thông tin AboutUs
-    const { aboutData } = useAboutUs();
 
     // DEBUG
     console.log('🛒 Header cart data:', cart);
@@ -38,9 +34,8 @@ const Header = ({ searchTerm, setSearchTerm }) => {
         : "https://images.unsplash.com/photo-1574158622682-e40e69881006?w=60&h=60&fit=crop&crop=face";
     const displayEmail = storedUser?.email || "user@email.com";
 
-    // Thông tin shop từ AboutUs
-    const shopName = aboutData?.storeName || "DarkCore Shop";
-    const shopLogo = aboutData?.logo;
+    // Thông tin shop cố định
+    const shopName = "DarkCore Shop";
 
     const handleLogout = () => {
         if (window.confirm("Bạn có chắc chắn muốn đăng xuất?")) {
@@ -62,21 +57,7 @@ const Header = ({ searchTerm, setSearchTerm }) => {
                 <div className="flex items-center justify-between h-16">
                     {/* Logo */}
                     <Link to="/" className="flex items-center space-x-2">
-                        {shopLogo ? (
-                            <img
-                                src={shopLogo}
-                                alt={shopName}
-                                className="w-10 h-10 rounded-lg object-contain"
-                                onError={(e) => {
-                                    e.currentTarget.style.display = 'none';
-                                    e.currentTarget.nextSibling.style.display = 'flex';
-                                }}
-                            />
-                        ) : null}
-                        <div 
-                            className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center"
-                            style={{ display: shopLogo ? 'none' : 'flex' }}
-                        >
+                        <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
                             <span className="text-white text-xl">💻</span>
                         </div>
                         <span className="text-xl font-bold text-gray-900">{shopName}</span>

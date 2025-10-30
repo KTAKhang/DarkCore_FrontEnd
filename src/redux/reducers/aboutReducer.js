@@ -93,7 +93,7 @@ const aboutReducer = (state = initialState, action) => {
       return {
         ...state,
         deleting: false,
-        data: null,
+        data: null, // Hard delete - xóa hẳn data
         message: action.payload.message,
         error: null,
       };

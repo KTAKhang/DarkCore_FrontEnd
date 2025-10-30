@@ -55,7 +55,7 @@ export const aboutUpdateStatsSuccess = (data, message) => ({ type: ABOUT_UPDATE_
 export const aboutUpdateStatsFailure = (error) => ({ type: ABOUT_UPDATE_STATS_FAILURE, payload: error });
 
 export const aboutDeleteRequest = () => ({ type: ABOUT_DELETE_REQUEST });
-export const aboutDeleteSuccess = (message) => ({ type: ABOUT_DELETE_SUCCESS, payload: { message } });
+export const aboutDeleteSuccess = (data, message) => ({ type: ABOUT_DELETE_SUCCESS, payload: { data, message } });
 export const aboutDeleteFailure = (error) => ({ type: ABOUT_DELETE_FAILURE, payload: error });
 
 export const aboutClearMessages = () => ({ type: ABOUT_CLEAR_MESSAGES });
