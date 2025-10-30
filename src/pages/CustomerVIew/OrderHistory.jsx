@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import { Package, Truck, CheckCircle, XCircle, Clock, Eye, Search } from 'lucide-react';
-import { orderHistoryRequest, orderClearMessages } from '../../redux/actions/orderActions';
+import { orderHistoryRequest, orderClearMessages, orderDetailRequest } from '../../redux/actions/orderActions';
 import Footer from '../../components/Footer/Footer';
 import OrderHistoryDetails from './OrderHistoryDetails';
 
@@ -22,7 +22,7 @@ const OrderHistory = () => {
   const userId = storedUser?._id || storedUser?.id;
 
   // Lấy data từ Redux
-  const { history, loadingHistory, error, success, historyPagination } = useSelector((state) => state.order || {});
+  const { history, currentOrder, loadingHistory, loadingDetail, error, success, historyPagination } = useSelector((state) => state.order || {});
 
   // Load orders khi component mount hoặc khi filter/page/sort thay đổi (với debounce cho search)
   useEffect(() => {
@@ -157,6 +157,15 @@ const OrderHistory = () => {
   const filteredOrders = history || [];
 
   const openOrderDetails = (order) => {
+    console.log("🔍 Opening OrderDetails - Full order data:", order);
+    console.log("🔍 Opening OrderDetails - orderDetails:", order.orderDetails);
+    
+    // Fetch full order details with orderDetails populated from backend
+    if (order._id && userId) {
+      console.log("🔄 Fetching full order details for ID:", order._id);
+      dispatch(orderDetailRequest(order._id));
+    }
+    
     setSelectedOrder(order);
     setIsDetailsOpen(true);
   };
@@ -367,7 +376,8 @@ const OrderHistory = () => {
         <OrderHistoryDetails
           isOpen={isDetailsOpen}
           onClose={closeOrderDetails}
-          order={selectedOrder}
+          order={currentOrder || selectedOrder}
+          loading={loadingDetail}
         />
       </main>
       <Footer />

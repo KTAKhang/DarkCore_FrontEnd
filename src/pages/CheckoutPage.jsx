@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import { ArrowLeft, CreditCard, User, Phone, MapPin, MessageSquare } from "lucide-react";
+import { ArrowLeft, CreditCard, User } from "lucide-react";
 import apiClient from '../utils/axiosConfig';
 
 const CheckoutPage = () => {
@@ -9,32 +9,41 @@ const CheckoutPage = () => {
   const { state } = useLocation();
   const fallback = (() => {
     try {
-      return JSON.parse(localStorage.getItem('pendingOrder')) || null;
+      return JSON.parse(localStorage.getItem('pendingCheckout')) || null;
     } catch {
       return null;
     }
   })();
-  const orderId = state?.orderId || fallback?.orderId;
-  const amount = state?.amount || fallback?.amount;
-  const orderNumber = state?.orderNumber || fallback?.orderNumber;
+  
+  // ✅ LẤY THÔNG TIN TỪ PENDING CHECKOUT (chưa có order)
+  const checkoutData = state || fallback;
+  const amount = checkoutData?.totalPrice;
+  const userId = checkoutData?.userId;
+  const discount = checkoutData?.discount || 0;
+  const subtotal = checkoutData?.subtotal;
+  
+  // ✅ Wrap items in useMemo to avoid re-creating array on every render
+  const items = useState(() => checkoutData?.items || [])[0];
   
   const [loading, setLoading] = useState(false);
+  
+  // ✅ Pre-fill form với data từ CartPage
   const [formData, setFormData] = useState({
-    fullName: '',
-    phone: '',
-    address: '',
+    fullName: checkoutData?.customerInfo?.fullName || '',
+    phone: checkoutData?.customerInfo?.phone || '',
+    address: checkoutData?.customerInfo?.address || '',
     note: ''
   });
 
   // Kiểm tra dữ liệu từ CartPage
   useEffect(() => {
-    console.log('🔍 CheckoutPage - Received state:', { orderId, amount, orderNumber });
-    if (!orderId || !amount) {
-      console.error('❌ CheckoutPage - Missing orderId or amount, redirecting to cart');
-      toast.error('Thông tin đơn hàng không hợp lệ');
+    console.log('🔍 CheckoutPage - Received checkoutData:', checkoutData);
+    if (!checkoutData || !amount || !userId || !items.length) {
+      console.error('❌ CheckoutPage - Missing checkout data, redirecting to cart');
+      toast.error('Thông tin giỏ hàng không hợp lệ. Vui lòng thử lại.');
       navigate('/customer/cart');
     }
-  }, [orderId, amount, navigate]);
+  }, [checkoutData, amount, userId, items, navigate]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -58,30 +67,44 @@ const CheckoutPage = () => {
       toast.error('Vui lòng nhập địa chỉ');
       return;
     }
+    
     try {
       setLoading(true);
-      // Dùng lại orderId, amount đã được tạo từ CartPage trước đó
-      const curOrderId = orderId;
-      const curAmount = amount;
-      if (!curOrderId || !curAmount) {
-        toast.error('Không tìm thấy đơn hàng để thanh toán!');
-        setLoading(false);
-        return;
-      }
-      // Update lại thông tin địa chỉ vào localStorage cho result page dùng
-      localStorage.setItem('pendingOrder', JSON.stringify({
-        orderId: curOrderId,
-        orderNumber,
-        amount: curAmount,
-        customerInfo: formData
-      }));
-      // Gọi API tạo VNPay payment URL qua gateway
+      
+      // ✅ LƯU THÔNG TIN ĐẦY ĐỦ VÀO LOCALSTORAGE để tạo order sau khi thanh toán thành công
+      const orderData = {
+        userId,
+        items: items.map(item => ({
+          productId: item.productId,
+          quantity: item.quantity
+        })),
+        receiverName: formData.fullName.trim(),
+        receiverPhone: formData.phone.trim(),
+        receiverAddress: formData.address.trim(),
+        paymentMethod: 'vnpay',
+        note: formData.note.trim(),
+        shippingFee: 0,
+        discount,
+        subtotal,
+        totalPrice: amount
+      };
+      
+      console.log('💾 Saving order data for post-payment creation:', orderData);
+      localStorage.setItem('pendingOrderData', JSON.stringify(orderData));
+      
+      // ✅ TẠO PAYMENT URL (KHÔNG TẠO ORDER)
+      // Sử dụng timestamp làm txnRef tạm thời
+      const tempTxnRef = `TEMP_${Date.now()}`;
+      
       const { data } = await apiClient.post('/payment/vnpay/create', {
-        orderId: curOrderId,
-        amount: curAmount,
-        bankCode: undefined
+        txnRef: tempTxnRef,  // ✅ Backend nhận txnRef thay vì orderId
+        amount: amount,
+        bankCode: undefined,
+        orderData: orderData // ✅ Gửi kèm orderData (optional, để backend log)
       });
+      
       if (data.status === 'OK' && data.data.paymentUrl) {
+        console.log('✅ Payment URL created, redirecting to VNPay...');
         window.location.href = data.data.paymentUrl;
       } else {
         throw new Error(data.message || 'Không thể tạo URL thanh toán');
@@ -89,6 +112,7 @@ const CheckoutPage = () => {
     } catch (error) {
       const errorMessage = error.response?.data?.message || error.message || 'Có lỗi xảy ra khi tạo thanh toán';
       toast.error(errorMessage);
+      console.error('❌ Payment error:', error);
     } finally {
       setLoading(false);
     }
@@ -193,13 +217,20 @@ const CheckoutPage = () => {
             
             <div className="space-y-4 mb-6">
               <div className="flex justify-between">
-                <span className="text-gray-600">Mã đơn hàng:</span>
-                <span className="font-medium">{orderNumber}</span>
+                <span className="text-gray-600">Số lượng sản phẩm:</span>
+                <span className="font-medium">{items.length} sản phẩm</span>
               </div>
               
-              <div className="flex justify-between">
-                <span className="text-gray-600">Tổng tiền:</span>
-                <span className="text-xl font-bold text-red-600">
+              {discount > 0 && (
+                <div className="flex justify-between text-green-600">
+                  <span>Giảm giá:</span>
+                  <span className="font-medium">-{formatPrice(discount)}</span>
+                </div>
+              )}
+              
+              <div className="border-t pt-4 flex justify-between">
+                <span className="text-lg font-bold text-gray-900">Tổng tiền:</span>
+                <span className="text-2xl font-bold text-red-600">
                   {formatPrice(amount)}
                 </span>
               </div>

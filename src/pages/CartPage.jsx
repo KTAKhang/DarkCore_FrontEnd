@@ -3,8 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import { Minus, Plus, Trash2, ArrowLeft, Shield, Truck, Headphones } from 'lucide-react';
-import Header from '../components/Header/Header';
-import apiClient from '../utils/axiosConfig';
 import {
     cartGetRequest,
     cartUpdateRequest,
@@ -26,11 +24,10 @@ const CartPage = () => {
     // Lấy state từ Redux store (cart, loading, error)
     const { cart, loading, error } = useSelector((state) => state.cart || {});
     const { appliedDiscount, applying, error: discountError } = useSelector((state) => state.discount || {});
-    const [searchTerm, setSearchTerm] = useState('');
     const [couponCode, setCouponCode] = useState('');
-    // Debug log trạng thái ban đầu
+    // Debug log trạng thái ban đầu - CHỈ CHẠY 1 LẦN KHI MOUNT
     useEffect(() => {
-        console.log('CartPage state:', { cart, loading, error }); // Ghi log trạng thái Redux để debug
+        console.log('CartPage mounted - fetching cart'); // Ghi log trạng thái Redux để debug
         const token = localStorage.getItem('token'); // Lấy token từ localStorage
         if (!token) {
             console.log('CartPage: No token found, redirecting to login'); // Ghi log nếu không có token
@@ -40,7 +37,12 @@ const CartPage = () => {
         }
         console.log('CartPage: Dispatching cartGetRequest with token:', token); // Ghi log khi dispatch action
         dispatch(cartGetRequest()); // Dispatch action để lấy giỏ hàng
-    }, [dispatch, navigate]); // Chạy lại khi dispatch hoặc navigate thay đổi
+    }, [dispatch, navigate]); // CHỈ phụ thuộc vào dispatch và navigate (không thay đổi)
+    
+    // Debug log khi cart state thay đổi (separate useEffect để debug)
+    useEffect(() => {
+        console.log('CartPage state updated:', { cart, loading, error });
+    }, [cart, loading, error]);
 
     // Xử lý lỗi giỏ hàng
     useEffect(() => {
@@ -152,61 +154,52 @@ const CartPage = () => {
             navigate("/login");
             return;
         }
+        
         try {
             setCheckoutLoading(true);
             const subtotal = calculateSubtotal();
             const totalPrice = calculateTotal();
             const discountAmount = appliedDiscount ? appliedDiscount.discountAmount : 0;
             const totalQuantity = cart.items.reduce((sum, i) => sum + i.quantity, 0);
+            
+            // Pre-fill thông tin từ user profile
             const receiverName = storedUser?.user_name || storedUser?.fullName || storedUser?.name || "";
             const receiverPhone = storedUser?.phone || "";
             const receiverAddress = storedUser?.address || storedUser?.shippingAddress || "";
-            const finalReceiverName = receiverName || storedUser?.email || "Khách hàng";
-            const finalReceiverPhone = receiverPhone || "0123456789";
-            const finalReceiverAddress = receiverAddress || "Địa chỉ chưa được cung cấp";
+            
+            // Map items để lưu vào localStorage
             const items = cart.items.map(item => ({
                 productId: item.productId || item._id,
-                quantity: item.quantity || 1
+                productName: item.name,
+                productImage: item.image,
+                quantity: item.quantity || 1,
+                price: item.price
             }));
-            const { data } = await apiClient.post('/order/orders', {
+            
+            // ✅ LƯU THÔNG TIN GIỎ HÀNG VÀO LOCALSTORAGE - CHƯA TẠO ORDER
+            const pendingCheckout = {
                 userId,
                 items,
-                receiverName: finalReceiverName.trim(),
-                receiverPhone: finalReceiverPhone.trim(),
-                receiverAddress: finalReceiverAddress.trim(),
-                paymentMethod: 'e_wallet',
-                note: "Đơn hàng từ giỏ hàng",
-                shippingFee: 0,
-                discount: discountAmount
-            });
-            if (data.status !== "OK") {
-                throw new Error(data.message || "Không tạo được đơn hàng");
-            }
-            localStorage.setItem('pendingOrder', JSON.stringify({
-                orderId: data.data._id,
-                amount: data.data.totalPrice,
-                orderNumber: data.data.orderNumber,
+                subtotal,
+                totalPrice,
+                discount: discountAmount,
+                totalQuantity,
                 customerInfo: {
-                    fullName: finalReceiverName,
-                    phone: finalReceiverPhone,
-                    address: finalReceiverAddress
+                    fullName: receiverName || storedUser?.email || "Khách hàng",
+                    phone: receiverPhone || "",
+                    address: receiverAddress || ""
                 }
-            }));
+            };
+            
+            console.log('💾 Saving checkout data to localStorage:', pendingCheckout);
+            localStorage.setItem('pendingCheckout', JSON.stringify(pendingCheckout));
+            
+            // Chuyển đến trang checkout để nhập thông tin giao hàng
             navigate("/customer/checkout", {
-                state: {
-                    orderId: data.data._id,
-                    amount: data.data.totalPrice,
-                    orderNumber: data.data.orderNumber,
-                    totalQuantity,
-                    customerInfo: {
-                        fullName: finalReceiverName,
-                        phone: finalReceiverPhone,
-                        address: finalReceiverAddress
-                    }
-                }
+                state: pendingCheckout
             });
         } catch (error) {
-            const errorMessage = error.response?.data?.message || error.message || "Không thể tạo đơn hàng";
+            const errorMessage = error.message || "Có lỗi xảy ra";
             toast.error(errorMessage);
         } finally {
             setCheckoutLoading(false);
