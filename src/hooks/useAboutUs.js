@@ -6,7 +6,8 @@ export const useAboutUs = () => {
 
     // Không gọi API nữa, chỉ trả về dữ liệu có sẵn trong store
     // Điều này sẽ ngăn vòng lập vô tận khi backend không khả dụng
-    
+    //Can delete this file later
+    //can delete this file later
     return {
         aboutData: aboutData || null,
         loading: false, // Tạm thời set false để không loading
