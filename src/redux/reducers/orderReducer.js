@@ -103,13 +103,35 @@ const orderReducer = (state = initialState, action) => {
         error: null,
       };
 
-    case ORDER_DETAIL_SUCCESS:
+    case ORDER_DETAIL_SUCCESS: {
+      // Map customer information from userId if needed
+      const orderDetail = action.payload;
+      const mappedOrder = {
+        ...orderDetail,
+        // Ensure customer object exists for consistent access
+        customer: orderDetail.customer || {
+          _id: orderDetail.userId?._id,
+          name: orderDetail.userId?.user_name,
+          email: orderDetail.userId?.email,
+          phone: orderDetail.userId?.phone
+        },
+        // Map receiver info if not already present
+        receiverName: orderDetail.receiverName || orderDetail.userId?.user_name,
+        receiverPhone: orderDetail.receiverPhone,
+        receiverAddress: orderDetail.receiverAddress,
+        // Map customerEmail/Name/Phone for compatibility
+        customerName: orderDetail.customerName || orderDetail.userId?.user_name || "N/A",
+        customerEmail: orderDetail.customerEmail || orderDetail.userId?.email || "N/A",
+        customerPhone: orderDetail.customerPhone || orderDetail.userId?.phone || "N/A",
+      };
+      
       return {
         ...state,
         loadingDetail: false,
-        currentOrder: action.payload,
+        currentOrder: mappedOrder,
         error: null,
       };
+    }
 
     case ORDER_DETAIL_FAILURE:
     case ORDER_DETAIL_FAILED:

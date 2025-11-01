@@ -49,10 +49,15 @@ import OrderReviewPage from "../pages/ProductReview/OrderReviewPage";
 import ProductReviewManagement from "../pages/ProductReview/ProductReviewManagement";
 import AdminProductReviewDetailPage from "../pages/ProductReview/AdminProductReviewDetailPage";
 import AboutUsManagement from "../pages/AboutUsManagement/AboutUsManagerment";
+import CreateAboutUs from "../pages/AboutUsManagement/CreateAboutUs";
+import UpdateAboutUs from "../pages/AboutUsManagement/UpdateAboutUs";
 import ShowAboutUs from "../pages/CustomerVIew/ShowAboutUs";
 import FoundersManagement from "../pages/FoundersManagement/FoundersManagement";
 import FinanceLayout from "../layout/FinanceLayout";
 import StaffOrderManagement from "../pages/StaffOrderManagement/OrderManagement";
+import CheckoutPage from "../pages/CheckoutPage";
+import PaymentResultPage from "../pages/PaymentResultPage";
+
 
 export const routes = [
   // Trang chủ
@@ -114,6 +119,11 @@ export const routes = [
     element: <ShowAboutUs />,
   },
 
+  // Route public cho payment result (VNPay callback)
+  {
+    path: "/payment-result",
+    element: <PaymentResultPage />,
+  },
 
   // THÊM: Trang mã giảm giá cho user (public)
   {
@@ -140,6 +150,14 @@ export const routes = [
       {
         path: "orders",
         element: <OrderHistory />,
+      },
+      {
+        path: "checkout",
+        element: <CheckoutPage />,
+      },
+      {
+        path: "payment-result",
+        element: <PaymentResultPage />,
       },
       {
         path: "contact/history",
@@ -190,6 +208,8 @@ export const routes = [
       { path: "contact", element: <ContactManagement /> },
       { path: "discounts", element: <AdminDiscountPage /> },
       { path: "about-us", element: <AboutUsManagement /> },
+      { path: "about-us/create", element: <CreateAboutUs /> },
+      { path: "about-us/update", element: <UpdateAboutUs /> },
       { path: "founders", element: <FoundersManagement /> },
     ],
   },

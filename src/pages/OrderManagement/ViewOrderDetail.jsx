@@ -23,10 +23,10 @@ const ViewOrderDetail = ({ visible, onClose, orderData, loading = false }) => {
 
   // Debug log to see the order data structure
   console.log("🔍 ViewOrderDetail - orderData:", orderData);
-  console.log("🔍 ViewOrderDetail - orderDetails:", orderData.items || orderData.orderDetails);
+  console.log("🔍 ViewOrderDetail - orderDetails:", orderData.items || orderData.orderDetails || orderData.orderdetails);
   
-  // Debug the order details structure
-  const orderDetails = orderData.items || orderData.orderDetails || [];
+  // Debug the order details structure - try multiple possible field names
+  const orderDetails = orderData.items || orderData.orderDetails || orderData.orderdetails || [];
   console.log("🔍 ViewOrderDetail - orderDetails array:", orderDetails);
   if (orderDetails.length > 0) {
     console.log("🔍 ViewOrderDetail - first order detail:", orderDetails[0]);
@@ -232,19 +232,21 @@ const ViewOrderDetail = ({ visible, onClose, orderData, loading = false }) => {
         {statusConfig.text}
       </Tag>
     ),
-    createItem("totalPrice", "Tổng tiền", <Text style={styles.totalAmount}>{(orderData.totalPrice || orderData.totalAmount || 0).toLocaleString("vi-VN")}đ</Text>),
+    createItem("totalAmount", "Tổng tiền", <Text style={styles.totalAmount}>{(orderData.totalAmount || orderData.totalPrice || 0).toLocaleString("vi-VN")}đ</Text>),
     createItem("paymentMethod", "Phương thức thanh toán", <Tag color="#0D364C" style={{ borderRadius: 16, fontWeight: 500, padding: "4px 12px" }} icon={<CreditCardOutlined />}>{getPaymentMethodText(orderData.paymentMethod)}</Tag>),
-    createItem("paymentStatus", "Trạng thái thanh toán", <Tag color={orderData.paymentStatus === 'paid' ? '#52c41a' : '#faad14'}>{orderData.paymentStatus || 'pending'}</Tag>),
     createItem("createdAt", "Ngày tạo", <Text style={styles.createdAt}>{formatDateTime(orderData.createdAt)}</Text>),
     createItem("updatedAt", "Cập nhật gần nhất", <Text style={styles.updatedAt}>{formatDateTime(orderData.updatedAt)}</Text>),
   ];
 
-  // Customer information
+  // Customer information (Receiver information - người nhận hàng)
+  // Try multiple sources for email: customer object, userId object, or direct field
+  const customerEmail = orderData.customer?.email || orderData.userId?.email || orderData.customerEmail || "N/A";
+  
   const customerItems = [
-    createItem("receiverName", "Tên khách hàng", <Text strong>{orderData.receiverName || orderData.userId?.user_name || orderData.customer?.name || orderData.customerName || "N/A"}</Text>),
-    createItem("customerEmail", "Email", <Text>{orderData.userId?.email || orderData.customer?.email || orderData.customerEmail || "N/A"}</Text>),
-    createItem("receiverPhone", "Số điện thoại", <Text>{orderData.receiverPhone || orderData.userId?.phone || orderData.customer?.phone || orderData.customerPhone || "N/A"}</Text>),
-    createItem("receiverAddress", "Địa chỉ giao hàng", <Text>{orderData.receiverAddress || orderData.userId?.address || orderData.shippingAddress || "N/A"}</Text>),
+    createItem("receiverName", "Tên khách hàng", <Text strong>{orderData.receiverName || orderData.customer?.name || orderData.userId?.user_name || orderData.customerName || "N/A"}</Text>),
+    createItem("customerEmail", "Email", <Text>{customerEmail}</Text>),
+    createItem("receiverPhone", "Số điện thoại", <Text>{orderData.receiverPhone || orderData.customer?.phone || orderData.userId?.phone || orderData.customerPhone || "N/A"}</Text>),
+    createItem("shippingAddress", "Địa chỉ giao hàng", <Text>{orderData.receiverAddress || orderData.shippingAddress || "Địa chỉ chưa được cung cấp"}</Text>),
   ];
 
   try {
@@ -264,19 +266,19 @@ const ViewOrderDetail = ({ visible, onClose, orderData, loading = false }) => {
       >
         <Spin spinning={loading} tip="Đang tải chi tiết đơn hàng...">
           <div style={{ maxHeight: "70vh", overflowY: "auto" }}>
-            {/* Order Information */}
-            <Card 
-              title={
-                <Space>
-                  <FileTextOutlined style={{ color: "#13C2C2" }} />
-                  <span>Thông tin Đơn hàng</span>
-                </Space>
-              }
-              style={{ marginBottom: 16, borderRadius: 8 }}
-              size="small"
-            >
-              <Descriptions bordered column={2} items={orderItems} size="small" />
-            </Card>
+          {/* Order Information */}
+          <Card 
+            title={
+              <Space>
+                <FileTextOutlined style={{ color: "#13C2C2" }} />
+                <span>Thông tin Đơn hàng</span>
+              </Space>
+            }
+            style={{ marginBottom: 16, borderRadius: 8 }}
+            size="small"
+          >
+            <Descriptions bordered column={2} items={orderItems} size="small" />
+          </Card>
 
           {/* Customer Information */}
           <Card 
@@ -319,7 +321,7 @@ const ViewOrderDetail = ({ visible, onClose, orderData, loading = false }) => {
                 <Space size="large">
                   <Text strong style={{ fontSize: 16 }}>Tổng cộng:</Text>
                   <Text strong style={styles.totalAmount}>
-                    {(orderData.totalPrice || orderData.totalAmount || 0).toLocaleString("vi-VN")}đ
+                    {(orderData.totalAmount || orderData.totalPrice || 0).toLocaleString("vi-VN")}đ
                   </Text>
                 </Space>
               </Col>

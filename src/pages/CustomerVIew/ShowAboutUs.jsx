@@ -19,9 +19,9 @@ const ShowAboutUs = () => {
 
   if (publicLoading || publicLoadingList) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 flex flex-col">
         <Header searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
-        <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="flex items-center justify-center flex-grow">
           <Spin size="large" />
         </div>
         <Footer />
@@ -31,9 +31,9 @@ const ShowAboutUs = () => {
 
   if (!aboutData) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 flex flex-col">
         <Header searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
-        <div className="container mx-auto px-4 py-16 text-center">
+        <div className="container mx-auto px-4 py-16 text-center flex-grow">
           <h1 className="text-3xl font-bold text-gray-900 mb-4">Chưa có thông tin</h1>
           <p className="text-gray-600">Vui lòng quay lại sau.</p>
         </div>
@@ -43,7 +43,7 @@ const ShowAboutUs = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       <Header searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
 
       {/* Hero Section */}
