@@ -51,7 +51,8 @@ import AdminProductReviewDetailPage from "../pages/ProductReview/AdminProductRev
 import AboutUsManagement from "../pages/AboutUsManagement/AboutUsManagerment";
 import ShowAboutUs from "../pages/CustomerVIew/ShowAboutUs";
 import FoundersManagement from "../pages/FoundersManagement/FoundersManagement";
-
+import FinanceLayout from "../layout/FinanceLayout";
+import StaffOrderManagement from "../pages/StaffOrderManagement/OrderManagement";
 
 export const routes = [
   // Trang chủ
@@ -112,7 +113,7 @@ export const routes = [
     path: "/about",
     element: <ShowAboutUs />,
   },
-  
+
 
   // THÊM: Trang mã giảm giá cho user (public)
   {
@@ -145,6 +146,19 @@ export const routes = [
         element: <ContactHistory />,
       },
       { path: "review/:id", element: <OrderReviewPage /> },
+    ],
+  },
+
+  {
+    path: "/sale-staff",
+    element: (
+      <PrivateRoute requiredRole="sales-staff">
+        <FinanceLayout />
+      </PrivateRoute>
+    ),
+    children: [
+      { path: "order", element: <StaffOrderManagement /> },
+
     ],
   },
 

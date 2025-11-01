@@ -35,7 +35,7 @@ const UpdateOrder = ({ visible, onClose, onSuccess, orderData }) => {
       if (!statuses || statuses.length === 0) {
         dispatch(orderStatusesRequest());
       }
-      
+
       if (orderData) {
         console.log("🔍 UpdateOrder - orderData:", orderData);
         console.log("🔍 UpdateOrder - status info:", {
@@ -43,7 +43,7 @@ const UpdateOrder = ({ visible, onClose, onSuccess, orderData }) => {
           statusId: orderData.statusId,
           orderStatusId: orderData.orderStatusId
         });
-        
+
         // Set giá trị mặc định cho form
         form.setFieldsValue({
           status: orderData.status,
@@ -109,14 +109,14 @@ const UpdateOrder = ({ visible, onClose, onSuccess, orderData }) => {
    */
   const handleFinish = async (values) => {
     if (isSubmitting) return; // Tránh submit nhiều lần
-    
+
     try {
       setIsSubmitting(true);
 
       // Tìm ID của trạng thái đã chọn
       const selectedStatusOption = statusOptions.find(option => option.value === values.status);
       const statusId = selectedStatusOption?.id || orderData?.statusId || orderData?.orderStatusId?._id || orderData?.orderStatusId;
-      
+
       // Nếu chưa tìm thấy statusId, tìm trong mảng statuses
       let finalStatusId = statusId;
       if (!finalStatusId && statuses && statuses.length > 0) {
@@ -125,7 +125,7 @@ const UpdateOrder = ({ visible, onClose, onSuccess, orderData }) => {
           finalStatusId = matchingStatus._id;
         }
       }
-      
+
       // Debug log để kiểm tra dữ liệu
       console.log("🔍 UpdateOrder - handleFinish:", {
         selectedStatus: values.status,
@@ -165,7 +165,7 @@ const UpdateOrder = ({ visible, onClose, onSuccess, orderData }) => {
 
   // Lấy thông tin của trạng thái hiện đang được chọn trong form
   const currentStatus = statusOptions.find(option => option.value === selectedStatus);
-  
+
   // Lấy danh sách các trạng thái tiếp theo hợp lệ
   // Sử dụng trạng thái thực tế của đơn hàng (orderData.status) thay vì selectedStatus
   // để đảm bảo logic đúng khi user thay đổi lựa chọn nhưng chưa submit
@@ -193,23 +193,23 @@ const UpdateOrder = ({ visible, onClose, onSuccess, orderData }) => {
       cancelled: [], // Trạng thái kết thúc - không thể chuyển sang trạng thái khác
       returned: [] // Trạng thái kết thúc - không thể chuyển sang trạng thái khác
     };
-    
+
     // Filter ra các trạng thái hợp lệ: 
     // - Các trạng thái trong luồng tiếp theo
     // - Trạng thái hiện tại (cho phép giữ nguyên)
-    return statusOptions.filter(option => 
+    return statusOptions.filter(option =>
       statusFlow[currentStatus]?.includes(option.value) || option.value === currentStatus
     );
   }
 
   return (
-    <Modal 
-      open={visible} 
-      title={null} 
-      onCancel={onClose} 
-      footer={null} 
+    <Modal
+      open={visible}
+      title={null}
+      onCancel={onClose}
+      footer={null}
       destroyOnClose // Xóa form khi đóng modal
-      width={600} 
+      width={600}
       styles={{ body: { padding: 0 }, header: { display: "none" } }}
     >
       <Card style={customStyles.card}>
@@ -245,18 +245,18 @@ const UpdateOrder = ({ visible, onClose, onSuccess, orderData }) => {
             {/* Form cập nhật trạng thái */}
             <Form form={form} layout="vertical" onFinish={handleFinish} size="large">
               {/* Select chọn trạng thái mới */}
-              <Form.Item 
+              <Form.Item
                 label={
                   <Space>
                     <CheckCircleOutlined style={{ color: "#13C2C2" }} />
                     <span style={customStyles.label}>Trạng thái đơn hàng</span>
                   </Space>
-                } 
-                name="status" 
+                }
+                name="status"
                 rules={[{ required: true, message: "Vui lòng chọn trạng thái đơn hàng!" }]}
               >
-                <Select 
-                  placeholder="Chọn trạng thái đơn hàng" 
+                <Select
+                  placeholder="Chọn trạng thái đơn hàng"
                   style={customStyles.input}
                   onChange={(value) => setSelectedStatus(value)} // Cập nhật selectedStatus khi thay đổi
                   optionLabelProp="label"
@@ -282,7 +282,7 @@ const UpdateOrder = ({ visible, onClose, onSuccess, orderData }) => {
                   <Space>
                     <ClockCircleOutlined style={{ color: "#faad14" }} />
                     <Text style={{ fontSize: 13, color: "#d46b08" }}>
-                      Đang thay đổi từ <strong>&ldquo;{statusOptions.find(opt => opt.value === orderData?.status)?.label}&rdquo;</strong> 
+                      Đang thay đổi từ <strong>&ldquo;{statusOptions.find(opt => opt.value === orderData?.status)?.label}&rdquo;</strong>
                       {" "}sang <strong>&ldquo;{currentStatus.label}&rdquo;</strong>
                     </Text>
                   </Space>
@@ -295,22 +295,22 @@ const UpdateOrder = ({ visible, onClose, onSuccess, orderData }) => {
               <Form.Item style={{ marginBottom: 0 }}>
                 <Space style={{ width: "100%", justifyContent: "space-between" }}>
                   {/* Button Hủy bỏ */}
-                  <Button 
-                    onClick={onClose} 
-                    size="large" 
-                    disabled={isSubmitting} 
+                  <Button
+                    onClick={onClose}
+                    size="large"
+                    disabled={isSubmitting}
                     style={{ height: 44, borderRadius: 8, fontWeight: 500, minWidth: 120, borderColor: "#d9d9d9", color: "#666" }}
                   >
                     Hủy bỏ
                   </Button>
                   {/* Button Cập nhật (submit form) */}
-                  <Button 
-                    type="primary" 
-                    htmlType="submit" 
-                    loading={isSubmitting} 
-                    icon={<EditOutlined />} 
-                    size="large" 
-                    disabled={isSubmitting} 
+                  <Button
+                    type="primary"
+                    htmlType="submit"
+                    loading={isSubmitting}
+                    icon={<EditOutlined />}
+                    size="large"
+                    disabled={isSubmitting}
                     style={{ ...customStyles.primaryButton, minWidth: 140 }}
                   >
                     Cập nhật

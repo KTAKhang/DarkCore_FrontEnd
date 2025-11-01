@@ -14,7 +14,7 @@ function FinanceLayout() {
             <div>
                 <Navbar toggleSidebar={toggleSidebar} />
                 <div className="flex">
-                    <Sidebar isFinance={true} isOpen={isOpen} />
+                    <Sidebar isSaleStaff={true} isAdmin={false} isOpen={isOpen} />
                     <div className="flex-1 p-4 bg-[#F8FAFD]  w-full">
                         <Outlet />
                     </div>
