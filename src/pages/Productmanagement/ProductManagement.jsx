@@ -11,7 +11,6 @@ import {
   Statistic,
   Row,
   Col,
-  Badge,
   Avatar,
   Tooltip,
   Spin,
@@ -38,7 +37,6 @@ import {
   productCreateRequest,
   productUpdateRequest,
   productStatsRequest,
-  productClearMessages,
 } from "../../redux/actions/productActions";
 import { categoryListRequest } from "../../redux/actions/categoryActions";
 
@@ -46,7 +44,7 @@ const { Title, Text } = Typography;
 
 const ProductManagement = () => {
   const dispatch = useDispatch();
-  const { items: productItems, stats, pagination: apiPagination, loadingList, loadingStats, creating, updating, deleting, error } = useSelector((state) => state.product);
+  const { items: productItems, stats, pagination: apiPagination, loadingList, loadingStats, creating, updating, deleting } = useSelector((state) => state.product);
   const { items: categoryItems } = useSelector((state) => state.category);
   
   // Simplified state management
@@ -107,6 +105,7 @@ const ProductManagement = () => {
     dispatch(productStatsRequest());
     dispatch(categoryListRequest({ page: 1, limit: 100, status: "active" }));
   }, [dispatch, fetchProducts]);
+
 
   // Handle filter changes with debounce for search
   const [isInitialLoad, setIsInitialLoad] = useState(true);
@@ -317,14 +316,9 @@ const ProductManagement = () => {
       dataIndex: "status",
       key: "status",
       render: (status) => (
-        <Badge
-          status={status ? "success" : "error"}
-          text={
-            <Tag color={status ? "#52c41a" : "#ff4d4f"} style={{ borderRadius: 16, fontWeight: 500, padding: "4px 12px" }}>
-              {status ? "Hiển thị" : "Ẩn"}
-            </Tag>
-          }
-        />
+        <Tag color={status ? "#52c41a" : "#ff4d4f"} style={{ borderRadius: 16, fontWeight: 500, padding: "4px 12px" }}>
+          {status ? "Hiển thị" : "Ẩn"}
+        </Tag>
       ),
     },
     {
@@ -462,21 +456,6 @@ const ProductManagement = () => {
           </Space>
         </div>
 
-        {/* Error and Success Messages */}
-        {error && (
-          <Alert
-            message={error}
-            type="error"
-            showIcon
-            closable
-            onClose={() => dispatch(productClearMessages())}
-            style={{ 
-              marginBottom: 16, 
-              borderColor: "#ff4d4f", 
-              backgroundColor: "#fff2f0"
-            }}
-          />
-        )}
         
         {/* Removed success message alert - using toast notification instead */}
 

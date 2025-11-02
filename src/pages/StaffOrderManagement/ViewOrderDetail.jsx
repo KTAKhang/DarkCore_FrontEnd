@@ -1,9 +1,9 @@
 import PropTypes from "prop-types";
 import { Modal, Descriptions, Tag, Typography, Card, Row, Col, Divider, Table, Space, Spin } from "antd";
-import { 
-  CheckCircleOutlined, 
-  ClockCircleOutlined, 
-  CloseCircleOutlined, 
+import {
+  CheckCircleOutlined,
+  ClockCircleOutlined,
+  CloseCircleOutlined,
   ShoppingCartOutlined,
   UserOutlined,
   CreditCardOutlined,
@@ -14,7 +14,7 @@ const { Text } = Typography;
 
 const ViewOrderDetail = ({ visible, onClose, orderData, loading = false }) => {
   if (!orderData) return null;
-  
+
   // Safety check to ensure orderData is valid
   if (typeof orderData !== 'object' || orderData === null) {
     console.error("Invalid orderData:", orderData);
@@ -23,15 +23,15 @@ const ViewOrderDetail = ({ visible, onClose, orderData, loading = false }) => {
 
   // Debug log to see the order data structure
   console.log("🔍 ViewOrderDetail - orderData:", orderData);
-  console.log("🔍 ViewOrderDetail - orderDetails:", orderData.items || orderData.orderDetails || orderData.orderdetails);
-  
-  // Debug the order details structure - try multiple possible field names
-  const orderDetails = orderData.items || orderData.orderDetails || orderData.orderdetails || [];
+  console.log("🔍 ViewOrderDetail - orderDetails:", orderData.items || orderData.orderDetails);
+
+  // Debug the order details structure
+  const orderDetails = orderData.items || orderData.orderDetails || [];
   console.log("🔍 ViewOrderDetail - orderDetails array:", orderDetails);
   if (orderDetails.length > 0) {
     console.log("🔍 ViewOrderDetail - first order detail:", orderDetails[0]);
     console.log("🔍 ViewOrderDetail - first order detail product:", orderDetails[0]?.product);
-    
+
     // Check if any field contains objects that might cause rendering issues
     const firstDetail = orderDetails[0];
     Object.keys(firstDetail).forEach(key => {
@@ -75,7 +75,7 @@ const ViewOrderDetail = ({ visible, onClose, orderData, loading = false }) => {
   // Helper để validate và lấy ảnh hợp lệ
   const getValidImageUrl = (record) => {
     let imageUrl = null;
-    
+
     try {
       // Try to get image from various possible fields
       if (record.product && typeof record.product === 'object') {
@@ -83,7 +83,7 @@ const ViewOrderDetail = ({ visible, onClose, orderData, loading = false }) => {
       } else {
         imageUrl = record.productImage;
       }
-      
+
       // Check if URL is valid (not from example.com)
       if (imageUrl && !imageUrl.includes('example.com')) {
         return imageUrl;
@@ -91,7 +91,7 @@ const ViewOrderDetail = ({ visible, onClose, orderData, loading = false }) => {
     } catch (error) {
       console.error("Error extracting image:", error);
     }
-    
+
     // Fallback to placeholder
     return 'https://via.placeholder.com/64x64?text=No+Image';
   };
@@ -105,7 +105,7 @@ const ViewOrderDetail = ({ visible, onClose, orderData, loading = false }) => {
         // Safely extract product information with additional checks
         let productName = "N/A";
         let productId = "N/A";
-        
+
         try {
           if (record.product && typeof record.product === 'object') {
             productName = record.product.name || record.productName || "N/A";
@@ -114,10 +114,10 @@ const ViewOrderDetail = ({ visible, onClose, orderData, loading = false }) => {
             productName = record.productName || "N/A";
             productId = record.productId || "N/A";
           }
-          
+
           // Ensure we have strings, not objects
           productName = String(productName);
-          
+
           // Special handling for productId to convert objects to strings
           if (productId && typeof productId === 'object') {
             productId = productId.toString ? productId.toString() : JSON.stringify(productId);
@@ -129,7 +129,7 @@ const ViewOrderDetail = ({ visible, onClose, orderData, loading = false }) => {
           productName = "N/A";
           productId = "N/A";
         }
-        
+
         return (
           <Space>
             <img
@@ -177,7 +177,7 @@ const ViewOrderDetail = ({ visible, onClose, orderData, loading = false }) => {
           console.error("Error extracting price:", error);
           price = 0;
         }
-        
+
         return (
           <Text style={{ color: "#13C2C2", fontWeight: 500 }}>
             {price.toLocaleString("vi-VN")}đ
@@ -226,134 +226,132 @@ const ViewOrderDetail = ({ visible, onClose, orderData, loading = false }) => {
     createItem("orderNumber", "Mã đơn hàng", <Text code>{orderData.orderNumber || "N/A"}</Text>),
     createItem("id", "ID", <Text code>{orderData._id || "N/A"}</Text>),
     createItem(
-      "status", 
-      "Trạng thái", 
+      "status",
+      "Trạng thái",
       <Tag color={statusConfig.color} icon={statusConfig.icon} style={{ borderRadius: 16, fontWeight: 500, padding: "4px 12px" }}>
         {statusConfig.text}
       </Tag>
     ),
-    createItem("totalAmount", "Tổng tiền", <Text style={styles.totalAmount}>{(orderData.totalAmount || orderData.totalPrice || 0).toLocaleString("vi-VN")}đ</Text>),
+    createItem("totalPrice", "Tổng tiền", <Text style={styles.totalAmount}>{(orderData.totalPrice || orderData.totalAmount || 0).toLocaleString("vi-VN")}đ</Text>),
     createItem("paymentMethod", "Phương thức thanh toán", <Tag color="#0D364C" style={{ borderRadius: 16, fontWeight: 500, padding: "4px 12px" }} icon={<CreditCardOutlined />}>{getPaymentMethodText(orderData.paymentMethod)}</Tag>),
+    createItem("paymentStatus", "Trạng thái thanh toán", <Tag color={orderData.paymentStatus === 'paid' ? '#52c41a' : '#faad14'}>{orderData.paymentStatus || 'pending'}</Tag>),
     createItem("createdAt", "Ngày tạo", <Text style={styles.createdAt}>{formatDateTime(orderData.createdAt)}</Text>),
     createItem("updatedAt", "Cập nhật gần nhất", <Text style={styles.updatedAt}>{formatDateTime(orderData.updatedAt)}</Text>),
   ];
 
-  // Customer information (Receiver information - người nhận hàng)
-  // Try multiple sources for email: customer object, userId object, or direct field
-  const customerEmail = orderData.customer?.email || orderData.userId?.email || orderData.customerEmail || "N/A";
-  
+  // Customer information
   const customerItems = [
-    createItem("receiverName", "Tên khách hàng", <Text strong>{orderData.receiverName || orderData.customer?.name || orderData.userId?.user_name || orderData.customerName || "N/A"}</Text>),
-    createItem("customerEmail", "Email", <Text>{customerEmail}</Text>),
-    createItem("receiverPhone", "Số điện thoại", <Text>{orderData.receiverPhone || orderData.customer?.phone || orderData.userId?.phone || orderData.customerPhone || "N/A"}</Text>),
-    createItem("shippingAddress", "Địa chỉ giao hàng", <Text>{orderData.receiverAddress || orderData.shippingAddress || "Địa chỉ chưa được cung cấp"}</Text>),
+    createItem("receiverName", "Tên khách hàng", <Text strong>{orderData.receiverName || orderData.userId?.user_name || orderData.customer?.name || orderData.customerName || "N/A"}</Text>),
+    createItem("customerEmail", "Email", <Text>{orderData.userId?.email || orderData.customer?.email || orderData.customerEmail || "N/A"}</Text>),
+    createItem("receiverPhone", "Số điện thoại", <Text>{orderData.receiverPhone || orderData.userId?.phone || orderData.customer?.phone || orderData.customerPhone || "N/A"}</Text>),
+    createItem("receiverAddress", "Địa chỉ giao hàng", <Text>{orderData.receiverAddress || orderData.userId?.address || orderData.shippingAddress || "N/A"}</Text>),
   ];
 
   try {
     return (
-      <Modal 
-        open={visible} 
-        onCancel={onClose} 
-        footer={null} 
+      <Modal
+        open={visible}
+        onCancel={onClose}
+        footer={null}
         title={
           <Space>
             <FileTextOutlined style={{ color: "#13C2C2" }} />
             <span>Chi tiết Đơn hàng</span>
           </Space>
-        } 
+        }
         width={900}
         style={{ top: 20 }}
       >
         <Spin spinning={loading} tip="Đang tải chi tiết đơn hàng...">
           <div style={{ maxHeight: "70vh", overflowY: "auto" }}>
-          {/* Order Information */}
-          <Card 
-            title={
-              <Space>
-                <FileTextOutlined style={{ color: "#13C2C2" }} />
-                <span>Thông tin Đơn hàng</span>
-              </Space>
-            }
-            style={{ marginBottom: 16, borderRadius: 8 }}
-            size="small"
-          >
-            <Descriptions bordered column={2} items={orderItems} size="small" />
-          </Card>
-
-          {/* Customer Information */}
-          <Card 
-            title={
-              <Space>
-                <UserOutlined style={{ color: "#13C2C2" }} />
-                <span>Thông tin Khách hàng</span>
-              </Space>
-            }
-            style={{ marginBottom: 16, borderRadius: 8 }}
-            size="small"
-          >
-            <Descriptions bordered column={2} items={customerItems} size="small" />
-          </Card>
-
-          {/* Order Items */}
-          <Card 
-            title={
-              <Space>
-                <ShoppingCartOutlined style={{ color: "#13C2C2" }} />
-                <span>Chi tiết Sản phẩm ({orderDetails.length} sản phẩm)</span>
-              </Space>
-            }
-            style={{ marginBottom: 16, borderRadius: 8 }}
-            size="small"
-          >
-            <Table
-              columns={itemColumns}
-              dataSource={orderDetails}
-              pagination={false}
-              rowKey={(record) => record._id || record.id || Math.random().toString(36)}
-              size="small"
-              style={{ borderRadius: 8 }}
-            />
-            
-            <Divider />
-            
-            <Row justify="end">
-              <Col>
-                <Space size="large">
-                  <Text strong style={{ fontSize: 16 }}>Tổng cộng:</Text>
-                  <Text strong style={styles.totalAmount}>
-                    {(orderData.totalAmount || orderData.totalPrice || 0).toLocaleString("vi-VN")}đ
-                  </Text>
-                </Space>
-              </Col>
-            </Row>
-          </Card>
-
-          {/* Additional Information */}
-          {(orderData.notes || orderData.shippingNotes) && (
-            <Card 
+            {/* Order Information */}
+            <Card
               title={
                 <Space>
                   <FileTextOutlined style={{ color: "#13C2C2" }} />
-                  <span>Ghi chú</span>
+                  <span>Thông tin Đơn hàng</span>
                 </Space>
               }
-              style={{ borderRadius: 8 }}
+              style={{ marginBottom: 16, borderRadius: 8 }}
               size="small"
             >
-              {orderData.notes && (
-                <div style={{ marginBottom: 12 }}>
-                  <Text strong style={{ color: "#0D364C", display: "block", marginBottom: 4 }}>Ghi chú đơn hàng:</Text>
-                  <Text>{orderData.notes}</Text>
-                </div>
-              )}
-              {orderData.shippingNotes && (
-                <div>
-                  <Text strong style={{ color: "#0D364C", display: "block", marginBottom: 4 }}>Ghi chú giao hàng:</Text>
-                  <Text>{orderData.shippingNotes}</Text>
-                </div>
-              )}
+              <Descriptions bordered column={2} items={orderItems} size="small" />
             </Card>
-          )}
+
+            {/* Customer Information */}
+            <Card
+              title={
+                <Space>
+                  <UserOutlined style={{ color: "#13C2C2" }} />
+                  <span>Thông tin Khách hàng</span>
+                </Space>
+              }
+              style={{ marginBottom: 16, borderRadius: 8 }}
+              size="small"
+            >
+              <Descriptions bordered column={2} items={customerItems} size="small" />
+            </Card>
+
+            {/* Order Items */}
+            <Card
+              title={
+                <Space>
+                  <ShoppingCartOutlined style={{ color: "#13C2C2" }} />
+                  <span>Chi tiết Sản phẩm ({orderDetails.length} sản phẩm)</span>
+                </Space>
+              }
+              style={{ marginBottom: 16, borderRadius: 8 }}
+              size="small"
+            >
+              <Table
+                columns={itemColumns}
+                dataSource={orderDetails}
+                pagination={false}
+                rowKey={(record) => record._id || record.id || Math.random().toString(36)}
+                size="small"
+                style={{ borderRadius: 8 }}
+              />
+
+              <Divider />
+
+              <Row justify="end">
+                <Col>
+                  <Space size="large">
+                    <Text strong style={{ fontSize: 16 }}>Tổng cộng:</Text>
+                    <Text strong style={styles.totalAmount}>
+                      {(orderData.totalPrice || orderData.totalAmount || 0).toLocaleString("vi-VN")}đ
+                    </Text>
+                  </Space>
+                </Col>
+              </Row>
+            </Card>
+
+            {/* Additional Information */}
+            {(orderData.notes || orderData.shippingNotes) && (
+              <Card
+                title={
+                  <Space>
+                    <FileTextOutlined style={{ color: "#13C2C2" }} />
+                    <span>Ghi chú</span>
+                  </Space>
+                }
+                style={{ borderRadius: 8 }}
+                size="small"
+              >
+                {orderData.notes && (
+                  <div style={{ marginBottom: 12 }}>
+                    <Text strong style={{ color: "#0D364C", display: "block", marginBottom: 4 }}>Ghi chú đơn hàng:</Text>
+                    <Text>{orderData.notes}</Text>
+                  </div>
+                )}
+                {orderData.shippingNotes && (
+                  <div>
+                    <Text strong style={{ color: "#0D364C", display: "block", marginBottom: 4 }}>Ghi chú giao hàng:</Text>
+                    <Text>{orderData.shippingNotes}</Text>
+                  </div>
+                )}
+              </Card>
+            )}
           </div>
         </Spin>
       </Modal>
@@ -361,10 +359,10 @@ const ViewOrderDetail = ({ visible, onClose, orderData, loading = false }) => {
   } catch (error) {
     console.error("Error rendering ViewOrderDetail:", error);
     return (
-      <Modal 
-        open={visible} 
-        onCancel={onClose} 
-        footer={null} 
+      <Modal
+        open={visible}
+        onCancel={onClose}
+        footer={null}
         title="Chi tiết Đơn hàng"
         width={900}
         style={{ top: 20 }}

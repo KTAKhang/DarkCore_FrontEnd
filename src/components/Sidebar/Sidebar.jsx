@@ -1,4 +1,4 @@
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import {
   HomeOutlined,
   AppstoreOutlined,
@@ -6,31 +6,21 @@ import {
   UserOutlined,
   ShoppingCartOutlined,
   ProfileOutlined,
-  FileTextOutlined,
-  CheckCircleOutlined,
   DollarOutlined,
-  LogoutOutlined,
-  DownOutlined,
-  RightOutlined,
-  PlusOutlined,
   ProjectOutlined,
-  MenuOutlined,
   MessageOutlined,
-  ReadOutlined
+  ReadOutlined,
+  InfoCircleOutlined,
+  TeamOutlined
 } from '@ant-design/icons';
 import { useState, useRef, useEffect } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSidebar } from '../../contexts/SidebarContext';
 import PropTypes from 'prop-types';
 
-const Sidebar = ({ isFinance = false, isAdmin = false, isApprover = false, isClaimer = false }) => {
-  const [isClaimsOpen, setIsClaimsOpen] = useState(false);
-  const [isWarehouseOpen, setIsWarehouseOpen] = useState(false);
+const Sidebar = ({ isAdmin = false, isSaleStaff = false }) => {
   const location = useLocation();
-  const navigate = useNavigate();
-  const { logout } = useAuth();
-  const sidebarContext = useSidebar ? useSidebar() : {};
+  const sidebarContext = useSidebar();
   const isOpen = typeof sidebarContext.isOpen !== 'undefined'
     ? sidebarContext.isOpen
     : true;
@@ -39,12 +29,6 @@ const Sidebar = ({ isFinance = false, isAdmin = false, isApprover = false, isCla
   const prevIsOpen = useRef(isOpen);
   useEffect(() => { prevIsOpen.current = isOpen; }, [isOpen]);
 
-  const handleLogout = () => {
-    logout();
-    navigate('/');
-  };
-
-  // ✅ Fixed syntax here (added missing `{`)
   const adminMenuItems = [
     {
       title: "Dashboard",
@@ -83,7 +67,7 @@ const Sidebar = ({ isFinance = false, isAdmin = false, isApprover = false, isCla
       color: "#54A0FF"
     },
     {
-      title: "Quản Lý Đánh giá",
+      title: "Quản Lý Đánh Giá",
       path: "/admin/review",
       icon: <ProfileOutlined />,
       color: "#FF9F43"
@@ -111,6 +95,51 @@ const Sidebar = ({ isFinance = false, isAdmin = false, isApprover = false, isCla
       path: "/admin/discounts",
       icon: <DollarOutlined />,
       color: "#00D2D3"
+    },
+    {
+      title: "Quản Lý About Us",
+      path: "/admin/about-us",
+      icon: <InfoCircleOutlined />,
+      color: "#06D6A0"
+    },
+    {
+      title: "Quản Lý Founders",
+      path: "/admin/founders",
+      icon: <TeamOutlined />,
+      color: "#EE5A6F"
+    }
+  ];
+
+  const saleStaffMenuItems = [
+    {
+      title: "Dashboard",
+      path: "/sale-staff",
+      icon: <HomeOutlined />,
+      color: "#FF6B6B"
+    },
+    {
+      title: "Quản Lý Sản Phẩm",
+      path: "/sale-staff/product",
+      icon: <DatabaseOutlined />,
+      color: "#FF9FF3"
+    },
+    {
+      title: "Quản Lý Đánh Giá",
+      path: "/sale-staff/review",
+      icon: <ProfileOutlined />,
+      color: "#FF9F43"
+    },
+    {
+      title: "Quản Lý Đơn Hàng",
+      path: "/sale-staff/order",
+      icon: <ShoppingCartOutlined />,
+      color: "#5F27CD"
+    },
+    {
+      title: "Quản Lý Liên Hệ",
+      path: "/sale-staff/contact",
+      icon: <MessageOutlined />,
+      color: "#FF6B6B"
     }
   ];
 
@@ -164,7 +193,47 @@ const Sidebar = ({ isFinance = false, isAdmin = false, isApprover = false, isCla
       )}
     </div>
   );
-
+  const renderSaleStaffMenuItems = () => (
+    <div className="space-y-2">
+      {saleStaffMenuItems.map((item, idx) =>
+        !item.children ? (
+          <motion.div
+            key={idx}
+            whileHover={{ scale: 1.02, x: 5 }}
+            whileTap={{ scale: 0.98 }}
+            onHoverStart={() => setHoveredItem(idx)}
+            onHoverEnd={() => setHoveredItem(null)}
+          >
+            <Link
+              to={item.path}
+              className={`group relative flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all duration-300 overflow-hidden ${location.pathname === item.path
+                ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/25'
+                : 'text-gray-300 hover:bg-gradient-to-r hover:from-gray-700 hover:to-gray-600 hover:text-white'
+                }`}
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+              <div className="relative z-10 p-2 rounded-lg transition-colors duration-300"
+                style={{ backgroundColor: hoveredItem === idx ? `${item.color}20` : 'transparent' }}>
+                <span className="text-xl" style={{ color: location.pathname === item.path ? 'white' : item.color }}>{item.icon}</span>
+              </div>
+              <AnimatePresence>
+                {isOpen && (
+                  <motion.span
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -10 }}
+                    className="relative z-10 font-medium"
+                  >
+                    {item.title}
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </Link>
+          </motion.div>
+        ) : null
+      )}
+    </div>
+  );
   const renderMenuItems = (items) => (
     <div className="space-y-2">
       {items.map((item, index) => (
@@ -206,7 +275,8 @@ const Sidebar = ({ isFinance = false, isAdmin = false, isApprover = false, isCla
   );
 
   const getMenuItems = () => {
-    if (isAdmin) return renderAdminMenuItems();
+    if (isAdmin === true) return renderAdminMenuItems();
+    if (isSaleStaff === true) return renderSaleStaffMenuItems();
     else return renderMenuItems(generalMenuItems);
   };
 
@@ -250,10 +320,7 @@ const Sidebar = ({ isFinance = false, isAdmin = false, isApprover = false, isCla
 };
 
 Sidebar.propTypes = {
-  isFinance: PropTypes.bool,
   isAdmin: PropTypes.bool,
-  isApprover: PropTypes.bool,
-  isClaimer: PropTypes.bool,
 };
 
 export default Sidebar;

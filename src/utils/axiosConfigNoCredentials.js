@@ -34,16 +34,26 @@ const logoutUser = () => {
   window.location.href = '/login';
 };
 
-// Request interceptor - thêm token vào mọi request
+// Request interceptor - KHÔNG thêm token cho public API
 apiClientNoCredentials.interceptors.request.use(
   (config) => {
-    const token = getToken();
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-      console.log('📤 Request sent with token:', token ? `${token.substring(0, 20)}...` : 'no token');
-      console.log('📤 Authorization header:', config.headers.Authorization);
+    // ✅ FIX: Public API không cần token, chỉ thêm token nếu URL yêu cầu
+    // Các endpoint public như /about/about, /founder/founders không nên gửi token
+    const publicEndpoints = ['/about/about', '/founder/founders', '/product/products', '/news/news'];
+    const isPublicEndpoint = publicEndpoints.some(endpoint => config.url?.includes(endpoint));
+    
+    if (!isPublicEndpoint) {
+      // Chỉ thêm token cho các endpoint không phải public
+      const token = getToken();
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+        console.log('📤 Request sent with token:', token ? `${token.substring(0, 20)}...` : 'no token');
+        console.log('📤 Authorization header:', config.headers.Authorization);
+      } else {
+        console.log('⚠️ No token found in localStorage');
+      }
     } else {
-      console.log('⚠️ No token found in localStorage');
+      console.log('🌐 Public endpoint detected, not sending token');
     }
     
     // ✅ FIX: Không set Content-Type cho FormData, để browser tự set
@@ -79,8 +89,12 @@ apiClientNoCredentials.interceptors.response.use(
     
     const originalRequest = error.config;
     
-    // Nếu lỗi 401 và chưa retry
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // Kiểm tra nếu là public endpoint
+    const publicEndpoints = ['/about/about', '/founder/founders', '/product/products', '/news/news'];
+    const isPublicEndpoint = publicEndpoints.some(endpoint => originalRequest.url?.includes(endpoint));
+    
+    // Nếu lỗi 401 và chưa retry VÀ KHÔNG PHẢI public endpoint
+    if (error.response?.status === 401 && !originalRequest._retry && !isPublicEndpoint) {
       originalRequest._retry = true;
       
       console.log('🔄 Token expired, attempting refresh...');
@@ -128,6 +142,12 @@ apiClientNoCredentials.interceptors.response.use(
         
         return Promise.reject(refreshError);
       }
+    }
+    
+    // Nếu là public endpoint và lỗi 401, chỉ log không redirect
+    if (error.response?.status === 401 && isPublicEndpoint) {
+      console.log('🌐 Public endpoint returned 401, ignoring (no authentication required)');
+      return Promise.reject(error);
     }
     
     // Xử lý các lỗi khác

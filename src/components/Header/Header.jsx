@@ -34,6 +34,9 @@ const Header = ({ searchTerm, setSearchTerm }) => {
         : "https://images.unsplash.com/photo-1574158622682-e40e69881006?w=60&h=60&fit=crop&crop=face";
     const displayEmail = storedUser?.email || "user@email.com";
 
+    // Thông tin shop cố định
+    const shopName = "DarkCore Shop";
+
     const handleLogout = () => {
         if (window.confirm("Bạn có chắc chắn muốn đăng xuất?")) {
             dispatch(logoutRequest());
@@ -57,7 +60,7 @@ const Header = ({ searchTerm, setSearchTerm }) => {
                         <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
                             <span className="text-white text-xl">💻</span>
                         </div>
-                        <span className="text-xl font-bold text-gray-900">TechStore</span>
+                        <span className="text-xl font-bold text-gray-900">{shopName}</span>
                     </Link>
 
                     {/* Nav links */}
