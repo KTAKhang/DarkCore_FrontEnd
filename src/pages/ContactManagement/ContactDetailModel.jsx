@@ -14,7 +14,6 @@ const { Title, Text, Paragraph } = Typography;
 const ContactDetailModel = ({ visible, onClose, contactData }) => {
   if (!contactData) return null;
 
-  // Xử lý màu và icon cho trạng thái
   const renderStatusTag = (status) => {
     switch (status) {
       case "Pending":
@@ -69,24 +68,6 @@ const ContactDetailModel = ({ visible, onClose, contactData }) => {
       children: <Tag color="#13C2C2">{contactData.reason || "Không có lý do"}</Tag>,
       span: 1,
     },
-    // {
-    //   key: "priority",
-    //   label: <Text strong style={{ color: "#0D364C" }}>Mức độ ưu tiên</Text>,
-    //   children: (
-    //     <Tag
-    //       color={
-    //         contactData.priority === "High"
-    //           ? "red"
-    //           : contactData.priority === "Medium"
-    //           ? "orange"
-    //           : "green"
-    //       }
-    //     >
-    //       {contactData.priority}
-    //     </Tag>
-    //   ),
-    //   span: 1,
-    // },
     {
       key: "status",
       label: <Text strong style={{ color: "#0D364C" }}>Trạng thái</Text>,
@@ -114,54 +95,26 @@ const ContactDetailModel = ({ visible, onClose, contactData }) => {
       key: "message",
       label: <Text strong style={{ color: "#0D364C" }}>Nội dung</Text>,
       children: (
-        <Paragraph
-          style={{ color: "#555", whiteSpace: "pre-wrap" }}
-          ellipsis={{ rows: 5, expandable: true, symbol: "Xem thêm" }}
-        >
-          {contactData.message}
-        </Paragraph>
+        <div style={{ maxHeight: 240, overflowY: "auto", width: "100%", minWidth: 0 }}>
+          <div style={{ maxWidth: "100%", width: "100%", overflow: "hidden" }}>
+            <Paragraph
+              style={{
+                color: "#555",
+                whiteSpace: "pre-wrap",
+                overflowWrap: "break-word",
+                wordBreak: "break-word",
+                wordWrap: "break-word",
+                margin: 0,
+                width: "100%",
+              }}
+            >
+              {contactData.message}
+            </Paragraph>
+          </div>
+        </div>
       ),
       span: 3,
     },
-    // {
-    //   key: "attachments",
-    //   label: <Text strong style={{ color: "#0D364C" }}>Tệp đính kèm</Text>,
-    //   children:
-    //     contactData.attachments && contactData.attachments.length > 0 ? (
-    //       <Space wrap>
-    //         {contactData.attachments.map((file, i) => (
-    //           <a
-    //             key={i}
-    //             href={file.url || file}
-    //             target="_blank"
-    //             rel="noopener noreferrer"
-    //             style={{ color: "#13C2C2" }}
-    //           >
-    //             📎 {file.originalName || `File ${i + 1}`}
-    //           </a>
-    //         ))}
-    //       </Space>
-    //     ) : (
-    //       <Text type="secondary">Không có tệp đính kèm</Text>
-    //     ),
-    //   span: 3,
-    // },
-    // {
-    //   key: "image",
-    //   label: <Text strong style={{ color: "#0D364C" }}>Hình ảnh</Text>,
-    //   children: contactData.image ? (
-    //     <Image
-    //       src={contactData.image}
-    //       width={200}
-    //       height={150}
-    //       preview={{ mask: "Xem ảnh" }}
-    //       style={{ borderRadius: 8, objectFit: "cover" }}
-    //     />
-    //   ) : (
-    //     <Text type="secondary">Không có hình ảnh</Text>
-    //   ),
-    //   span: 3,
-    // },
     {
       key: "createdAt",
       label: <Text strong style={{ color: "#0D364C" }}>Ngày tạo</Text>,
@@ -212,22 +165,16 @@ const ContactDetailModel = ({ visible, onClose, contactData }) => {
       style={{ top: 20 }}
       bodyStyle={{ maxHeight: "75vh", overflowY: "auto" }}
     >
-      <Descriptions 
-        bordered 
-        column={3} 
-        items={items}
-        size="middle"
-      />
+      <Descriptions bordered column={3} items={items} size="middle" />
 
-      {/* Phần Replies */}
       {contactData.replies && contactData.replies.length > 0 && (
         <>
           <Divider orientation="left">
             <Title level={4} style={{ color: "#0D364C", margin: 0 }}>
-              💬 Lịch sử phản hồi ({contactData.replies.length})
+              Lịch sử phản hồi ({contactData.replies.length})
             </Title>
           </Divider>
-          
+
           <div style={{ maxHeight: "300px", overflowY: "auto" }}>
             {contactData.replies.map((reply, idx) => (
               <div
@@ -244,7 +191,7 @@ const ContactDetailModel = ({ visible, onClose, contactData }) => {
                 <Space direction="vertical" style={{ width: "100%" }}>
                   <Space>
                     <Text strong style={{ color: reply.senderRole === "admin" ? "#1890ff" : "#52c41a" }}>
-                      {reply.senderRole === "admin" ? "🛠️ Admin" : "👤 Khách hàng"}
+                      {reply.senderRole === "admin" ? "Admin" : "Khách hàng"}
                     </Text>
                     <Text type="secondary">•</Text>
                     <Text type="secondary">{reply.senderId?.user_name || "Unknown"}</Text>
@@ -254,17 +201,19 @@ const ContactDetailModel = ({ visible, onClose, contactData }) => {
                       </Tag>
                     )}
                   </Space>
-                  
-                  <Paragraph 
-                    style={{ 
-                      margin: "8px 0", 
+
+                  <Paragraph
+                    style={{
+                      margin: "8px 0",
                       color: "#555",
-                      whiteSpace: "pre-wrap" 
+                      whiteSpace: "pre-wrap",
+                      overflowWrap: "anywhere",
+                      wordBreak: "break-word",
                     }}
                   >
                     {reply.message}
                   </Paragraph>
-                  
+
                   {reply.attachments && reply.attachments.length > 0 && (
                     <Space wrap>
                       {reply.attachments.map((file, i) => (
@@ -275,14 +224,14 @@ const ContactDetailModel = ({ visible, onClose, contactData }) => {
                           rel="noopener noreferrer"
                           style={{ color: "#13C2C2", fontSize: 12 }}
                         >
-                          📎 {file.originalName || `Attachment ${i + 1}`}
+                          {file.originalName || `Attachment ${i + 1}`}
                         </a>
                       ))}
                     </Space>
                   )}
-                  
+
                   <Text type="secondary" style={{ fontSize: 12 }}>
-                    🕒 {new Date(reply.createdAt).toLocaleString("vi-VN")}
+                    {new Date(reply.createdAt).toLocaleString("vi-VN")}
                   </Text>
                 </Space>
               </div>
@@ -294,10 +243,7 @@ const ContactDetailModel = ({ visible, onClose, contactData }) => {
       {(!contactData.replies || contactData.replies.length === 0) && (
         <>
           <Divider />
-          <Empty 
-            description="Chưa có phản hồi nào"
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
-          />
+          <Empty description="Chưa có phản hồi nào" image={Empty.PRESENTED_IMAGE_SIMPLE} />
         </>
       )}
     </Modal>
@@ -332,19 +278,19 @@ ContactDetailModel.propTypes = {
       email: PropTypes.string,
     }),
     replies: PropTypes.arrayOf(
-  PropTypes.shape({
-    _id: PropTypes.string,
-    senderRole: PropTypes.string,
-    senderId: PropTypes.oneOfType([
-      PropTypes.string, // ID của user
       PropTypes.shape({
-        user_name: PropTypes.string, // nếu có object
-      }),
-    ]),
-    message: PropTypes.string,
-    isInternal: PropTypes.bool,
-    attachments: PropTypes.array,
-    createdAt: PropTypes.string,
+        _id: PropTypes.string,
+        senderRole: PropTypes.string,
+        senderId: PropTypes.oneOfType([
+          PropTypes.string,
+          PropTypes.shape({
+            user_name: PropTypes.string,
+          }),
+        ]),
+        message: PropTypes.string,
+        isInternal: PropTypes.bool,
+        attachments: PropTypes.array,
+        createdAt: PropTypes.string,
       })
     ),
   }),

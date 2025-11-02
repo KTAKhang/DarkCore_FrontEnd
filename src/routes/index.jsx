@@ -95,7 +95,6 @@ export const routes = [
     path: "/wishlist",
     element: <WishlistPage />,
   },
-
   // THÊM: Trang tin tức cho customer (public, chỉ published news)
   {
     path: "/news",
@@ -105,8 +104,6 @@ export const routes = [
     path: "/contact",
     element: <ContactPage />,
   },
-  
-
   // THÊM: Trang mã giảm giá cho user (public)
   {
     path: "/discounts",
