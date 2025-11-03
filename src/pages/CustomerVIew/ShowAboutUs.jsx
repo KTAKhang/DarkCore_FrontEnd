@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import Header from "../../components/Header/Header";
 import Footer from "../../components/Footer/Footer";
+import ShowFounderDetails from "./ShowFounderDetails";
 import { aboutPublicInfoRequest } from "../../redux/actions/aboutActions";
 import { founderPublicListRequest } from "../../redux/actions/founderActions";
 import { Spin } from "antd";
@@ -11,11 +12,23 @@ const ShowAboutUs = () => {
   const { publicData: aboutData, publicLoading } = useSelector((state) => state.about);
   const { publicItems: founders, publicLoadingList } = useSelector((state) => state.founder);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedFounderId, setSelectedFounderId] = useState(null);
+  const [isFounderModalVisible, setIsFounderModalVisible] = useState(false);
 
   useEffect(() => {
     dispatch(aboutPublicInfoRequest());
     dispatch(founderPublicListRequest());
   }, [dispatch]);
+
+  const handleFounderClick = (founderId) => {
+    setSelectedFounderId(founderId);
+    setIsFounderModalVisible(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsFounderModalVisible(false);
+    setSelectedFounderId(null);
+  };
 
   if (publicLoading || publicLoadingList) {
     return (
@@ -176,7 +189,11 @@ const ShowAboutUs = () => {
             <h2 className="text-3xl font-bold text-gray-900 mb-12 text-center">Đội ngũ sáng lập</h2>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
               {founders.map((founder) => (
-                <div key={founder._id} className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
+                <div
+                  key={founder._id}
+                  onClick={() => handleFounderClick(founder._id)}
+                  className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow cursor-pointer"
+                >
                   {founder.avatar && (
                     <img
                       src={founder.avatar}
@@ -296,6 +313,13 @@ const ShowAboutUs = () => {
           </div>
         </div>
       </section>
+
+      {/* Founder Details Modal */}
+      <ShowFounderDetails
+        visible={isFounderModalVisible}
+        founderId={selectedFounderId}
+        onClose={handleCloseModal}
+      />
 
       <Footer />
     </div>

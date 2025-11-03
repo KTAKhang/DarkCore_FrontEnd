@@ -27,6 +27,7 @@ const initialState = {
   items: [],
   publicItems: [],
   item: null,
+  pagination: null,
   loadingList: false,
   publicLoadingList: false,
   loadingDetail: false,
@@ -49,7 +50,13 @@ const founderReducer = (state = initialState, action) => {
     case FOUNDER_LIST_REQUEST:
       return { ...state, loadingList: true, error: null };
     case FOUNDER_LIST_SUCCESS:
-      return { ...state, loadingList: false, items: action.payload.items || [], error: null };
+      return { 
+        ...state, 
+        loadingList: false, 
+        items: action.payload.items || [], 
+        pagination: action.payload.pagination || null,
+        error: null 
+      };
     case FOUNDER_LIST_FAILURE:
       return { ...state, loadingList: false, error: action.payload };
 

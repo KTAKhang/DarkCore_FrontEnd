@@ -40,10 +40,22 @@ const apiListPublicFounders = async () => {
   return res.data;
 };
 
+const apiGetPublicFounderDetail = async (id) => {
+  const res = await apiClientNoCredentials.get(`/about/founders/${id}`);
+  return res.data;
+};
+
 // API helpers - Admin endpoint (cần auth)
 const apiListFounders = async (query = {}) => {
   const params = new URLSearchParams();
+  
+  // Pagination params
+  if (query.page) params.append("page", query.page);
+  if (query.limit) params.append("limit", query.limit);
+  
+  // Filter params
   if (query.status !== undefined) params.append("status", query.status);
+  if (query.search) params.append("search", query.search);
   
   const queryString = params.toString();
   const url = queryString ? `/about/admin/founders?${queryString}` : `/about/admin/founders`;
@@ -148,6 +160,7 @@ const apiUpdateFounder = async (id, payload) => {
 };
 
 const apiDeleteFounder = async (id) => {
+  // Backend đã đổi sang permanent delete
   const res = await apiClient.delete(`/about/admin/founders/${id}`);
   return res.data;
 };
@@ -177,7 +190,8 @@ function* listFoundersWorker(action) {
     const query = action.payload?.query || {};
     const data = yield call(apiListFounders, query);
     if (data.status === "OK") {
-      yield put(founderListSuccess(data.data || []));
+      // Backend trả về data và pagination riêng biệt
+      yield put(founderListSuccess(data.data || [], data.pagination));
     } else {
       throw new Error(data.message || "Không thể tải danh sách Founder");
     }
@@ -189,7 +203,15 @@ function* listFoundersWorker(action) {
 
 function* getFounderDetailWorker(action) {
   try {
-    const data = yield call(apiGetFounderDetail, action.payload.id);
+    // Thử dùng public endpoint trước (cho customer view)
+    let data;
+    try {
+      data = yield call(apiGetPublicFounderDetail, action.payload.id);
+    } catch (publicError) {
+      // Nếu public endpoint fail (có thể do không có auth), thử admin endpoint
+      data = yield call(apiGetFounderDetail, action.payload.id);
+    }
+    
     if (data.status === "OK") {
       yield put(founderDetailSuccess(data.data));
     } else {
