@@ -29,7 +29,7 @@ const initialState = {
         total: 0,
         totalAllReviews: 0,
         page: 1,
-        limit: 5,
+        limit: 2,
         hasMore: false,
         averageRating: 0,
         ratingCounts: [],

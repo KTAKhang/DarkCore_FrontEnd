@@ -21,38 +21,28 @@ const ContactHistory = () => {
   const getStatusConfig = (status) => {
     const configs = {
       Pending: { 
-        color: "bg-yellow-100 text-yellow-800 border-yellow-200", 
+        color: "bg-yellow-100 text-yellow-800 border-yellow-200",
         icon: Clock,
         label: "Đang chờ"
       },
       "In Progress": { 
-        color: "bg-blue-100 text-blue-800 border-blue-200", 
+        color: "bg-blue-100 text-blue-800 border-blue-200",
         icon: MessageSquare,
         label: "Đang xử lý"
       },
       Resolved: { 
-        color: "bg-green-100 text-green-800 border-green-200", 
+        color: "bg-green-100 text-green-800 border-green-200",
         icon: CheckCircle,
         label: "Đã giải quyết"
       },
       Closed: { 
-        color: "bg-gray-100 text-gray-800 border-gray-200", 
+        color: "bg-gray-100 text-gray-800 border-gray-200",
         icon: AlertCircle,
         label: "Đã đóng"
       }
     };
     return configs[status] || configs.Pending;
   };
-
-  // const getPriorityColor = (priority) => {
-  //   const colors = {
-  //     Low: "text-green-600",
-  //     Medium: "text-yellow-600",
-  //     High: "text-orange-600",
-  //     Urgent: "text-red-600"
-  //   };
-  //   return colors[priority] || colors.Medium;
-  // };
 
   if (loadingList) {
     return (
@@ -69,7 +59,6 @@ const ContactHistory = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      {/* Header */}
       <div className="bg-white border-b shadow-sm">
         <div className="container mx-auto px-4 py-8">
           <div className="flex items-center gap-3">
@@ -84,7 +73,6 @@ const ContactHistory = () => {
         </div>
       </div>
 
-      {/* Main Content */}
       <main className="container mx-auto px-4 py-8 max-w-5xl">
         {(list?.data || []).length === 0 ? (
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-16 text-center">
@@ -107,7 +95,6 @@ const ContactHistory = () => {
                   key={contact._id} 
                   className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200 overflow-hidden"
                 >
-                  {/* Header */}
                   <div 
                     className="p-6 cursor-pointer"
                     onClick={() => toggleExpand(contact._id)}
@@ -129,11 +116,7 @@ const ContactHistory = () => {
                             <Clock className="w-4 h-4" />
                             <span>{new Date(contact.createdAt).toLocaleString("vi-VN")}</span>
                           </div>
-                          {/* <div className={`font-medium ${getPriorityColor(contact.priority)}`}>
-                            {contact.priority === "Low" ? "Thấp" : 
-                             contact.priority === "Medium" ? "Trung bình" :
-                             contact.priority === "High" ? "Cao" : "Khẩn cấp"}
-                          </div> */}
+                          
                           {hasReplies && (
                             <div className="flex items-center gap-1 text-blue-600 font-medium">
                               <MessageSquare className="w-4 h-4" />
@@ -157,10 +140,8 @@ const ContactHistory = () => {
                     </div>
                   </div>
 
-                  {/* Expanded Content */}
                   {isExpanded && (
                     <div className="border-t border-gray-100 bg-gray-50">
-                      {/* Original Message */}
                       <div className="p-6">
                         <div className="bg-white rounded-lg p-4 border border-gray-200">
                           <div className="flex items-center gap-2 mb-3">
@@ -178,7 +159,6 @@ const ContactHistory = () => {
                         </div>
                       </div>
 
-                      {/* Replies */}
                       {hasReplies && (
                         <div className="px-6 pb-6">
                           <div className="flex items-center gap-2 mb-4">

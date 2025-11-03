@@ -20,6 +20,7 @@ import discountReducer from "./reducers/discountReducer";
 import reviewReducer from "./reducers/reviewReducer";
 import aboutReducer from "./reducers/aboutReducer";
 import founderReducer from "./reducers/founderReducer";
+import orderStaffReducer from "./reducers/orderStaffReducer";
 import rootSaga from "./sagas/rootSaga";
 
 const rootReducer = combineReducers({
@@ -42,6 +43,7 @@ const rootReducer = combineReducers({
   review: reviewReducer,
   about: aboutReducer,
   founder: founderReducer,
+  orderStaffReducer: orderStaffReducer,
 });
 
 const sagaMiddleware = createSagaMiddleware();
