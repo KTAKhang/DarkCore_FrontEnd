@@ -206,6 +206,72 @@ const CartPage = () => {
         }
     };
 
+    // Xử lý "Mua trước trả sau"
+    const handleBuyNowPayLater = async () => {
+        console.log('🔥 handleBuyNowPayLater triggered');
+        if (!cart?.items || cart.items.length === 0) {
+            toast.error("Giỏ hàng trống");
+            return;
+        }
+        const storedUser = JSON.parse(localStorage.getItem("user"));
+        const userId = storedUser?._id;
+        if (!userId) {
+            toast.error("Vui lòng đăng nhập để đặt hàng");
+            navigate("/login");
+            return;
+        }
+        
+        try {
+            setCheckoutLoading(true);
+            const subtotal = calculateSubtotal();
+            const totalPrice = calculateTotal();
+            const discountAmount = appliedDiscount ? appliedDiscount.discountAmount : 0;
+            
+            // Pre-fill thông tin từ user profile
+            const receiverName = storedUser?.user_name || storedUser?.fullName || storedUser?.name || "";
+            const receiverPhone = storedUser?.phone || "";
+            const receiverAddress = storedUser?.address || storedUser?.shippingAddress || "";
+            
+            // Map items để lưu vào localStorage
+            const items = cart.items.map(item => ({
+                productId: item.productId || item._id,
+                productName: item.name,
+                productImage: item.image,
+                quantity: item.quantity || 1,
+                price: item.price
+            }));
+            
+            // ✅ LƯU THÔNG TIN GIỎ HÀNG VÀO LOCALSTORAGE - CHƯA TẠO ORDER
+            const pendingCheckout = {
+                userId,
+                items,
+                subtotal,
+                totalPrice,
+                discount: discountAmount,
+                totalQuantity: cart.items.reduce((sum, i) => sum + i.quantity, 0),
+                customerInfo: {
+                    fullName: receiverName || storedUser?.email || "Khách hàng",
+                    phone: receiverPhone || "",
+                    address: receiverAddress || ""
+                },
+                isCodPayment: true // ✅ Flag để CheckoutPage biết đây là thanh toán COD
+            };
+            
+            console.log('💾 Saving COD checkout data to localStorage:', pendingCheckout);
+            localStorage.setItem('pendingCheckout', JSON.stringify(pendingCheckout));
+            
+            // Chuyển đến trang checkout để nhập thông tin giao hàng (COD)
+            navigate("/customer/checkout", {
+                state: pendingCheckout
+            });
+        } catch (error) {
+            const errorMessage = error.message || "Có lỗi xảy ra";
+            toast.error(errorMessage);
+        } finally {
+            setCheckoutLoading(false);
+        }
+    };
+
     return (
         <>
             {/* <Header searchTerm={searchTerm} setSearchTerm={setSearchTerm}/> */}
@@ -373,10 +439,11 @@ const CartPage = () => {
                                             {checkoutLoading ? 'Đang tạo đơn hàng...' : 'Thanh toán ngay'}
                                         </button>
                                         <button
-                                            className="w-full border border-gray-300 text-gray-700 py-3 rounded-lg hover:bg-gray-50 transition-colors font-medium disabled:opacity-50"
-                                            disabled={loading || !cart?.items?.length}
+                                            onClick={handleBuyNowPayLater}
+                                            className="w-full border border-gray-300 text-gray-700 py-3 rounded-lg hover:bg-gray-50 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                                            disabled={checkoutLoading || loading || !cart?.items?.length}
                                         >
-                                            Mua trước trả sau
+                                            {checkoutLoading ? 'Đang xử lý...' : 'Mua trước trả sau'}
                                         </button>
                                     </div>
                                     {/* Phần áp dụng mã giảm giá */}
