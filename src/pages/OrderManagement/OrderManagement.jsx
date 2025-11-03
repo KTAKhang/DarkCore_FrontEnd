@@ -11,7 +11,6 @@ import {
   Statistic,
   Row,
   Col,
-  Badge,
   Avatar,
   Tooltip,
   Spin,
@@ -203,9 +202,9 @@ const OrderManagement = () => {
           email: order.userId?.email,
           phone: order.userId?.phone
         },
-        // Add receiver information (người nhận hàng)
+        // Add receiver information (người nhận hàng) - với fallback logic như ViewOrderDetail
         receiverName: order.receiverName || order.userId?.user_name || "N/A",
-        receiverPhone: order.receiverPhone || "N/A",
+        receiverPhone: order.receiverPhone || order.customer?.phone || order.userId?.phone || order.customerPhone || "N/A",
         receiverAddress: order.receiverAddress || "Địa chỉ chưa được cung cấp",
         status: statusInfo.name,
         statusColor: statusInfo.color,
@@ -390,9 +389,9 @@ const OrderManagement = () => {
       key: "customer",
       render: (_, record) => (
         <div>
-          <Text strong style={{ color: "#0D364C", display: "block", fontSize: 14 }}>{record.customerName}</Text>
+          <Text strong style={{ color: "#0D364C", display: "block", fontSize: 14 }}>{record.receiverName || record.customerName}</Text>
           <Text type="secondary" style={{ fontSize: 12 }}>{record.customerEmail}</Text>
-          <Text type="secondary" style={{ fontSize: 12, display: "block" }}>{record.customerPhone}</Text>
+          <Text type="secondary" style={{ fontSize: 12, display: "block" }}>{record.receiverPhone}</Text>
         </div>
       ),
     },
@@ -442,14 +441,9 @@ const OrderManagement = () => {
       render: (status) => {
         const config = getStatusConfig(status);
         return (
-          <Badge
-            status={status === "delivered" || status === "completed" ? "success" : status === "cancelled" ? "error" : "processing"}
-            text={
-              <Tag color={config.color} style={{ borderRadius: 16, fontWeight: 500, padding: "4px 12px" }} icon={config.icon}>
-                {config.text}
-              </Tag>
-            }
-          />
+          <Tag color={config.color} style={{ borderRadius: 16, fontWeight: 500, padding: "4px 12px" }} icon={config.icon}>
+            {config.text}
+          </Tag>
         );
       },
     },
