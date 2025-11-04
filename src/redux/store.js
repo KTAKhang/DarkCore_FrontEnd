@@ -17,6 +17,7 @@ import repairServiceReducer from "./reducers/repairServiceReducer";
 import repairRequestReducer from "./reducers/repairRequestReducer";
 import discountReducer from "./reducers/discountReducer";
 import reviewReducer from "./reducers/reviewReducer";
+import statisticsReducer from "./reducers/statisticsReducer";
 import rootSaga from "./sagas/rootSaga";
 
 const rootReducer = combineReducers({
@@ -36,6 +37,7 @@ const rootReducer = combineReducers({
   repairRequest: repairRequestReducer,
   discount: discountReducer,
   review: reviewReducer,
+  statistics: statisticsReducer,
 
 });
 

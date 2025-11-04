@@ -255,8 +255,8 @@ const CartPage = () => {
                                             <span className="text-gray-600">Tạm tính:</span>
                                             <span className="font-medium">{formatPrice(calculateSubtotal())}</span>
                                         </div>
-                                        
-                                        {/* Discount Section */}
+
+                                        {/* Hiển thị thông tin giảm giá nếu có */}
                                         {appliedDiscount && (
                                             <div className="bg-green-50 border border-green-200 rounded-lg p-3">
                                                 <div className="flex justify-between items-center mb-2">

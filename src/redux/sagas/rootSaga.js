@@ -15,6 +15,7 @@ import repairServiceSaga from "./repairServiceSaga";
 import repairRequestSaga from "./repairRequestSaga";
 import discountSaga from "./discountSaga";
 import reviewSaga from "./reviewSaga";
+import statisticsSaga from "./statisticsSaga";
 
 export default function* rootSaga() {
   try {
@@ -35,6 +36,7 @@ export default function* rootSaga() {
       repairRequestSaga(),
       discountSaga(),
       reviewSaga(),
+      statisticsSaga(),
 
     ]);
   } catch (error) {
