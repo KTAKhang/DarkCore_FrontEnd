@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import PropTypes from 'prop-types';
+import { useDispatch, useSelector } from 'react-redux';
 import { Card, Row, Col, Typography, Input, Button, Spin, Badge } from "antd";
 import {
   UserOutlined,
@@ -8,90 +9,19 @@ import {
   TeamOutlined,
   GiftOutlined,
   ClockCircleOutlined,
+  DownloadOutlined,
 } from "@ant-design/icons";
+import { fetchDashboardDataRequest, exportDashboardExcelRequest } from '../redux/actions/statisticsActions';
 
 const { Text, Title } = Typography;
 
-// Dữ liệu mẫu
-const mockData = {
-  overview: {
-    totalUsers: 1250,
-    totalOrders: 3486,
-    totalRevenue: 24567000,
-    totalProducts: 156
-  },
-  revenueByMonth: [
-    { month: 1, totalRevenue: 1800000 },
-    { month: 2, totalRevenue: 2100000 },
-    { month: 3, totalRevenue: 1950000 },
-    { month: 4, totalRevenue: 2300000 },
-    { month: 5, totalRevenue: 2800000 },
-    { month: 6, totalRevenue: 3200000 },
-    { month: 7, totalRevenue: 2900000 },
-    { month: 8, totalRevenue: 3100000 },
-    { month: 9, totalRevenue: 2750000 },
-    { month: 10, totalRevenue: 3400000 },
-    { month: 11, totalRevenue: 3800000 },
-    { month: 12, totalRevenue: 4200000 }
-  ],
-  revenueByDate: [
-    {
-      date: new Date().toISOString().split('T')[0],
-      totalRevenue: 1250000
-    }
-  ],
-  newCustomers: [
-    {
-      date: new Date().toISOString().split('T')[0],
-      newCustomers: 28,
-      newCustomerCount: 28,
-      count: 28,
-      totalNewCustomers: 28
-    }
-  ],
-  salesByDate: [
-    {
-      date: new Date().toISOString().split('T')[0],
-      totalSoldQuantity: 156,
-      totalOrders: 89,
-      totalAmount: 156,
-      orderCount: 89
-    }
-  ],
-  topProducts: [
-    {
-      productId: 1,
-      productName: "CPU Intel Core i7-13700K",
-      totalQuantitySold: 125,
-      totalRevenue: 125000000,
-      orderCount: 78
-    },
-    {
-      productId: 2,
-      productName: "Mainboard ASUS TUF B660",
-      totalQuantitySold: 96,
-      totalRevenue: 46000000,
-      orderCount: 54
-    },
-    {
-      productId: 3,
-      productName: "SSD Samsung 970 EVO Plus 1TB",
-      totalQuantitySold: 184,
-      totalRevenue: 92000000,
-      orderCount: 92
-    }
-  ],
-  pendingOrdersCount: 15
-};
-
 const AdminDashboard = () => {
+  const dispatch = useDispatch();
+  const { dashboardData, loading, error, exporting } = useSelector(state => state.statistics);
+  
   const [hoveredCard, setHoveredCard] = useState(null);
   const [hoveredStat, setHoveredStat] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [selectedYear, setSelectedYear] = useState(2025);
-
-  // Mock data state
-  const [dashboardData, setDashboardData] = useState(mockData);
 
   // Helper function to get current date in YYYY-MM-DD format
   const getCurrentDate = () => {
@@ -111,25 +41,10 @@ const AdminDashboard = () => {
     }
   };
 
-  // Function to simulate API loading
+  // Function to fetch dashboard data from API
   const refreshDashboardData = useCallback(() => {
-    setLoading(true);
-    
-    // Simulate API delay
-    setTimeout(() => {
-      // Có thể thay đổi dữ liệu dựa trên selectedYear
-      const updatedData = {
-        ...mockData,
-        revenueByMonth: mockData.revenueByMonth.map(item => ({
-          ...item,
-          totalRevenue: item.totalRevenue * (selectedYear === 2024 ? 0.8 : selectedYear === 2025 ? 1 : 1.2)
-        }))
-      };
-      
-      setDashboardData(updatedData);
-      setLoading(false);
-    }, 500);
-  }, [selectedYear]);
+    dispatch(fetchDashboardDataRequest(selectedYear));
+  }, [dispatch, selectedYear]);
 
   // Load dashboard data on component mount
   useEffect(() => {
@@ -141,17 +56,47 @@ const AdminDashboard = () => {
     refreshDashboardData();
   };
 
+  // Function to handle Excel export
+  const handleExportExcel = () => {
+    dispatch(exportDashboardExcelRequest(selectedYear));
+  };
+
   // Transform data for chart
-  const areaData = dashboardData.revenueByMonth.length > 0
+  const areaData = dashboardData?.revenueByMonth?.length > 0
     ? dashboardData.revenueByMonth.map((item) => ({
       month: `Tháng ${item.month}`,
-      DoanhThu: item.totalRevenue / 1000, 
+      DoanhThu: item.totalRevenue, 
     }))
     : [];
 
+  // Calculate max revenue for dynamic scaling
+  const maxRevenue = areaData.length > 0 
+    ? Math.max(...areaData.map(item => item.DoanhThu))
+    : 1;
+
+  // Format currency for display
+  const formatCurrency = (value) => {
+    if (value >= 1000000) {
+      return `${(value / 1000000).toFixed(1)}M`; // Triệu
+    } else if (value >= 1000) {
+      return `${(value / 1000).toFixed(0)}K`; // Nghìn
+    }
+    return value.toString();
+  };
+
+  // Calculate bar height with minimum for visibility
+  const getBarHeight = (value) => {
+    if (value === 0) return 0;
+    if (maxRevenue === 0) return 0;
+    
+    const percentage = (value / maxRevenue) * 100;
+    // Minimum 3% height if there's any value, max 95%
+    return Math.min(Math.max(percentage, 3), 95);
+  };
+
   // Get today's actual data
   const getTodayRevenue = () => {
-    if (dashboardData.revenueByDate && dashboardData.revenueByDate.length > 0) {
+    if (dashboardData?.revenueByDate && dashboardData.revenueByDate.length > 0) {
       const today = getCurrentDate();
       const todayData = dashboardData.revenueByDate.find(item => {
         const isToday = isSameDate(item.date, today);
@@ -163,7 +108,7 @@ const AdminDashboard = () => {
   };
 
   const getTodayNewCustomers = () => {
-    if (dashboardData.newCustomers && dashboardData.newCustomers.length > 0) {
+    if (dashboardData?.newCustomers && dashboardData.newCustomers.length > 0) {
       const today = getCurrentDate();
       const todayData = dashboardData.newCustomers.find(item => {
         const isToday = isSameDate(item.date, today);
@@ -175,7 +120,7 @@ const AdminDashboard = () => {
   };
 
   const getTodaySales = () => {
-    if (dashboardData.salesByDate && dashboardData.salesByDate.length > 0) {
+    if (dashboardData?.salesByDate && dashboardData.salesByDate.length > 0) {
       const today = getCurrentDate();
       const todayData = dashboardData.salesByDate.find(item => {
         const isToday = isSameDate(item.date, today);
@@ -207,34 +152,41 @@ const AdminDashboard = () => {
     },
     {
       title: "Đơn hàng chờ xử lý",
-      value: dashboardData.pendingOrdersCount,
+      value: dashboardData?.pendingOrdersCount || 0,
       icon: <ClockCircleOutlined style={{ fontSize: 28 }} />,
       bgColor: "linear-gradient(135deg, #722ed1 0%, #531dab 100%)",
     },
   ];
 
+  // Calculate total revenue including sales + repair
+  const calculateTotalRevenue = () => {
+    const salesRevenue = dashboardData?.overview?.totalRevenue || 0;
+    const repairRevenue = (dashboardData?.repairRevenueByYear || []).reduce((sum, item) => sum + (item.totalRevenue || 0), 0);
+    return salesRevenue + repairRevenue;
+  };
+
   const summaryStats = [
     {
       label: 'Tổng người dùng',
-      value: dashboardData.overview.totalUsers ? dashboardData.overview.totalUsers.toLocaleString() : '0',
+      value: dashboardData?.overview?.totalUsers ? dashboardData.overview.totalUsers.toLocaleString() : '0',
       icon: <TeamOutlined style={{ fontSize: 20 }} />,
       color: '#13C2C2'
     },
     {
       label: 'Tổng đơn hàng',
-      value: dashboardData.overview.totalOrders ? dashboardData.overview.totalOrders.toLocaleString() : '0',
+      value: dashboardData?.overview?.totalOrders ? dashboardData.overview.totalOrders.toLocaleString() : '0',
       icon: <ShoppingCartOutlined style={{ fontSize: 20 }} />,
       color: '#52C41A'
     },
     {
       label: 'Tổng doanh thu',
-      value: dashboardData.overview.totalRevenue ? dashboardData.overview.totalRevenue.toLocaleString() : '0',
+      value: calculateTotalRevenue().toLocaleString(),
       icon: <DollarOutlined style={{ fontSize: 20 }} />,
       color: '#FA8C16'
     },
     {
       label: 'Tổng sản phẩm',
-      value: dashboardData.overview.totalProducts ? dashboardData.overview.totalProducts.toLocaleString() : '0',
+      value: dashboardData?.overview?.totalProducts ? dashboardData.overview.totalProducts.toLocaleString() : '0',
       icon: <GiftOutlined style={{ fontSize: 20 }} />,
       color: '#722ED1'
     }
@@ -331,13 +283,29 @@ const AdminDashboard = () => {
       padding: "24px"
     }}>
       {/* Header */}
-      <div style={{ marginBottom: 32 }}>
-        <Title level={2} style={{ color: "#0D364C", marginBottom: 8 }}>
-          Dashboard Quản Trị
-        </Title>
-        <Text style={{ color: "#13C2C2", fontSize: 16 }}>
-          Tổng quan hoạt động kinh doanh hôm nay
-        </Text>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
+        <div>
+          <Title level={2} style={{ color: "#0D364C", marginBottom: 8 }}>
+            Dashboard Quản Trị
+          </Title>
+          <Text style={{ color: "#13C2C2", fontSize: 16 }}>
+            Tổng quan hoạt động kinh doanh hôm nay
+          </Text>
+        </div>
+        <Button 
+          type="primary" 
+          onClick={handleExportExcel}
+          loading={exporting}
+          icon={<DownloadOutlined />}
+          style={{ 
+            background: "#13C2C2", 
+            borderColor: "#13C2C2",
+            height: 40,
+            fontSize: 16
+          }}
+        >
+          📊 Xuất báo cáo Excel
+        </Button>
       </div>
 
       {/* Stats Cards */}
@@ -357,9 +325,9 @@ const AdminDashboard = () => {
         ))}
       </Row>
 
-      {/* Chart Section */}
+      {/* Revenue Charts Section - Sales and Repair side by side */}
       <Row gutter={[24, 24]}>
-        <Col xs={24} lg={16}>
+        <Col xs={24} lg={12}>
           <Card
             style={{
               borderRadius: 20,
@@ -372,7 +340,7 @@ const AdminDashboard = () => {
           >
             <div style={{ marginBottom: 24 }}>
               <Title level={4} style={{ color: "#0D364C", marginBottom: 8 }}>
-                Tổng quan doanh thu
+                Tổng quan doanh thu bán hàng
               </Title>
               <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 16 }}>
                 <Badge color="#13C2C2" text="Doanh thu" />
@@ -407,31 +375,42 @@ const AdminDashboard = () => {
               position: "relative",
               minHeight: "200px"
             }}>
-              {areaData.map((item, index) => (
-                <div key={index} style={{
-                  position: "absolute",
-                  bottom: 30,
-                  left: `${(index / (areaData.length - 1)) * 90}%`,
-                  width: "8px",
-                  height: `${Math.min((item.DoanhThu / 5000) * 100, 100)}%`,
-                  background: "linear-gradient(to top, #0D364C, #13C2C2)",
-                  borderRadius: "4px 4px 0 0",
-                  transition: "all 0.3s ease",
-                  marginRight: "4px"
-                }}>
-                  <div style={{
+              {areaData.map((item, index) => {
+                const barHeight = getBarHeight(item.DoanhThu);
+                const hasData = item.DoanhThu > 0;
+                
+                return (
+                  <div key={index} style={{
                     position: "absolute",
-                    top: -20,
-                    left: "50%",
-                    transform: "translateX(-50%)",
-                    fontSize: "10px",
-                    color: "#0D364C",
-                    fontWeight: "600"
+                    bottom: 30,
+                    left: `${(index / (areaData.length - 1)) * 90}%`,
+                    width: "8px",
+                    height: `${barHeight}%`,
+                    background: hasData 
+                      ? "linear-gradient(to top, #0D364C, #13C2C2)"
+                      : "transparent",
+                    borderRadius: "4px 4px 0 0",
+                    transition: "all 0.3s ease",
+                    marginRight: "4px",
+                    opacity: hasData ? 1 : 0.3
                   }}>
-                    {Math.round(item.DoanhThu)}
+                    {hasData && (
+                      <div style={{
+                        position: "absolute",
+                        top: -20,
+                        left: "50%",
+                        transform: "translateX(-50%)",
+                        fontSize: "10px",
+                        color: "#0D364C",
+                        fontWeight: "600",
+                        whiteSpace: "nowrap"
+                      }}>
+                        {formatCurrency(item.DoanhThu)}
+                      </div>
+                    )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
               {/* Month Labels */}
               {areaData.map((item, index) => (
                 <div key={`month-${index}`} style={{
@@ -451,15 +430,99 @@ const AdminDashboard = () => {
           </Card>
         </Col>
 
-        <Col xs={24} lg={8}>
+        <Col xs={24} lg={12}>
+          <Card
+            style={{
+              borderRadius: 20,
+              border: `2px solid #FA8C16`,
+              boxShadow: "0 8px 32px rgba(250, 140, 22, 0.15)",
+              background: "white",
+              height: "480px",
+            }}
+            bodyStyle={{ padding: "32px" }}
+          >
+            <div style={{ marginBottom: 24 }}>
+              <Title level={4} style={{ color: "#0D364C", marginBottom: 8 }}>
+                Tổng quan doanh thu sửa chữa
+              </Title>
+              <Text style={{ color: "#FA8C16", fontSize: 14, fontWeight: 500 }}>
+                Doanh thu từ dịch vụ sửa chữa theo tháng
+              </Text>
+            </div>
+
+            {/* Simple Chart Visualization for Repair */}
+            <div style={{
+              height: "calc(480px - 200px)",
+              position: "relative",
+              minHeight: "200px"
+            }}>
+              {(dashboardData?.repairRevenueByYear || []).map((item, index) => {
+                const maxRepairRevenue = Math.max(...(dashboardData?.repairRevenueByYear || []).map(i => i.totalRevenue)) || 1;
+                const barHeight = item.totalRevenue > 0 
+                  ? Math.min(Math.max((item.totalRevenue / maxRepairRevenue) * 100, 3), 95)
+                  : 0;
+                const hasData = item.totalRevenue > 0;
+
+                return (
+                  <div key={index} style={{
+                    position: "absolute",
+                    bottom: 30,
+                    left: `${(index / 11) * 90}%`,
+                    width: "8px",
+                    height: `${barHeight}%`,
+                    background: hasData 
+                      ? "linear-gradient(to top, #FA8C16, #d4380d)"
+                      : "transparent",
+                    borderRadius: "4px 4px 0 0",
+                    transition: "all 0.3s ease",
+                    marginRight: "4px",
+                    opacity: hasData ? 1 : 0.3
+                  }}>
+                    {hasData && (
+                      <div style={{
+                        position: "absolute",
+                        top: -20,
+                        left: "50%",
+                        transform: "translateX(-50%)",
+                        fontSize: "10px",
+                        color: "#0D364C",
+                        fontWeight: "600",
+                        whiteSpace: "nowrap"
+                      }}>
+                        {formatCurrency(item.totalRevenue)}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+              {/* Month Labels */}
+              {(dashboardData?.repairRevenueByYear || []).map((item, index) => (
+                <div key={`month-${index}`} style={{
+                  position: "absolute",
+                  bottom: 5,
+                  left: `${(index / 11) * 90}%`,
+                  transform: "translateX(-50%)",
+                  fontSize: "11px",
+                  color: "#FA8C16",
+                  fontWeight: "600"
+                }}>
+                  T{item.month}
+                </div>
+              ))}
+            </div>
+          </Card>
+        </Col>
+      </Row>
+
+      {/* Summary Stats Section */}
+      <Row gutter={[24, 24]} style={{ marginTop: 24 }}>
+        <Col xs={24}>
           <Card
             style={{
               borderRadius: 20,
               border: `2px solid #13C2C2`,
               boxShadow: "0 8px 32px rgba(19, 194, 194, 0.15)",
               background: "linear-gradient(135deg, #f0f9ff 0%, #e0f7fa 100%)",
-              height: "480px",
-              overflow: "hidden"
             }}
             bodyStyle={{ padding: 0 }}
           >
@@ -481,37 +544,38 @@ const AdminDashboard = () => {
             <div style={{
               padding: "24px 32px 32px 32px",
               background: "white",
-              flex: 1,
-              overflowY: "auto",
-              height: "calc(480px - 120px)"
+              flex: 1
             }}>
-              <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+              <Row gutter={[24, 24]}>
                 {summaryStats.map((stat, index) => (
-                  <div
-                    key={index}
-                    onMouseEnter={() => setHoveredStat(index)}
-                    onMouseLeave={() => setHoveredStat(null)}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      padding: "20px 24px",
-                      borderRadius: "16px",
-                      background: hoveredStat === index
-                        ? `linear-gradient(135deg, ${stat.color}15 0%, ${stat.color}08 100%)`
-                        : "linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)",
-                      cursor: "pointer",
-                      transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                      transform: hoveredStat === index ? "translateY(-2px) scale(1.02)" : "translateY(0) scale(1)",
-                      border: `2px solid ${hoveredStat === index ? stat.color : "rgba(13, 54, 76, 0.1)"}`,
-                      boxShadow: hoveredStat === index
-                        ? `0 8px 25px ${stat.color}20`
-                        : "0 2px 8px rgba(13, 54, 76, 0.08)",
-                      animation: `fadeInLeft 0.6s ease-out ${index * 0.1}s forwards`,
-                      opacity: 0
-                    }}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                  <Col xs={24} sm={12} lg={6} key={index}>
+                    <div
+                      onMouseEnter={() => setHoveredStat(index)}
+                      onMouseLeave={() => setHoveredStat(null)}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        padding: "20px 24px",
+                        borderRadius: "16px",
+                        background: hoveredStat === index
+                          ? `linear-gradient(135deg, ${stat.color}15 0%, ${stat.color}08 100%)`
+                          : "linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)",
+                        cursor: "pointer",
+                        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                        transform: hoveredStat === index ? "translateY(-2px) scale(1.02)" : "translateY(0) scale(1)",
+                        border: `2px solid ${hoveredStat === index ? stat.color : "rgba(13, 54, 76, 0.1)"}`,
+                        boxShadow: hoveredStat === index
+                          ? `0 8px 25px ${stat.color}20`
+                          : "0 2px 8px rgba(13, 54, 76, 0.08)",
+                        animation: `fadeInLeft 0.6s ease-out ${index * 0.1}s forwards`,
+                        opacity: 0,
+                        flexDirection: "column",
+                        alignItems: "center",
+                        textAlign: "center",
+                        gap: 12
+                      }}
+                    >
                       <div style={{
                         display: "flex",
                         alignItems: "center",
@@ -534,31 +598,28 @@ const AdminDashboard = () => {
                       <div>
                         <Text style={{
                           color: "#0D364C",
-                          fontSize: 16,
+                          fontSize: 14,
                           fontWeight: 600,
                           display: "block",
-                          lineHeight: 1.3
+                          marginBottom: 4
                         }}>
                           {stat.label}
                         </Text>
+                        <Text style={{
+                          color: hoveredStat === index ? stat.color : "#0D364C",
+                          fontSize: 24,
+                          fontWeight: 700,
+                          transition: "all 0.3s ease",
+                          display: "block",
+                          textShadow: hoveredStat === index ? `0 2px 4px ${stat.color}20` : "none"
+                        }}>
+                          {stat.value}
+                        </Text>
                       </div>
                     </div>
-                    <div style={{ textAlign: "right" }}>
-                      <Text style={{
-                        color: hoveredStat === index ? stat.color : "#0D364C",
-                        fontSize: 28,
-                        fontWeight: 700,
-                        transition: "all 0.3s ease",
-                        transform: hoveredStat === index ? "scale(1.1)" : "scale(1)",
-                        display: "inline-block",
-                        textShadow: hoveredStat === index ? `0 2px 4px ${stat.color}20` : "none"
-                      }}>
-                        {stat.value}
-                      </Text>
-                    </div>
-                  </div>
+                  </Col>
                 ))}
-              </div>
+              </Row>
             </div>
 
             {/* Bottom accent line */}
@@ -572,10 +633,11 @@ const AdminDashboard = () => {
       </Row>
 
       {/* Top Selling Products Section */}
-      {dashboardData.topProducts && dashboardData.topProducts.length > 0 && (
-        <Row gutter={[24, 24]} style={{ marginTop: 32 }}>
-          <Col span={24}>
-            <Card
+      {dashboardData?.topProducts && dashboardData.topProducts.length > 0 && (
+        <>
+          <Row gutter={[24, 24]} style={{ marginTop: 32 }}>
+            <Col span={24}>
+              <Card
               style={{
                 borderRadius: 20,
                 border: `2px solid #13C2C2`,
@@ -697,6 +759,7 @@ const AdminDashboard = () => {
             </Card>
           </Col>
         </Row>
+        </>
       )}
 
       <style>{`
