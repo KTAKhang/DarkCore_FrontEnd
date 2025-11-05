@@ -11,7 +11,6 @@ import {
   Statistic,
   Row,
   Col,
-  Badge,
   Avatar,
   Tooltip,
   Spin,
@@ -39,21 +38,24 @@ import {
   orderStatusesRequest,
   orderUpdateStatusRequest,
   orderClearMessages,
+  orderDetailRequest,
 } from "../../redux/actions/orderActions";
 
 const { Title, Text } = Typography;
 
 const OrderManagement = () => {
   const dispatch = useDispatch();
-  const { items: orderItems, stats, statuses, pagination: apiPagination, loadingList, loadingStats, loadingStatuses, updating, error, success } = useSelector((state) => state.order);
+  const { items: orderItems, currentOrder, stats, statuses, pagination: apiPagination, loadingList, loadingDetail, loadingStats, loadingStatuses, updating, error, success } = useSelector((state) => state.order);
   
   // Debug Redux state
   useEffect(() => {
     console.log("🔍 OrderManagement Redux state:", {
       orderItems: orderItems?.length || 0,
+      currentOrder: currentOrder?._id || null,
       stats,
       statuses: statuses?.length || 0,
       loadingList,
+      loadingDetail,
       loadingStats,
       loadingStatuses,
       error,
@@ -70,7 +72,13 @@ const OrderManagement = () => {
         statusDescription: orderItems[0].orderStatusId?.description
       });
     }
-  }, [orderItems, stats, loadingList, loadingStats, error, success]);
+    
+    // Debug currentOrder when it changes
+    if (currentOrder) {
+      console.log("✅ CurrentOrder loaded:", currentOrder);
+      console.log("✅ CurrentOrder orderDetails:", currentOrder.orderDetails);
+    }
+  }, [orderItems, currentOrder, stats, loadingList, loadingDetail, loadingStats, error, success]);
   
   // Simplified state management
   const [loading, setLoading] = useState(false);
@@ -194,6 +202,10 @@ const OrderManagement = () => {
           email: order.userId?.email,
           phone: order.userId?.phone
         },
+        // Add receiver information (người nhận hàng) - với fallback logic như ViewOrderDetail
+        receiverName: order.receiverName || order.userId?.user_name || "N/A",
+        receiverPhone: order.receiverPhone || order.customer?.phone || order.userId?.phone || order.customerPhone || "N/A",
+        receiverAddress: order.receiverAddress || "Địa chỉ chưa được cung cấp",
         status: statusInfo.name,
         statusColor: statusInfo.color,
         statusId: statusInfo.id,
@@ -264,6 +276,16 @@ const OrderManagement = () => {
   };
 
   const handleOpenViewDetailModal = (order) => {
+    console.log("🔍 Opening ViewDetail - Full order data:", order);
+    console.log("🔍 Opening ViewDetail - orderDetails:", order.orderDetails);
+    console.log("🔍 Opening ViewDetail - items:", order.items);
+    
+    // Fetch full order details with orderDetails populated from backend
+    if (order._id) {
+      console.log("🔄 Fetching full order details for ID:", order._id);
+      dispatch(orderDetailRequest(order._id));
+    }
+    
     setSelectedOrder(order);
     setIsViewDetailModalVisible(true);
   };
@@ -367,9 +389,9 @@ const OrderManagement = () => {
       key: "customer",
       render: (_, record) => (
         <div>
-          <Text strong style={{ color: "#0D364C", display: "block", fontSize: 14 }}>{record.customerName}</Text>
+          <Text strong style={{ color: "#0D364C", display: "block", fontSize: 14 }}>{record.receiverName || record.customerName}</Text>
           <Text type="secondary" style={{ fontSize: 12 }}>{record.customerEmail}</Text>
-          <Text type="secondary" style={{ fontSize: 12, display: "block" }}>{record.customerPhone}</Text>
+          <Text type="secondary" style={{ fontSize: 12, display: "block" }}>{record.receiverPhone}</Text>
         </div>
       ),
     },
@@ -419,14 +441,9 @@ const OrderManagement = () => {
       render: (status) => {
         const config = getStatusConfig(status);
         return (
-          <Badge
-            status={status === "delivered" || status === "completed" ? "success" : status === "cancelled" ? "error" : "processing"}
-            text={
-              <Tag color={config.color} style={{ borderRadius: 16, fontWeight: 500, padding: "4px 12px" }} icon={config.icon}>
-                {config.text}
-              </Tag>
-            }
-          />
+          <Tag color={config.color} style={{ borderRadius: 16, fontWeight: 500, padding: "4px 12px" }} icon={config.icon}>
+            {config.text}
+          </Tag>
         );
       },
     },
@@ -684,8 +701,16 @@ const OrderManagement = () => {
         <UpdateOrder visible={isUpdateModalVisible} orderData={selectedOrder} onClose={() => { setIsUpdateModalVisible(false); setSelectedOrder(null); }} onSuccess={handleUpdateSuccess} />
       )}
 
-      {selectedOrder && (
-        <ViewOrderDetail visible={isViewDetailModalVisible} orderData={selectedOrder} onClose={() => { setIsViewDetailModalVisible(false); setSelectedOrder(null); }} />
+      {(selectedOrder || currentOrder) && (
+        <ViewOrderDetail 
+          visible={isViewDetailModalVisible} 
+          orderData={currentOrder || selectedOrder} 
+          loading={loadingDetail}
+          onClose={() => { 
+            setIsViewDetailModalVisible(false); 
+            setSelectedOrder(null); 
+          }} 
+        />
       )}
     </div>
   );

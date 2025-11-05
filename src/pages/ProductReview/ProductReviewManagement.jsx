@@ -35,7 +35,6 @@ import {
 } from "@ant-design/icons";
 import {
     getAllReviewsForAdminRequest,
-    // reuse update action to toggle review.status
     updateReviewStatusRequest,
     clearReviewMessages,
 } from "../../redux/actions/reviewActions";
@@ -75,8 +74,6 @@ const ProductReviewManagement = () => {
         loading: adminLoading,
         error: adminError,
     } = useSelector((state) => state.review?.adminReviews || {});
-
-    // --- new selectors for update status flow ---
     const { updateStatusLoading, updateStatusError, updatedStatusData } = useSelector(
         (state) => ({
             updateStatusLoading: state.review?.updateStatusLoading,
@@ -89,7 +86,7 @@ const ProductReviewManagement = () => {
     const [statusFilter, setStatusFilter] = useState("all");
     const [ratingFilter, setRatingFilter] = useState("all");
     const [sortBy, setSortBy] = useState("desc");
-    const [pagination, setPagination] = useState({ current: 1, pageSize: 10 });
+    const [pagination, setPagination] = useState({ current: 1, pageSize: 5 });
     const [loadingTable, setLoadingTable] = useState(false);
     const [selectedReview, setSelectedReview] = useState(null);
     const [isDetailModalVisible, setIsDetailModalVisible] = useState(false);
@@ -130,9 +127,6 @@ const ProductReviewManagement = () => {
         setTimeout(() => setLoadingTable(false), 300);
     }, [dispatch, searchText, ratingFilter, statusFilter, sortBy, pagination]);
 
-    // refresh after toggling status: listen to review.update flags in store if available
-    // (optional) you can add effect to refetch when updateReviewSuccess flag changes
-
     const dataSource = useMemo(
         () =>
             (adminReviewsList || []).map((r) => ({
@@ -158,19 +152,15 @@ const ProductReviewManagement = () => {
             okText: newStatus ? "Hiển thị" : "Ẩn",
             cancelText: "Hủy",
             onOk() {
-                // updateProductReviewRequest(review_id, updateData, user_id)
-                // use new isolated action (doesn't touch other code files)
                 dispatch(updateReviewStatusRequest(record._id, newStatus));
                 message.loading({ content: "Đang gửi yêu cầu...", key: "updateStatus" });
             },
         });
     };
 
-    // when update completes -> show result and refetch list (or show error)
     useEffect(() => {
         if (updateStatusLoading === false && updatedStatusData) {
             message.success({ content: "Cập nhật trạng thái thành công", key: "updateStatus", duration: 2 });
-            // refetch current page with current filters/pagination
             const params = {
                 page: pagination.current,
                 limit: pagination.pageSize,
@@ -180,7 +170,6 @@ const ProductReviewManagement = () => {
                 sortBy: sortBy || undefined,
             };
             dispatch(getAllReviewsForAdminRequest(params));
-            // clear the temporary status data/error in store
             dispatch(clearReviewMessages());
         }
 
@@ -222,18 +211,6 @@ const ProductReviewManagement = () => {
 
                         <Text strong style={{ color: "#0D364C", display: "block" }}>
                             {record.productName}
-                        </Text>
-                        <Text
-                            type="secondary"
-                            style={{ fontSize: 12, cursor: "pointer" }}
-                            onClick={() => {
-                                navigator.clipboard.writeText(record._id);
-                                message.success("Đã copy ID vào clipboard");
-                            }}
-                            title={`Click để copy ID: ${record._id}`}
-                        >
-
-                            ID: {record._id.slice(0, 5)}
                         </Text>
                     </div>
                 </Space>
@@ -436,7 +413,7 @@ const ProductReviewManagement = () => {
                             setStatusFilter("all");
                             setRatingFilter("all");
                             setSortBy("desc");
-                            setPagination({ current: 1, pageSize: 10 });
+                            setPagination({ current: 1, pageSize: 5 });
                         }} style={{ borderColor: "#13C2C2", color: "#13C2C2" }}>Làm mới</Button>
                     </Space>
                 </div>

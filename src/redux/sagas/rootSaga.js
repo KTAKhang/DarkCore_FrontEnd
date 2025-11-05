@@ -13,10 +13,13 @@ import favoriteSaga from "./favoriteSaga";
 import newsSaga from "./newsSaga";
 import repairServiceSaga from "./repairServiceSaga";
 import repairRequestSaga from "./repairRequestSaga";
+import contactSaga from "./contactSaga";
 import discountSaga from "./discountSaga";
 import reviewSaga from "./reviewSaga";
 import statisticsSaga from "./statisticsSaga";
-
+import aboutSaga from "./aboutSaga";
+import founderSaga from "./founderSaga";
+import orderStaffSaga from "./orderStaffSaga";
 export default function* rootSaga() {
   try {
     yield all([
@@ -34,9 +37,13 @@ export default function* rootSaga() {
       favoriteSaga(),
       repairServiceSaga(),
       repairRequestSaga(),
+      contactSaga(),
       discountSaga(),
       reviewSaga(),
       statisticsSaga(),
+      aboutSaga(),
+      founderSaga(),
+      orderStaffSaga(),
 
     ]);
   } catch (error) {

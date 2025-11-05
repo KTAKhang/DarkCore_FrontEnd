@@ -1,4 +1,4 @@
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import {
   HomeOutlined,
   AppstoreOutlined,
@@ -6,45 +6,28 @@ import {
   UserOutlined,
   ShoppingCartOutlined,
   ProfileOutlined,
-  FileTextOutlined,
-  CheckCircleOutlined,
   DollarOutlined,
-  LogoutOutlined,
-  DownOutlined,
-  RightOutlined,
-  PlusOutlined,
   ProjectOutlined,
-  MenuOutlined
+  MessageOutlined,
+  ReadOutlined,
+  InfoCircleOutlined,
+  TeamOutlined
 } from '@ant-design/icons';
 import { useState, useRef, useEffect } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSidebar } from '../../contexts/SidebarContext';
 import PropTypes from 'prop-types';
 
-const Sidebar = ({ isFinance = false, isAdmin = false, isApprover = false, isClaimer = false }) => {
-  const [isClaimsOpen, setIsClaimsOpen] = useState(false);
-  const [isWarehouseOpen, setIsWarehouseOpen] = useState(false);
+const Sidebar = ({ isAdmin = false, isSaleStaff = false }) => {
   const location = useLocation();
-  const navigate = useNavigate();
-  const { logout } = useAuth();
-  const sidebarContext = useSidebar ? useSidebar() : {};
-  const isOpen = typeof sidebarContext.isOpen !== 'undefined' ? sidebarContext.isOpen : (typeof props.isOpen !== 'undefined' ? props.isOpen : true);
+  const sidebarContext = useSidebar();
+  const isOpen = typeof sidebarContext.isOpen !== 'undefined'
+    ? sidebarContext.isOpen
+    : true;
   const [hoveredItem, setHoveredItem] = useState(null);
 
-  // Sử dụng useRef để theo dõi trạng thái isOpen trước đó
   const prevIsOpen = useRef(isOpen);
-
-  useEffect(() => {
-    // Cập nhật giá trị ref sau mỗi render
-    prevIsOpen.current = isOpen;
-  }, [isOpen]);
-
-  const handleLogout = () => {
-    logout();
-    navigate('/');
-  };
-
+  useEffect(() => { prevIsOpen.current = isOpen; }, [isOpen]);
 
   const adminMenuItems = [
     {
@@ -53,7 +36,6 @@ const Sidebar = ({ isFinance = false, isAdmin = false, isApprover = false, isCla
       icon: <HomeOutlined />,
       color: "#FF6B6B"
     },
-
     {
       title: "Quản Lý Category",
       path: "/admin/category",
@@ -72,24 +54,20 @@ const Sidebar = ({ isFinance = false, isAdmin = false, isApprover = false, isCla
       icon: <UserOutlined />,
       color: "#00B894"
     },
-
     {
       title: "Quản lý dịch vụ sửa chữa",
       path: "/admin/repair",
       icon: <ProjectOutlined />,
       color: "#13C2C2"
     },
-
     {
       title: "Quản Lý Khách Hàng",
       path: "/admin/customer",
       icon: <UserOutlined />,
       color: "#54A0FF"
-    }
-    ,
-
+    },
     {
-      title: "Quản Lý Đánh giá",
+      title: "Quản Lý Đánh Giá",
       path: "/admin/review",
       icon: <ProfileOutlined />,
       color: "#FF9F43"
@@ -103,8 +81,14 @@ const Sidebar = ({ isFinance = false, isAdmin = false, isApprover = false, isCla
     {
       title: "Quản Lý News",
       path: "/admin/news",
-      icon: <HomeOutlined />,
+      icon: <ReadOutlined />,
       color: "#FF9F43"
+    },
+    {
+      title: "Quản Lý Liên Hệ",
+      path: "/admin/contact",
+      icon: <MessageOutlined />,
+      color: "#FF6B6B"
     },
     {
       title: "Quản Lý Mã Giảm Giá",
@@ -112,10 +96,52 @@ const Sidebar = ({ isFinance = false, isAdmin = false, isApprover = false, isCla
       icon: <DollarOutlined />,
       color: "#00D2D3"
     },
+    {
+      title: "Quản Lý About Us",
+      path: "/admin/about-us",
+      icon: <InfoCircleOutlined />,
+      color: "#06D6A0"
+    },
+    {
+      title: "Quản Lý Founders",
+      path: "/admin/founders",
+      icon: <TeamOutlined />,
+      color: "#EE5A6F"
+    }
   ];
 
-
-
+  const saleStaffMenuItems = [
+    {
+      title: "Dashboard",
+      path: "/sale-staff",
+      icon: <HomeOutlined />,
+      color: "#FF6B6B"
+    },
+    {
+      title: "Quản Lý Sản Phẩm",
+      path: "/sale-staff/product",
+      icon: <DatabaseOutlined />,
+      color: "#FF9FF3"
+    },
+    {
+      title: "Quản Lý Đánh Giá",
+      path: "/sale-staff/review",
+      icon: <ProfileOutlined />,
+      color: "#FF9F43"
+    },
+    {
+      title: "Quản Lý Đơn Hàng",
+      path: "/sale-staff/order",
+      icon: <ShoppingCartOutlined />,
+      color: "#5F27CD"
+    },
+    {
+      title: "Quản Lý Liên Hệ",
+      path: "/sale-staff/contact",
+      icon: <MessageOutlined />,
+      color: "#FF6B6B"
+    }
+  ];
 
   const generalMenuItems = [
     {
@@ -145,7 +171,8 @@ const Sidebar = ({ isFinance = false, isAdmin = false, isApprover = false, isCla
                 }`}
             >
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
-              <div className={`relative z-10 p-2 rounded-lg transition-colors duration-300`} style={{ backgroundColor: hoveredItem === idx ? `${item.color}20` : 'transparent' }}>
+              <div className="relative z-10 p-2 rounded-lg transition-colors duration-300"
+                style={{ backgroundColor: hoveredItem === idx ? `${item.color}20` : 'transparent' }}>
                 <span className="text-xl" style={{ color: location.pathname === item.path ? 'white' : item.color }}>{item.icon}</span>
               </div>
               <AnimatePresence>
@@ -162,87 +189,51 @@ const Sidebar = ({ isFinance = false, isAdmin = false, isApprover = false, isCla
               </AnimatePresence>
             </Link>
           </motion.div>
-        ) : (
-          <div key={idx}>
-            <motion.button
-              whileHover={{ scale: 1.02, x: 5 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => setIsWarehouseOpen((open) => !open)}
-              className={`group relative flex items-center justify-between w-full px-4 py-3.5 rounded-xl transition-all duration-300 overflow-hidden ${location.pathname === item.path
+        ) : null
+      )}
+    </div>
+  );
+  const renderSaleStaffMenuItems = () => (
+    <div className="space-y-2">
+      {saleStaffMenuItems.map((item, idx) =>
+        !item.children ? (
+          <motion.div
+            key={idx}
+            whileHover={{ scale: 1.02, x: 5 }}
+            whileTap={{ scale: 0.98 }}
+            onHoverStart={() => setHoveredItem(idx)}
+            onHoverEnd={() => setHoveredItem(null)}
+          >
+            <Link
+              to={item.path}
+              className={`group relative flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all duration-300 overflow-hidden ${location.pathname === item.path
                 ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/25'
                 : 'text-gray-300 hover:bg-gradient-to-r hover:from-gray-700 hover:to-gray-600 hover:text-white'
                 }`}
             >
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
-              <span className="relative z-10 flex items-center gap-4">
-                <div className="p-2 rounded-lg" style={{ backgroundColor: `${item.color}20` }}>
-                  <span className="text-xl" style={{ color: item.color }}>{item.icon}</span>
-                </div>
-                <AnimatePresence>
-                  {isOpen && (
-                    <motion.span
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -10 }}
-                      className="font-medium"
-                    >
-                      {item.title}
-                    </motion.span>
-                  )}
-                </AnimatePresence>
-              </span>
+              <div className="relative z-10 p-2 rounded-lg transition-colors duration-300"
+                style={{ backgroundColor: hoveredItem === idx ? `${item.color}20` : 'transparent' }}>
+                <span className="text-xl" style={{ color: location.pathname === item.path ? 'white' : item.color }}>{item.icon}</span>
+              </div>
               <AnimatePresence>
                 {isOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, rotate: -90 }}
-                    animate={{ opacity: 1, rotate: isWarehouseOpen ? 0 : -90 }}
-                    exit={{ opacity: 0, rotate: -90 }}
-                    className="relative z-10"
+                  <motion.span
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -10 }}
+                    className="relative z-10 font-medium"
                   >
-                    <DownOutlined className="text-sm" />
-                  </motion.div>
+                    {item.title}
+                  </motion.span>
                 )}
               </AnimatePresence>
-            </motion.button>
-            <AnimatePresence>
-              {isWarehouseOpen && isOpen && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="ml-6 mt-2 space-y-1 overflow-hidden"
-                >
-                  {item.children.map((child, cidx) => (
-                    <motion.div
-                      key={cidx}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: cidx * 0.1 }}
-                    >
-                      <Link
-                        to={child.path}
-                        className={`group relative flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-300 overflow-hidden ${location.pathname === child.path
-                          ? 'bg-white text-indigo-600 shadow-md transform translate-x-2'
-                          : 'text-gray-400 hover:bg-white/10 hover:text-white hover:translate-x-1'
-                          }`}
-                      >
-                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-500"></div>
-                        <div className="relative z-10 p-1.5 rounded-md" style={{ backgroundColor: `${child.color}15` }}>
-                          <span className="text-lg" style={{ color: child.color }}>{child.icon}</span>
-                        </div>
-                        <span className="relative z-10 font-medium">{child.title}</span>
-                      </Link>
-                    </motion.div>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        )
+            </Link>
+          </motion.div>
+        ) : null
       )}
     </div>
   );
-
   const renderMenuItems = (items) => (
     <div className="space-y-2">
       {items.map((item, index) => (
@@ -261,7 +252,8 @@ const Sidebar = ({ isFinance = false, isAdmin = false, isApprover = false, isCla
               }`}
           >
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
-            <div className={`relative z-10 p-2 rounded-lg transition-colors duration-300`} style={{ backgroundColor: hoveredItem === index ? `${item.color}20` : 'transparent' }}>
+            <div className="relative z-10 p-2 rounded-lg transition-colors duration-300"
+              style={{ backgroundColor: hoveredItem === index ? `${item.color}20` : 'transparent' }}>
               <span className="text-xl" style={{ color: location.pathname === item.path ? 'white' : item.color }}>{item.icon}</span>
             </div>
             <AnimatePresence>
@@ -282,102 +274,10 @@ const Sidebar = ({ isFinance = false, isAdmin = false, isApprover = false, isCla
     </div>
   );
 
-  const renderClaimsSection = () => (
-    <div>
-      <motion.button
-        whileHover={{ scale: 1.02, x: 5 }}
-        whileTap={{ scale: 0.98 }}
-        onClick={() => setIsClaimsOpen(!isClaimsOpen)}
-        className={`group relative w-full flex items-center justify-between px-4 py-3.5 rounded-xl transition-all duration-300 overflow-hidden ${isClaimsOpen
-          ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/25'
-          : 'text-gray-300 hover:bg-gradient-to-r hover:from-gray-700 hover:to-gray-600 hover:text-white'
-          }`}
-      >
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
-        <div className="relative z-10 flex items-center gap-4">
-          <div className="p-2 rounded-lg bg-blue-500/20">
-            <FileTextOutlined className="text-xl text-blue-400" />
-          </div>
-          <AnimatePresence>
-            {isOpen && (
-              <motion.span
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -10 }}
-                className="font-medium"
-              >
-                Claims
-              </motion.span>
-            )}
-          </AnimatePresence>
-        </div>
-        <AnimatePresence>
-          {isOpen && (
-            <motion.div
-              initial={{ opacity: 0, rotate: -90 }}
-              animate={{ opacity: 1, rotate: isClaimsOpen ? 0 : -90 }}
-              exit={{ opacity: 0, rotate: -90 }}
-              className="relative z-10"
-            >
-              <DownOutlined className="text-sm opacity-60" />
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.button>
-
-      <AnimatePresence>
-        {isClaimsOpen && isOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            className="mt-3 ml-6 space-y-1 overflow-hidden"
-          >
-            {claimsItems.map((item, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.1 }}
-              >
-                <Link
-                  to={item.path}
-                  className={`group relative flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-300 overflow-hidden ${location.pathname === item.path
-                    ? 'bg-white text-indigo-600 shadow-md transform translate-x-2'
-                    : 'text-gray-400 hover:bg-white/10 hover:text-white hover:translate-x-1'
-                    }`}
-                >
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-500"></div>
-                  <div className="relative z-10 p-1.5 rounded-md" style={{ backgroundColor: `${item.color}15` }}>
-                    <span className="text-lg" style={{ color: item.color }}>{item.icon}</span>
-                  </div>
-                  <span className="relative z-10 font-medium">{item.title}</span>
-                </Link>
-              </motion.div>
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-
   const getMenuItems = () => {
-    if (isFinance) {
-      return (
-        <>
-          {renderMenuItems(financeMenuItems)}
-          {renderClaimsSection()}
-        </>
-      );
-    } else if (isAdmin) {
-      return renderAdminMenuItems();
-    } else if (isApprover) {
-      return renderMenuItems(approverMenuItems);
-    } else if (isClaimer) {
-      return renderMenuItems(claimerMenuItems);
-    } else {
-      return renderMenuItems(generalMenuItems);
-    }
+    if (isAdmin === true) return renderAdminMenuItems();
+    if (isSaleStaff === true) return renderSaleStaffMenuItems();
+    else return renderMenuItems(generalMenuItems);
   };
 
   if (!isOpen) return null;
@@ -391,27 +291,7 @@ const Sidebar = ({ isFinance = false, isAdmin = false, isApprover = false, isCla
       }}
       className="sticky top-0 z-40 bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 min-h-screen text-gray-200 shadow-2xl border-r border-slate-700/50"
     >
-      {/* Animated Background Pattern */}
-      <div className="absolute inset-0 opacity-5">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-400/10 via-purple-400/10 to-pink-400/10"></div>
-        <motion.div
-          animate={{
-            backgroundPosition: ["0% 0%", "100% 100%"],
-          }}
-          transition={{
-            duration: 20,
-            repeat: Infinity,
-            repeatType: "reverse",
-          }}
-          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-30"
-          style={{
-            backgroundSize: "200% 200%",
-          }}
-        />
-      </div>
-
       <div className="relative z-10 p-4 flex flex-col h-full">
-        {/* Header */}
         <div className="flex items-center mb-8 pb-4 border-b border-slate-700/50">
           <div className="w-8 h-8 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg">
             <AppstoreOutlined className="text-white text-lg" />
@@ -423,10 +303,7 @@ const Sidebar = ({ isFinance = false, isAdmin = false, isApprover = false, isCla
             <p className="text-xs text-gray-400 mt-0.5">Management System</p>
           </div>
         </div>
-
-        {/* Main Menu */}
         <div className="flex-1 flex flex-col justify-between">
-          {/* Menu Items Container */}
           <div className="space-y-6">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -443,10 +320,7 @@ const Sidebar = ({ isFinance = false, isAdmin = false, isApprover = false, isCla
 };
 
 Sidebar.propTypes = {
-  isFinance: PropTypes.bool,
   isAdmin: PropTypes.bool,
-  isApprover: PropTypes.bool,
-  isClaimer: PropTypes.bool,
 };
 
 export default Sidebar;

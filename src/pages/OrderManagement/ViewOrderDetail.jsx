@@ -1,5 +1,5 @@
 import PropTypes from "prop-types";
-import { Modal, Descriptions, Tag, Typography, Card, Row, Col, Divider, Table, Space } from "antd";
+import { Modal, Descriptions, Tag, Typography, Card, Row, Col, Divider, Table, Space, Spin } from "antd";
 import { 
   CheckCircleOutlined, 
   ClockCircleOutlined, 
@@ -12,7 +12,7 @@ import {
 
 const { Text } = Typography;
 
-const ViewOrderDetail = ({ visible, onClose, orderData }) => {
+const ViewOrderDetail = ({ visible, onClose, orderData, loading = false }) => {
   if (!orderData) return null;
   
   // Safety check to ensure orderData is valid
@@ -23,10 +23,10 @@ const ViewOrderDetail = ({ visible, onClose, orderData }) => {
 
   // Debug log to see the order data structure
   console.log("🔍 ViewOrderDetail - orderData:", orderData);
-  console.log("🔍 ViewOrderDetail - orderDetails:", orderData.items || orderData.orderDetails);
+  console.log("🔍 ViewOrderDetail - orderDetails:", orderData.items || orderData.orderDetails || orderData.orderdetails);
   
-  // Debug the order details structure
-  const orderDetails = orderData.items || orderData.orderDetails || [];
+  // Debug the order details structure - try multiple possible field names
+  const orderDetails = orderData.items || orderData.orderDetails || orderData.orderdetails || [];
   console.log("🔍 ViewOrderDetail - orderDetails array:", orderDetails);
   if (orderDetails.length > 0) {
     console.log("🔍 ViewOrderDetail - first order detail:", orderDetails[0]);
@@ -238,12 +238,15 @@ const ViewOrderDetail = ({ visible, onClose, orderData }) => {
     createItem("updatedAt", "Cập nhật gần nhất", <Text style={styles.updatedAt}>{formatDateTime(orderData.updatedAt)}</Text>),
   ];
 
-  // Customer information
+  // Customer information (Receiver information - người nhận hàng)
+  // Try multiple sources for email: customer object, userId object, or direct field
+  const customerEmail = orderData.customer?.email || orderData.userId?.email || orderData.customerEmail || "N/A";
+  
   const customerItems = [
-    createItem("customerName", "Tên khách hàng", <Text strong>{orderData.customer?.name || orderData.customerName || "N/A"}</Text>),
-    createItem("customerEmail", "Email", <Text>{orderData.customer?.email || orderData.customerEmail || "N/A"}</Text>),
-    createItem("customerPhone", "Số điện thoại", <Text>{orderData.customer?.phone || orderData.customerPhone || "N/A"}</Text>),
-    createItem("shippingAddress", "Địa chỉ giao hàng", <Text>{orderData.shippingAddress || orderData.receiverAddress || "N/A"}</Text>),
+    createItem("receiverName", "Tên khách hàng", <Text strong>{orderData.receiverName || orderData.customer?.name || orderData.userId?.user_name || orderData.customerName || "N/A"}</Text>),
+    createItem("customerEmail", "Email", <Text>{customerEmail}</Text>),
+    createItem("receiverPhone", "Số điện thoại", <Text>{orderData.receiverPhone || orderData.customer?.phone || orderData.userId?.phone || orderData.customerPhone || "N/A"}</Text>),
+    createItem("shippingAddress", "Địa chỉ giao hàng", <Text>{orderData.receiverAddress || orderData.shippingAddress || "Địa chỉ chưa được cung cấp"}</Text>),
   ];
 
   try {
@@ -261,7 +264,8 @@ const ViewOrderDetail = ({ visible, onClose, orderData }) => {
         width={900}
         style={{ top: 20 }}
       >
-        <div style={{ maxHeight: "70vh", overflowY: "auto" }}>
+        <Spin spinning={loading} tip="Đang tải chi tiết đơn hàng...">
+          <div style={{ maxHeight: "70vh", overflowY: "auto" }}>
           {/* Order Information */}
           <Card 
             title={
@@ -350,7 +354,8 @@ const ViewOrderDetail = ({ visible, onClose, orderData }) => {
               )}
             </Card>
           )}
-        </div>
+          </div>
+        </Spin>
       </Modal>
     );
   } catch (error) {
@@ -376,6 +381,7 @@ ViewOrderDetail.propTypes = {
   visible: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
   orderData: PropTypes.object,
+  loading: PropTypes.bool,
 };
 
 export default ViewOrderDetail;

@@ -1,12 +1,11 @@
 import { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import { useDispatch, useSelector } from "react-redux";
-import { Form, Button, Card, Modal, Select, Typography, Space, Divider, Input, message } from "antd";
+import { Form, Button, Card, Modal, Select, Typography, Space, Divider, message } from "antd";
 import { EditOutlined, FileTextOutlined, CheckCircleOutlined, ClockCircleOutlined, CloseCircleOutlined, ShoppingCartOutlined } from "@ant-design/icons";
 import { orderStatusesRequest } from "../../redux/actions/orderActions";
 
 const { Title, Text } = Typography;
-const { TextArea } = Input;
 
 const UpdateOrder = ({ visible, onClose, onSuccess, orderData }) => {
   const dispatch = useDispatch();
@@ -23,17 +22,8 @@ const UpdateOrder = ({ visible, onClose, onSuccess, orderData }) => {
       }
       
       if (orderData) {
-        console.log("🔍 UpdateOrder - orderData:", orderData);
-        console.log("🔍 UpdateOrder - status info:", {
-          status: orderData.status,
-          statusId: orderData.statusId,
-          orderStatusId: orderData.orderStatusId
-        });
-        
         form.setFieldsValue({
           status: orderData.status,
-          notes: orderData.notes || "",
-          shippingNotes: orderData.shippingNotes || "",
         });
         setSelectedStatus(orderData.status);
       }
@@ -44,9 +34,7 @@ const UpdateOrder = ({ visible, onClose, onSuccess, orderData }) => {
   const getStatusIcon = (statusName) => {
     const iconMap = {
       pending: <ClockCircleOutlined style={{ color: "#faad14" }} />,
-      confirmed: <CheckCircleOutlined style={{ color: "#1890ff" }} />,
-      processing: <ShoppingCartOutlined style={{ color: "#722ed1" }} />,
-      shipped: <ShoppingCartOutlined style={{ color: "#1890ff" }} />,
+      processing: <ShoppingCartOutlined style={{ color: "#1890ff" }} />,
       delivered: <CheckCircleOutlined style={{ color: "#52c41a" }} />,
       cancelled: <CloseCircleOutlined style={{ color: "#ff4d4f" }} />,
       returned: <CloseCircleOutlined style={{ color: "#fa8c16" }} />
@@ -54,25 +42,11 @@ const UpdateOrder = ({ visible, onClose, onSuccess, orderData }) => {
     return iconMap[statusName] || <ClockCircleOutlined style={{ color: "#faad14" }} />;
   };
 
-  const getStatusColor = (statusName) => {
-    const colorMap = {
-      pending: "#faad14",
-      confirmed: "#1890ff",
-      processing: "#722ed1",
-      shipped: "#1890ff",
-      delivered: "#52c41a",
-      cancelled: "#ff4d4f",
-      returned: "#fa8c16"
-    };
-    return colorMap[statusName] || "#faad14";
-  };
-
   const statusOptions = (statuses || []).map(status => ({
     value: status.name,
     label: status.description || status.name,
     icon: getStatusIcon(status.name),
     description: status.description || `Trạng thái: ${status.name}`,
-    color: status.color || getStatusColor(status.name),
     id: status._id
   }));
 
@@ -93,22 +67,11 @@ const UpdateOrder = ({ visible, onClose, onSuccess, orderData }) => {
           finalStatusId = matchingStatus._id;
         }
       }
-      
-      console.log("🔍 UpdateOrder - handleFinish:", {
-        selectedStatus: values.status,
-        selectedStatusOption,
-        statusId,
-        finalStatusId,
-        orderData: orderData,
-        allStatusOptions: statusOptions
-      });
 
       const payload = {
         _id: orderData?._id,
-        orderStatusId: finalStatusId, // Send the final status ID
-        status: values.status, // Keep the status name for reference
-        notes: (values.notes || "").trim(),
-        shippingNotes: (values.shippingNotes || "").trim(),
+        orderStatusId: finalStatusId,
+        status: values.status,
       };
 
       onSuccess && onSuccess(payload);
@@ -137,13 +100,14 @@ const UpdateOrder = ({ visible, onClose, onSuccess, orderData }) => {
   function getNextStatuses(currentStatus) {
     const statusFlow = {
       pending: ["confirmed", "cancelled"],
-      confirmed: ["shipping", "cancelled"],
-      shipping: ["completed", "cancelled"],
-      completed: [], // No further transitions from completed
-      cancelled: ["pending"] // Allow reactivation if needed
+      confirmed: ["processing"],
+      processing: ["shipped"],
+      shipped: ["delivered"],
+      delivered: ["returned"],
+      cancelled: [],
+      returned: []
     };
-    
-    return statusOptions.filter(option => 
+    return statusOptions.filter(option =>
       statusFlow[currentStatus]?.includes(option.value) || option.value === currentStatus
     );
   }
@@ -230,42 +194,6 @@ const UpdateOrder = ({ visible, onClose, onSuccess, orderData }) => {
                   </Space>
                 </Card>
               )}
-
-              <Form.Item 
-                label={
-                  <Space>
-                    <FileTextOutlined style={{ color: "#13C2C2" }} />
-                    <span style={customStyles.label}>Ghi chú đơn hàng</span>
-                  </Space>
-                } 
-                name="notes"
-              >
-                <TextArea 
-                  rows={3} 
-                  placeholder="Nhập ghi chú về đơn hàng (tuỳ chọn)" 
-                  style={{ borderRadius: 8 }} 
-                  maxLength={500} 
-                  showCount 
-                />
-              </Form.Item>
-              
-              <Form.Item 
-                label={
-                  <Space>
-                    <ShoppingCartOutlined style={{ color: "#13C2C2" }} />
-                    <span style={customStyles.label}>Ghi chú giao hàng</span>
-                  </Space>
-                } 
-                name="shippingNotes"
-              >
-                <TextArea 
-                  rows={3} 
-                  placeholder="Nhập ghi chú về giao hàng (tuỳ chọn)" 
-                  style={{ borderRadius: 8 }} 
-                  maxLength={500} 
-                  showCount 
-                />
-              </Form.Item>
 
               <Divider style={customStyles.divider} />
 

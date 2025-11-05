@@ -14,6 +14,9 @@ import CustomerDetail from "../pages/CustomerManagement/CustomerDetail";
 import CustomerManagement from "../pages/CustomerManagement/CustomerManagement";
 import OrderManagement from "../pages/OrderManagement/OrderManagement";
 import NewsManagement from "../pages/NewsManagement/NewsManagement";
+import ContactManagement from "../pages/ContactManagement/ContactManagement";
+
+
 //Repair customer client
 import RepairLandingPage from "../pages/Repair/RepairLandingPage";
 import RepairRequestPage from "../pages/Repair/RepairRequestPage";
@@ -38,12 +41,22 @@ import ProfileManagement from "../pages/ProfileManagement/ProfileManagerment";
 import UpdatePassword from "../pages/ProfileManagement/UpdatePassword";
 import PrivateRoute from "../components/PrivateRouter";
 import CustomerLayout from "../layout/CustomerLayout";
+import ContactPage from "../pages/CustomerVIew/ContactPage";
+import ContactHistory from "../pages/CustomerVIew/ContactHistory";
 import DiscountListPage from "../pages/UserDiscount/DiscountListPage";
 import AdminDiscountPage from "../pages/DiscountManagement/AdminDiscountPage";
 import OrderReviewPage from "../pages/ProductReview/OrderReviewPage";
 import ProductReviewManagement from "../pages/ProductReview/ProductReviewManagement";
 import AdminProductReviewDetailPage from "../pages/ProductReview/AdminProductReviewDetailPage";
-
+import AboutUsManagement from "../pages/AboutUsManagement/AboutUsManagerment";
+import CreateAboutUs from "../pages/AboutUsManagement/CreateAboutUs";
+import UpdateAboutUs from "../pages/AboutUsManagement/UpdateAboutUs";
+import ShowAboutUs from "../pages/CustomerVIew/ShowAboutUs";
+import FoundersManagement from "../pages/FoundersManagement/FoundersManagement";
+import FinanceLayout from "../layout/FinanceLayout";
+import StaffOrderManagement from "../pages/StaffOrderManagement/OrderManagement";
+import CheckoutPage from "../pages/CheckoutPage";
+import PaymentResultPage from "../pages/PaymentResultPage";
 
 
 export const routes = [
@@ -91,13 +104,24 @@ export const routes = [
     path: "/wishlist",
     element: <WishlistPage />,
   },
-
   // THÊM: Trang tin tức cho customer (public, chỉ published news)
   {
     path: "/news",
     element: <NewsPage />,
   },
-
+  {
+    path: "/contact",
+    element: <ContactPage />,
+  },
+  {
+    path: "/about",
+    element: <ShowAboutUs />,
+  },
+  // Route public cho payment result (VNPay callback)
+  {
+    path: "/payment-result",
+    element: <PaymentResultPage />,
+  },
   // THÊM: Trang mã giảm giá cho user (public)
   {
     path: "/discounts",
@@ -124,7 +148,32 @@ export const routes = [
         path: "orders",
         element: <OrderHistory />,
       },
+      {
+        path: "checkout",
+        element: <CheckoutPage />,
+      },
+      {
+        path: "payment-result",
+        element: <PaymentResultPage />,
+      },
+      {
+        path: "contact/history",
+        element: <ContactHistory />,
+      },
       { path: "review/:id", element: <OrderReviewPage /> },
+    ],
+  },
+
+  {
+    path: "/sale-staff",
+    element: (
+      <PrivateRoute requiredRole="sales-staff">
+        <FinanceLayout />
+      </PrivateRoute>
+    ),
+    children: [
+      { path: "order", element: <StaffOrderManagement /> },
+
     ],
   },
 
@@ -153,7 +202,12 @@ export const routes = [
       { path: "review/:id", element: <AdminProductReviewDetailPage /> },
       { path: "change-password", element: <UpdatePassword /> },
       { path: "news", element: <NewsManagement /> },
+      { path: "contact", element: <ContactManagement /> },
       { path: "discounts", element: <AdminDiscountPage /> },
+      { path: "about-us", element: <AboutUsManagement /> },
+      { path: "about-us/create", element: <CreateAboutUs /> },
+      { path: "about-us/update", element: <UpdateAboutUs /> },
+      { path: "founders", element: <FoundersManagement /> },
     ],
   },
 

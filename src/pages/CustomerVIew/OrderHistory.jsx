@@ -2,41 +2,74 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
-import { Package, Truck, CheckCircle, XCircle, Clock, ChevronDown, ChevronUp, Search } from 'lucide-react';
-import { orderHistoryRequest, orderClearMessages } from '../../redux/actions/orderActions';
+import { Package, Truck, CheckCircle, XCircle, Clock, Eye, Search } from 'lucide-react';
+import { orderHistoryRequest, orderClearMessages, orderDetailRequest } from '../../redux/actions/orderActions';
 import Footer from '../../components/Footer/Footer';
+import OrderHistoryDetails from './OrderHistoryDetails';
 
 const OrderHistory = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('all');
-  const [expandedOrder, setExpandedOrder] = useState(null);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [sortBy, setSortBy] = useState('newest'); // newest (mới nhất) hoặc oldest (cũ nhất)
 
   // Lấy user từ localStorage
   const storedUser = JSON.parse(localStorage.getItem('user') || 'null');
   const userId = storedUser?._id || storedUser?.id;
 
   // Lấy data từ Redux
-  const { history, loadingHistory, error, success, historyPagination } = useSelector((state) => state.order || {});
+  const { history, currentOrder, loadingHistory, loadingDetail, error, success, historyPagination } = useSelector((state) => state.order || {});
 
-  // Load orders khi component mount hoặc khi filter/page thay đổi
+  // Load orders khi component mount hoặc khi filter/page/sort thay đổi (với debounce cho search)
   useEffect(() => {
-    if (userId) {
-      const query = {
-        page: currentPage,
-        limit: 10,
-      };
+    if (!userId) return;
 
-      // Thêm filter theo status nếu có
-      if (selectedStatus !== 'all') {
-        query.status = selectedStatus;
-      }
-
-      dispatch(orderHistoryRequest(userId, query));
+    // Reset page về 1 khi filter/search/sort thay đổi (trừ khi đang ở trang 1)
+    let targetPage = currentPage;
+    if (currentPage !== 1 && (selectedStatus !== 'all' || searchTerm.trim() || sortBy !== 'newest')) {
+      // Nếu filter thay đổi, reset về trang 1
+      targetPage = 1;
+      setCurrentPage(1);
     }
-  }, [dispatch, userId, selectedStatus, currentPage]);
+
+    const query = {
+      page: targetPage,
+      limit: 10,
+    };
+
+    // Thêm filter theo status nếu có
+    if (selectedStatus !== 'all') {
+      // Map 'shipping' thành 'shipped' để match với backend
+      // Backend dùng 'shipped' nhưng UI filter dùng 'shipping'
+      const statusForBackend = selectedStatus === 'shipping' ? 'shipped' : selectedStatus;
+      query.status = statusForBackend;
+    }
+
+    // Thêm search nếu có (server-side search)
+    if (searchTerm.trim()) {
+      query.search = searchTerm.trim();
+    }
+
+    // Thêm sort (theo createdAt)
+    if (sortBy === 'newest') {
+      query.sortBy = 'createdat';
+      query.sortOrder = 'desc';
+    } else if (sortBy === 'oldest') {
+      query.sortBy = 'createdat';
+      query.sortOrder = 'asc';
+    }
+
+    // Debounce search để tránh gọi API quá nhiều khi user đang gõ
+    const timeoutId = setTimeout(() => {
+      dispatch(orderHistoryRequest(userId, query));
+    }, searchTerm.trim() ? 500 : 0); // Delay 500ms nếu có search term
+
+    return () => clearTimeout(timeoutId);
+  }, [dispatch, userId, selectedStatus, currentPage, searchTerm, sortBy]);
 
   // Show toast messages
   useEffect(() => {
@@ -64,9 +97,11 @@ const OrderHistory = () => {
     all: { label: 'Tất cả', color: 'gray', icon: Package },
     pending: { label: 'Chờ xác nhận', color: 'yellow', icon: Clock },
     confirmed: { label: 'Đã xác nhận', color: 'blue', icon: CheckCircle },
+    processing: { label: 'Đang xử lý', color: 'blue', icon: Clock },
     shipping: { label: 'Đang giao', color: 'purple', icon: Truck },
     delivered: { label: 'Đã giao', color: 'green', icon: CheckCircle },
-    cancelled: { label: 'Đã hủy', color: 'red', icon: XCircle }
+    cancelled: { label: 'Đã hủy', color: 'red', icon: XCircle },
+    returned: { label: 'Đã trả hàng', color: 'red', icon: XCircle }
   };
 
   const formatPrice = (price) => {
@@ -85,17 +120,20 @@ const OrderHistory = () => {
   };
 
   const getStatusBadge = (status) => {
-    const config = statusConfig[status];
+    // Map 'shipped' thành 'shipping' nếu backend trả về 'shipped' (để tương thích)
+    const statusKey = status === 'shipped' ? 'shipping' : status;
+    const config = statusConfig[statusKey] || { label: status || 'N/A', color: 'gray' };
     const colorClasses = {
       yellow: 'bg-yellow-100 text-yellow-700 border-yellow-300',
       blue: 'bg-blue-100 text-blue-700 border-blue-300',
       purple: 'bg-purple-100 text-purple-700 border-purple-300',
       green: 'bg-green-100 text-green-700 border-green-300',
-      red: 'bg-red-100 text-red-700 border-red-300'
+      red: 'bg-red-100 text-red-700 border-red-300',
+      gray: 'bg-gray-100 text-gray-700 border-gray-300'
     };
 
     return (
-      <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${colorClasses[config.color]}`}>
+      <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${colorClasses[config.color] || colorClasses.gray}`}>
         {config.label}
       </span>
     );
@@ -105,23 +143,36 @@ const OrderHistory = () => {
   const getStatusName = (orderStatusId) => {
     if (!orderStatusId) return 'pending';
     if (typeof orderStatusId === 'string') return orderStatusId;
-    return orderStatusId.name || 'pending';
+    
+    // Lấy name từ orderStatusId object
+    const statusName = orderStatusId.name || 'pending';
+    
+    // Map 'shipped' thành 'shipping' nếu backend trả về 'shipped' (để tương thích)
+    if (statusName === 'shipped') return 'shipping';
+    
+    return statusName;
   };
 
-  // Filter theo search term (client-side filtering)
-  const filteredOrders = (history || []).filter(order => {
-    if (!searchTerm) return true;
+  // Không cần client-side filtering nữa vì backend đã xử lý search
+  const filteredOrders = history || [];
 
-    const orderIdMatch = order._id?.toLowerCase().includes(searchTerm.toLowerCase());
-    const productMatch = order.orderDetails?.some(item =>
-      item.productName?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+  const openOrderDetails = (order) => {
+    console.log("🔍 Opening OrderDetails - Full order data:", order);
+    console.log("🔍 Opening OrderDetails - orderDetails:", order.orderDetails);
+    
+    // Fetch full order details with orderDetails populated from backend
+    if (order._id && userId) {
+      console.log("🔄 Fetching full order details for ID:", order._id);
+      dispatch(orderDetailRequest(order._id));
+    }
+    
+    setSelectedOrder(order);
+    setIsDetailsOpen(true);
+  };
 
-    return orderIdMatch || productMatch;
-  });
-
-  const toggleOrderDetails = (orderId) => {
-    setExpandedOrder(expandedOrder === orderId ? null : orderId);
+  const closeOrderDetails = () => {
+    setIsDetailsOpen(false);
+    setSelectedOrder(null);
   };
 
   // Helper để validate và lấy ảnh hợp lệ
@@ -137,54 +188,10 @@ const OrderHistory = () => {
     return 'https://via.placeholder.com/64x64?text=No+Image';
   };
 
-  // Tạo timeline từ order data
-  const generateTimeline = (order) => {
-    const statusName = getStatusName(order.orderStatusId);
-    const timeline = [];
-
-    // Đơn hàng đã đặt
-    timeline.push({
-      status: 'Đơn hàng đã đặt',
-      date: order.createdAt ? formatDate(order.createdAt) : '',
-      completed: true
-    });
-
-    // Các trạng thái tiếp theo
-    if (statusName === 'cancelled') {
-      timeline.push({
-        status: 'Đã hủy',
-        date: order.cancelledAt ? formatDate(order.cancelledAt) : '',
-        completed: true
-      });
-    } else {
-      // Confirmed
-      timeline.push({
-        status: 'Đã xác nhận',
-        date: statusName !== 'pending' && order.createdAt ? formatDate(order.createdAt) : '',
-        completed: ['confirmed', 'processing', 'shipped', 'delivered'].includes(statusName)
-      });
-
-      // Shipping
-      timeline.push({
-        status: 'Đang giao hàng',
-        date: '',
-        completed: ['shipped', 'delivered'].includes(statusName)
-      });
-
-      // Delivered
-      timeline.push({
-        status: 'Đã giao hàng',
-        date: order.deliveredAt ? formatDate(order.deliveredAt) : '',
-        completed: statusName === 'delivered'
-      });
-    }
-
-    return timeline;
-  };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <main className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <main className="container mx-auto px-4 py-8 flex-1">
         {/* Page Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Lịch sử đơn hàng</h1>
@@ -200,12 +207,24 @@ const OrderHistory = () => {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
                 <input
                   type="text"
-                  placeholder="Tìm kiếm theo mã đơn hàng hoặc tên sản phẩm..."
+                  placeholder="Tìm kiếm theo mã đơn hàng hoặc tên người nhận..."
                   className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
+            </div>
+
+            {/* Sort */}
+            <div className="flex gap-2">
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              >
+                <option value="newest">Mới nhất</option>
+                <option value="oldest">Cũ nhất</option>
+              </select>
             </div>
 
             {/* Status Filter */}
@@ -239,7 +258,7 @@ const OrderHistory = () => {
             <h3 className="text-xl font-semibold text-gray-900 mb-2">Không tìm thấy đơn hàng</h3>
             <p className="text-gray-600 mb-6">
               {searchTerm || selectedStatus !== 'all'
-                ? 'Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm'
+                ? 'Không tìm thấy đơn hàng phù hợp. Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm'
                 : 'Bạn chưa có đơn hàng nào'}
             </p>
             <button
@@ -270,34 +289,33 @@ const OrderHistory = () => {
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      {getStatusName(order.orderStatusId) === 'delivered' && (
-                        <button
-                          onClick={() => {
-                            navigate(`/customer/review/${order._id}`, {
-                              orderData: history,
-                            });
-                          }}
-                          className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                        >
-                          Đánh giá đơn hàng
-                        </button>
-                      )}
-                      <div className="text-right">
-                        <p className="text-sm text-gray-500">Tổng tiền</p>
-                        <p className="text-xl font-bold text-blue-600">{formatPrice(order.totalPrice)}</p>
-                      </div>
-                      <button
-                        onClick={() => toggleOrderDetails(order._id)}
-                        className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                      >
-                        {expandedOrder === order._id ? (
-                          <ChevronUp className="w-5 h-5 text-gray-600" />
-                        ) : (
-                          <ChevronDown className="w-5 h-5 text-gray-600" />
-                        )}
-                      </button>
+                    <div className="text-right">
+                      <p className="text-sm text-gray-500">Tổng tiền</p>
+                      <p className="text-xl font-bold text-blue-600">{formatPrice(order.totalPrice)}</p>
                     </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex items-center gap-3 mb-4 pb-4 border-b border-gray-100">
+                    <button
+                      onClick={() => openOrderDetails(order)}
+                      className="flex items-center gap-2 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                    >
+                      <Eye className="w-4 h-4" />
+                      Xem chi tiết
+                    </button>
+                    {getStatusName(order.orderStatusId) === 'delivered' && (
+                      <button
+                        onClick={() => {
+                          navigate(`/customer/review/${order._id}`, {
+                            orderData: history,
+                          });
+                        }}
+                        className="bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors font-medium"
+                      >
+                        Đánh giá đơn hàng
+                      </button>
+                    )}
                   </div>
 
                   {/* Order Items Preview */}
@@ -325,115 +343,6 @@ const OrderHistory = () => {
                     ))}
                   </div>
                 </div>
-
-                {/* Expanded Details */}
-                {expandedOrder === order._id && (
-                  <div className="border-t border-gray-100 bg-gray-50 p-6">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                      {/* Order Timeline */}
-                      <div>
-                        <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
-                          <Clock className="w-5 h-5 text-blue-600" />
-                          Trạng thái đơn hàng
-                        </h4>
-                        <div className="space-y-4">
-                          {generateTimeline(order).map((step, index) => (
-                            <div key={index} className="flex items-start gap-3">
-                              <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${step.completed ? 'bg-green-100' : 'bg-gray-200'
-                                }`}>
-                                {step.completed ? (
-                                  <CheckCircle className="w-5 h-5 text-green-600" />
-                                ) : (
-                                  <Clock className="w-5 h-5 text-gray-400" />
-                                )}
-                              </div>
-                              <div>
-                                <p className={`font-medium ${step.completed ? 'text-gray-900' : 'text-gray-400'}`}>
-                                  {step.status}
-                                </p>
-                                {step.date && (
-                                  <p className="text-sm text-gray-500">{step.date}</p>
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Delivery & Payment Info */}
-                      <div className="space-y-4">
-                        <div>
-                          <h4 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
-                            <Truck className="w-5 h-5 text-blue-600" />
-                            Thông tin giao hàng
-                          </h4>
-                          <div className="bg-white rounded-lg p-4 border border-gray-200 space-y-2">
-                            <div>
-                              <p className="text-sm text-gray-600">Người nhận:</p>
-                              <p className="text-gray-900 font-medium">{order.receiverName}</p>
-                            </div>
-                            <div>
-                              <p className="text-sm text-gray-600">Số điện thoại:</p>
-                              <p className="text-gray-900 font-medium">{order.receiverPhone}</p>
-                            </div>
-                            <div>
-                              <p className="text-sm text-gray-600">Địa chỉ giao hàng:</p>
-                              <p className="text-gray-900 font-medium">{order.receiverAddress}</p>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div>
-                          <h4 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
-                            <Package className="w-5 h-5 text-blue-600" />
-                            Phương thức thanh toán
-                          </h4>
-                          <div className="bg-white rounded-lg p-4 border border-gray-200">
-                            <p className="text-gray-900 font-medium">
-                              {order.paymentMethod === 'COD' ? 'Thanh toán khi nhận hàng' : 'Chuyển khoản ngân hàng'}
-                            </p>
-                          </div>
-                        </div>
-
-                        {/* Action Buttons */}
-                        <div className="flex gap-3 pt-2">
-                          {getStatusName(order.orderStatusId) === 'pending' && (
-                            <button
-                              onClick={() => {
-                                if (window.confirm('Bạn có chắc chắn muốn hủy đơn hàng này?')) {
-                                  // TODO: Implement cancel order
-                                  toast.info('Chức năng hủy đơn hàng đang được phát triển');
-                                }
-                              }}
-                              className="flex-1 bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors font-medium"
-                            >
-                              Hủy đơn hàng
-                            </button>
-                          )}
-                          {getStatusName(order.orderStatusId) === 'delivered' && (
-                            <button
-                              onClick={() => {
-                                // TODO: Implement reorder
-                                toast.info('Chức năng mua lại đang được phát triển');
-                              }}
-                              className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                            >
-                              Mua lại
-                            </button>
-                          )}
-                          <button
-                            onClick={() => {
-                              toast.info('Vui lòng liên hệ: 0123.456.789');
-                            }}
-                            className="flex-1 border border-blue-600 text-blue-600 py-2 px-4 rounded-lg hover:bg-blue-50 transition-colors font-medium"
-                          >
-                            Liên hệ hỗ trợ
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
             ))}
           </div>
@@ -462,6 +371,14 @@ const OrderHistory = () => {
             </button>
           </div>
         )}
+
+        {/* Order Details Modal */}
+        <OrderHistoryDetails
+          isOpen={isDetailsOpen}
+          onClose={closeOrderDetails}
+          order={currentOrder || selectedOrder}
+          loading={loadingDetail}
+        />
       </main>
       <Footer />
     </div>

@@ -34,6 +34,9 @@ const Header = ({ searchTerm, setSearchTerm }) => {
         : "https://images.unsplash.com/photo-1574158622682-e40e69881006?w=60&h=60&fit=crop&crop=face";
     const displayEmail = storedUser?.email || "user@email.com";
 
+    // Thông tin shop cố định
+    const shopName = "DarkCore Shop";
+
     const handleLogout = () => {
         if (window.confirm("Bạn có chắc chắn muốn đăng xuất?")) {
             dispatch(logoutRequest());
@@ -57,7 +60,7 @@ const Header = ({ searchTerm, setSearchTerm }) => {
                         <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
                             <span className="text-white text-xl">💻</span>
                         </div>
-                        <span className="text-xl font-bold text-gray-900">TechStore</span>
+                        <span className="text-xl font-bold text-gray-900">{shopName}</span>
                     </Link>
 
                     {/* Nav links */}
@@ -83,6 +86,7 @@ const Header = ({ searchTerm, setSearchTerm }) => {
                         <Link to="/contact" className="text-gray-700 hover:text-blue-600">
                             Liên hệ
                         </Link>
+                        
                     </nav>
 
                     {/* Search + Cart + User */}
@@ -212,6 +216,17 @@ const Header = ({ searchTerm, setSearchTerm }) => {
                                                     >
                                                         <Clock className="w-5 h-5" style={{ color: '#135cc2ff' }} />
                                                         <span>Lịch sử sửa chữa</span>
+                                                    </button>
+
+                                                    <button
+                                                        onClick={() => {
+                                                            navigate('/customer/contact/history');
+                                                            setIsDropdownOpen(false);
+                                                        }}
+                                                        className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-gray-50 transition-all duration-200 hover:translate-x-1"
+                                                    >
+                                                        <Clock className="w-5 h-5" style={{ color: '#135cc2ff' }} />
+                                                        <span>Lịch sử liên hệ</span>
                                                     </button>
 
                                                     <div className="border-t border-gray-200/50 mt-2 pt-2">

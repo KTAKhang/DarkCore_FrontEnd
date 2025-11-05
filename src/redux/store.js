@@ -15,9 +15,13 @@ import favoriteReducer from "./reducers/favoriteReducer";
 import newsReducer from "./reducers/newsReducer";
 import repairServiceReducer from "./reducers/repairServiceReducer";
 import repairRequestReducer from "./reducers/repairRequestReducer";
+import contactRequestReducer from "./reducers/contactReducer";
 import discountReducer from "./reducers/discountReducer";
 import reviewReducer from "./reducers/reviewReducer";
 import statisticsReducer from "./reducers/statisticsReducer";
+import aboutReducer from "./reducers/aboutReducer";
+import founderReducer from "./reducers/founderReducer";
+import orderStaffReducer from "./reducers/orderStaffReducer";
 import rootSaga from "./sagas/rootSaga";
 
 const rootReducer = combineReducers({
@@ -35,10 +39,13 @@ const rootReducer = combineReducers({
   news: newsReducer,
   repairService: repairServiceReducer,
   repairRequest: repairRequestReducer,
+  contact: contactRequestReducer,
   discount: discountReducer,
   review: reviewReducer,
   statistics: statisticsReducer,
-
+  about: aboutReducer,
+  founder: founderReducer,
+  orderStaffReducer: orderStaffReducer,
 });
 
 const sagaMiddleware = createSagaMiddleware();
