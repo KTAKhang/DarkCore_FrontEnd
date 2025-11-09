@@ -55,6 +55,7 @@ import ShowAboutUs from "../pages/CustomerVIew/ShowAboutUs";
 import FoundersManagement from "../pages/FoundersManagement/FoundersManagement";
 import FinanceLayout from "../layout/FinanceLayout";
 import StaffOrderManagement from "../pages/StaffOrderManagement/OrderManagement";
+import StaffReviewManagement from "../pages/StaffReviewManagement/StaffReviewManagement";
 import CheckoutPage from "../pages/CheckoutPage";
 import PaymentResultPage from "../pages/PaymentResultPage";
 
@@ -173,7 +174,7 @@ export const routes = [
     ),
     children: [
       { path: "order", element: <StaffOrderManagement /> },
-
+      { path: "review", element: <StaffReviewManagement /> },
     ],
   },
 
