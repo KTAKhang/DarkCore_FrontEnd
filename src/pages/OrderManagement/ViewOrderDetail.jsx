@@ -63,9 +63,8 @@ const ViewOrderDetail = ({ visible, onClose, orderData, loading = false }) => {
   // Get payment method text
   const getPaymentMethodText = (method) => {
     const methodMap = {
-      cash: "Tiền mặt",
-      credit_card: "Thẻ tín dụng",
-      bank_transfer: "Chuyển khoản"
+      cod: "Thanh toán COD",
+      vnpay: "VNPay",
     };
     return methodMap[method] || method;
   };
