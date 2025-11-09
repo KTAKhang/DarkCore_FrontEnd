@@ -56,6 +56,13 @@ const RepairAdminRequestDetail = () => {
   };
 
   const handleStatus = (status) => {
+    // Show confirmation for completed status
+    if (status === 'completed') {
+      if (!window.confirm('⚠️ Xác nhận hoàn thành?\n\nSau khi hoàn thành, trạng thái sẽ bị khóa và không thể thay đổi.\nEmail thông báo sẽ được gửi đến khách hàng.')) {
+        return;
+      }
+    }
+    
     dispatch(repairRequestStatusUpdateRequest(id, status));
     setTimeout(() => {
       loadDetail();
@@ -178,12 +185,21 @@ const RepairAdminRequestDetail = () => {
                 </span>
               </div>
               <div className="space-y-2">
-                <button onClick={() => handleStatus("in-progress")} className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center justify-center">
-                  <Wrench className="h-4 w-4 mr-2" /> Chuyển đang xử lý
-                </button>
-                <button onClick={() => handleStatus("completed")} className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center justify-center">
-                  <CheckCircle className="h-4 w-4 mr-2" /> Hoàn thành
-                </button>
+                {item.status === 'completed' ? (
+                  <div className="text-center py-2">
+                    <div className="text-green-600 font-medium">✓ Đã hoàn thành</div>
+                    <div className="text-gray-500 text-sm mt-1">Trạng thái đã bị khóa</div>
+                  </div>
+                ) : (
+                  <>
+                    <button onClick={() => handleStatus("in-progress")} className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center justify-center">
+                      <Wrench className="h-4 w-4 mr-2" /> Chuyển đang xử lý
+                    </button>
+                    <button onClick={() => handleStatus("completed")} className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center justify-center">
+                      <CheckCircle className="h-4 w-4 mr-2" /> Hoàn thành
+                    </button>
+                  </>
+                )}
               </div>
             </div>
 

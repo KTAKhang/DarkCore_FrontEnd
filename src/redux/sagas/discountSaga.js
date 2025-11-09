@@ -93,7 +93,6 @@ function* fetchDiscountsSaga(action) {
     console.log("❌ API Error:", error);
     const errorMessage = error.response?.data?.message || error.message || "Lỗi kết nối server";
     yield put(discountListFailed(errorMessage));
-    toast.error(errorMessage);
   }
 }
 
@@ -110,7 +109,6 @@ function* fetchDiscountDetailSaga(action) {
   } catch (error) {
     const errorMessage = error.response?.data?.message || error.message || "Lỗi kết nối server";
     yield put(discountDetailFailed(errorMessage));
-    toast.error(errorMessage);
   }
 }
 
@@ -125,13 +123,11 @@ function* createDiscountSaga(action) {
       yield put(discountCreateSuccess(response.data));
     } else {
       yield put(discountCreateFailed(response.message || "Lỗi khi tạo mã giảm giá"));
-      toast.error(response.message || "Lỗi khi tạo mã giảm giá");
     }
   } catch (error) {
     console.log("❌ API Create Discount Error:", error);
     const errorMessage = error.response?.data?.message || error.message || "Lỗi kết nối server";
     yield put(discountCreateFailed(errorMessage));
-    toast.error(errorMessage);
   }
 }
 
@@ -144,12 +140,10 @@ function* updateDiscountSaga(action) {
       yield put(discountUpdateSuccess(response.data));
     } else {
       yield put(discountUpdateFailed(response.message || "Lỗi khi cập nhật mã giảm giá"));
-      toast.error(response.message || "Lỗi khi cập nhật mã giảm giá");
     }
   } catch (error) {
     const errorMessage = error.response?.data?.message || error.message || "Lỗi kết nối server";
     yield put(discountUpdateFailed(errorMessage));
-    toast.error(errorMessage);
   }
 }
 
@@ -162,12 +156,10 @@ function* deactivateDiscountSaga(action) {
       yield put(discountDeactivateSuccess(response.data));
     } else {
       yield put(discountDeactivateFailed(response.message || "Lỗi khi vô hiệu hóa mã giảm giá"));
-      toast.error(response.message || "Lỗi khi vô hiệu hóa mã giảm giá");
     }
   } catch (error) {
     const errorMessage = error.response?.data?.message || error.message || "Lỗi kết nối server";
     yield put(discountDeactivateFailed(errorMessage));
-    toast.error(errorMessage);
   }
 }
 
@@ -179,13 +171,14 @@ function* applyDiscountSaga(action) {
     if (response.status === "OK") {
       yield put(discountApplySuccess(response.data));
     } else {
-      yield put(discountApplyFailed(response.message || "Lỗi khi áp dụng mã giảm giá"));
-      toast.error(response.message || "Lỗi khi áp dụng mã giảm giá");
+      const message = response.message || "Mã giảm giá không hợp lệ hoặc đã hết hạn";
+      toast.error(message);
+      yield put(discountApplyFailed(message));
     }
   } catch (error) {
     const errorMessage = error.response?.data?.message || error.message || "Lỗi kết nối server";
-    yield put(discountApplyFailed(errorMessage));
     toast.error(errorMessage);
+    yield put(discountApplyFailed(errorMessage));
   }
 }
 
@@ -200,13 +193,11 @@ function* fetchActiveDiscountsSaga() {
       yield put(discountActiveSuccess(response.data));
     } else {
       yield put(discountActiveFailed(response.message || "Lỗi khi tải danh sách mã giảm giá"));
-      toast.error(response.message || "Lỗi khi tải danh sách mã giảm giá");
     }
   } catch (error) {
     console.log("❌ API Active Discounts Error:", error);
     const errorMessage = error.response?.data?.message || error.message || "Lỗi kết nối server";
     yield put(discountActiveFailed(errorMessage));
-    toast.error(errorMessage);
   }
 }
 
