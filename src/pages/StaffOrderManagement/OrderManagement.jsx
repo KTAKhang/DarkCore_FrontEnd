@@ -264,16 +264,6 @@ const OrderManagement = () => {
     returned: orderStats?.returned || 0,
   };
 
-  // const displayStats = {
-  //   total: 0,
-  //   pending: 0,
-  //   confirmed: 0,
-  //   processing: 0,
-  //   shipped: 0,
-  //   delivered: 0,
-  //   cancelled: 0,
-  //   returned: 0,
-  // };
 
   /**
    * Handler: Làm mới dữ liệu
@@ -462,18 +452,12 @@ const OrderManagement = () => {
     },
   ];
 
-  /**
-   * Config phân trang cho bảng
-   * - Sử dụng pagination từ API (server-side pagination)
-   * - Hỗ trợ thay đổi số items/trang
-   * - Hiển thị tổng số đơn hàng và trạng thái filter
-   */
   const tablePagination = {
     current: apiPagination?.page || pagination.current,
     pageSize: apiPagination?.limit || pagination.pageSize,
     total: apiPagination?.total || 0,
-    showSizeChanger: true, // Cho phép thay đổi số items/trang
-    showQuickJumper: true, // Cho phép nhảy nhanh đến trang
+    showSizeChanger: true,
+    showQuickJumper: true,
     pageSizeOptions: ["5", "10", "20", "50", "100"],
     showTotal: (total, range) => (
       <Text style={{ color: "#0D364C" }}>
@@ -481,19 +465,16 @@ const OrderManagement = () => {
         {hasActiveFilters && <span style={{ color: "#13C2C2" }}> (đã lọc)</span>}
       </Text>
     ),
-    // Khi chuyển trang
     onChange: (page, pageSize) => {
       setPagination({ current: page, pageSize });
       fetchOrders({ page, limit: pageSize });
     },
-    // Khi thay đổi số items/trang
     onShowSizeChange: (current, size) => {
       setPagination({ current, pageSize: size });
       fetchOrders({ page: current, limit: size });
     },
   };
 
-  // Backend xử lý phân trang, nên sử dụng data trực tiếp
   const dataForPage = orders;
 
   return (

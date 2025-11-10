@@ -174,7 +174,10 @@ export const routes = [
     ),
     children: [
       { path: "order", element: <StaffOrderManagement /> },
+      { path: "change-password", element: <UpdatePassword /> },
+      { path: "profile", element: <ProfileManagement /> },
       { path: "review", element: <StaffReviewManagement /> },
+
     ],
   },
 
@@ -225,6 +228,8 @@ export const routes = [
       { path: "jobs", element: <RepairStaffJobs /> },
       { path: "jobs/:id", element: <RepairStaffJobDetail /> },
       { path: "services", element: <RepairStaffServices /> },
+      { path: "change-password", element: <UpdatePassword /> },
+      { path: "profile", element: <ProfileManagement /> },
     ],
   },
 
