@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from "react";
-import { Menu, LogOut, ChevronDown } from "lucide-react";
+import { Menu, LogOut, ChevronDown, User, Settings } from "lucide-react";
 import { useSidebar } from '../../contexts/SidebarContext';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from "react-redux";
@@ -137,6 +137,28 @@ const RepairStaffNavbar = () => {
 
                     {/* Menu items */}
                     <div className="py-2">
+                      <button
+                        onClick={() => {
+                          navigate("/staff/profile");
+                          toggleDropdown();
+                        }}
+                        className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-gray-50 transition-all duration-200 hover:translate-x-1"
+                      >
+                        <User className="w-5 h-5" style={{ color: "#13C2C2" }} />
+                        <span>Trang cá nhân</span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          navigate("/staff/change-password");
+                          toggleDropdown();
+                        }}
+                        disabled={storedUser?.isGoogleAccount === true}
+                        className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-gray-50 transition-all duration-200 hover:translate-x-1"
+                      >
+                        <Settings className="w-5 h-5" style={{ color: "#13C2C2" }} />
+                        <span>Đổi mật khẩu</span>
+                      </button>
                       <div className="border-t border-gray-200/50 mt-2 pt-2">
                         <button
                           onClick={() => { handleLogout(); }}

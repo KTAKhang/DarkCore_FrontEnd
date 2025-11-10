@@ -15,17 +15,15 @@ const { Text } = Typography;
 const ViewOrderDetail = ({ visible, onClose, orderData, loading = false }) => {
   if (!orderData) return null;
 
-  // Safety check to ensure orderData is valid
   if (typeof orderData !== 'object' || orderData === null) {
     console.error("Invalid orderData:", orderData);
     return null;
   }
 
-  // Debug log to see the order data structure
   console.log("🔍 ViewOrderDetail - orderData:", orderData);
   console.log("🔍 ViewOrderDetail - orderDetails:", orderData.items || orderData.orderDetails);
 
-  // Debug the order details structure
+
   const orderDetails = orderData.items || orderData.orderDetails || [];
   console.log("🔍 ViewOrderDetail - orderDetails array:", orderDetails);
   if (orderDetails.length > 0) {
@@ -48,7 +46,6 @@ const ViewOrderDetail = ({ visible, onClose, orderData, loading = false }) => {
     return `${date.toLocaleDateString("vi-VN")} lúc ${date.toLocaleTimeString("vi-VN", { hour: '2-digit', minute: '2-digit' })}`;
   };
 
-  // Get status color and icon
   const getStatusConfig = (status) => {
     const statusMap = {
       pending: { color: "#faad14", icon: <ClockCircleOutlined />, text: "Chờ xác nhận" },
