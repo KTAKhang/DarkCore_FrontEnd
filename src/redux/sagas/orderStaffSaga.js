@@ -31,6 +31,7 @@ const apiCall = async (method, url, data = null, isForm = false) => {
             url: `${API_BASE_URL}${url}`,
             data: data ? data : undefined,
             withCredentials: true,
+            timeout: 30000, // 30 seconds timeout
             headers: {
                 "Content-Type": isForm ? "multipart/form-data" : "application/json",
                 Authorization: `Bearer ${token}`,
@@ -38,13 +39,34 @@ const apiCall = async (method, url, data = null, isForm = false) => {
         });
         return res.data;
     } catch (error) {
+        // Handle timeout errors
+        if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+            console.error("⏱️ Request timeout:", url);
+            throw new Error("Request timeout. Server đang phản hồi chậm. Vui lòng thử lại sau.");
+        }
+
+        // Handle 504 Gateway Timeout
+        if (error.response?.status === 504) {
+            console.error("⏱️ Gateway Timeout:", url);
+            throw new Error("Gateway timeout. Backend server đang không phản hồi. Vui lòng thử lại sau hoặc liên hệ admin.");
+        }
+
+        // Handle 502 Bad Gateway
+        if (error.response?.status === 502) {
+            console.error("🔥 Bad Gateway:", url);
+            throw new Error("Bad Gateway. Server đang gặp vấn đề. Vui lòng thử lại sau.");
+        }
+
         if (error.response?.status === 401) {
             console.log("401");
             try {
                 const refreshRes = await axios.post(
                     `${API_BASE_URL}/auth/refresh-token`,
                     {},
-                    { withCredentials: true }
+                    { 
+                        withCredentials: true,
+                        timeout: 10000 // 10 seconds for refresh token
+                    }
                 );
                 const newToken = refreshRes.data?.token?.access_token;
                 if (newToken) {
@@ -55,6 +77,7 @@ const apiCall = async (method, url, data = null, isForm = false) => {
                         url: `${API_BASE_URL}${url}`,
                         data,
                         withCredentials: true,
+                        timeout: 30000,
                         headers: {
                             "Content-Type": isForm ? "multipart/form-data" : "application/json",
                             Authorization: `Bearer ${newToken}`,
@@ -93,8 +116,14 @@ function* fetchOrdersSaga(action) {
             toast.error(response.message);
         }
     } catch (error) {
-        yield put(staffOrderListFailed(error.message));
-        toast.error("Lỗi khi tải danh sách đơn hàng");
+        const errorMessage = error.message || "Lỗi khi tải danh sách đơn hàng";
+        yield put(staffOrderListFailed(errorMessage));
+        // Show specific error message for timeout/504
+        if (errorMessage.includes("timeout") || errorMessage.includes("Gateway")) {
+            toast.error(errorMessage, { autoClose: 5000 });
+        } else {
+            toast.error(errorMessage);
+        }
     }
 }
 
@@ -144,8 +173,14 @@ function* fetchOrderStatusesSaga() {
             toast.error(response.message);
         }
     } catch (error) {
-        yield put(staffOrderStatusesFailed(error.message));
-        toast.error("Lỗi khi lấy danh sách trạng thái");
+        const errorMessage = error.message || "Lỗi khi lấy danh sách trạng thái";
+        yield put(staffOrderStatusesFailed(errorMessage));
+        // Show specific error message for timeout/504
+        if (errorMessage.includes("timeout") || errorMessage.includes("Gateway")) {
+            toast.error(errorMessage, { autoClose: 5000 });
+        } else {
+            toast.error(errorMessage);
+        }
     }
 }
 

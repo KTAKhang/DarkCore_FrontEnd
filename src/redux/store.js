@@ -18,6 +18,11 @@ import repairRequestReducer from "./reducers/repairRequestReducer";
 import contactRequestReducer from "./reducers/contactReducer";
 import discountReducer from "./reducers/discountReducer";
 import reviewReducer from "./reducers/reviewReducer";
+
+import reviewStaffReducer from "./reducers/reviewStaffReducer";
+
+import statisticsReducer from "./reducers/statisticsReducer";
+
 import aboutReducer from "./reducers/aboutReducer";
 import founderReducer from "./reducers/founderReducer";
 import orderStaffReducer from "./reducers/orderStaffReducer";
@@ -41,6 +46,11 @@ const rootReducer = combineReducers({
   contact: contactRequestReducer,
   discount: discountReducer,
   review: reviewReducer,
+
+  reviewStaff: reviewStaffReducer,
+
+  statistics: statisticsReducer,
+
   about: aboutReducer,
   founder: founderReducer,
   orderStaffReducer: orderStaffReducer,

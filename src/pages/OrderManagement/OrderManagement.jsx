@@ -11,13 +11,11 @@ import {
   Statistic,
   Row,
   Col,
-  Badge,
   Avatar,
   Tooltip,
   Spin,
   Select,
   Alert,
-  message,
 } from "antd";
 import {
   EditOutlined,
@@ -33,6 +31,7 @@ import {
 } from "@ant-design/icons";
 import UpdateOrder from "./UpdateOrder";
 import ViewOrderDetail from "./ViewOrderDetail";
+import { toast } from "react-toastify";
 import {
   orderListRequest,
   orderStatsRequest,
@@ -79,7 +78,7 @@ const OrderManagement = () => {
       console.log("✅ CurrentOrder loaded:", currentOrder);
       console.log("✅ CurrentOrder orderDetails:", currentOrder.orderDetails);
     }
-  }, [orderItems, currentOrder, stats, loadingList, loadingDetail, loadingStats, error, success]);
+  }, [orderItems, currentOrder, stats, statuses, loadingList, loadingDetail, loadingStats, loadingStatuses, error, success]);
   
   // Simplified state management
   const [loading, setLoading] = useState(false);
@@ -104,6 +103,19 @@ const OrderManagement = () => {
   useEffect(() => { filtersRef.current = filters; }, [filters]);
   useEffect(() => { paginationRef.current = pagination; }, [pagination]);
   useEffect(() => { sortRef.current = sort; }, [sort]);
+
+  // Toast notifications for API feedback
+  useEffect(() => {
+    if (!error) return;
+    toast.error(error, { toastId: "order-management-error" });
+    dispatch(orderClearMessages());
+  }, [error, dispatch]);
+
+  useEffect(() => {
+    if (!success) return;
+    toast.success(success, { toastId: "order-management-success" });
+    dispatch(orderClearMessages());
+  }, [success, dispatch]);
 
   // Simplified API call function with stable reference
   const fetchOrders = useCallback((params = {}) => {
@@ -203,9 +215,9 @@ const OrderManagement = () => {
           email: order.userId?.email,
           phone: order.userId?.phone
         },
-        // Add receiver information (người nhận hàng)
+        // Add receiver information (người nhận hàng) - với fallback logic như ViewOrderDetail
         receiverName: order.receiverName || order.userId?.user_name || "N/A",
-        receiverPhone: order.receiverPhone || "N/A",
+        receiverPhone: order.receiverPhone || order.customer?.phone || order.userId?.phone || order.customerPhone || "N/A",
         receiverAddress: order.receiverAddress || "Địa chỉ chưa được cung cấp",
         status: statusInfo.name,
         statusColor: statusInfo.color,
@@ -238,11 +250,8 @@ const OrderManagement = () => {
     }
     if (filters.paymentMethod !== "all") {
       const paymentMap = {
-        cod: "Tiền mặt",
-        cash: "Tiền mặt",
-        credit_card: "Thẻ tín dụng",
-        bank_transfer: "Chuyển khoản",
-        e_wallet: "Ví điện tử"
+        cod: "Thanh toán COD",
+        vnpay: "VNPay",
       };
       activeFilters.push(`Thanh toán: ${paymentMap[filters.paymentMethod] || filters.paymentMethod}`);
     }
@@ -357,11 +366,8 @@ const OrderManagement = () => {
   // Get payment method text
   const getPaymentMethodText = (method) => {
     const methodMap = {
-      cod: "Tiền mặt",
-      cash: "Tiền mặt",
-      credit_card: "Thẻ tín dụng",
-      bank_transfer: "Chuyển khoản",
-      e_wallet: "Ví điện tử"
+      cod: "Thanh toán COD",
+      vnpay: "VNPay",
     };
     return methodMap[method] || method;
   };
@@ -377,7 +383,7 @@ const OrderManagement = () => {
             <Text strong style={{ color: "#0D364C", display: "block", fontSize: 16 }}>{record.orderNumber}</Text>
             <Text type="secondary" style={{ fontSize: 12, cursor: "pointer" }} onClick={() => {
               navigator.clipboard.writeText(record._id);
-              message.success("Đã copy ID vào clipboard");
+              toast.success("Đã copy ID vào clipboard", { toastId: `order-copy-${record._id}` });
             }} title="Click để copy ID">
               ID: {record._id}
             </Text>
@@ -390,9 +396,9 @@ const OrderManagement = () => {
       key: "customer",
       render: (_, record) => (
         <div>
-          <Text strong style={{ color: "#0D364C", display: "block", fontSize: 14 }}>{record.customerName}</Text>
+          <Text strong style={{ color: "#0D364C", display: "block", fontSize: 14 }}>{record.receiverName || record.customerName}</Text>
           <Text type="secondary" style={{ fontSize: 12 }}>{record.customerEmail}</Text>
-          <Text type="secondary" style={{ fontSize: 12, display: "block" }}>{record.customerPhone}</Text>
+          <Text type="secondary" style={{ fontSize: 12, display: "block" }}>{record.receiverPhone}</Text>
         </div>
       ),
     },
@@ -442,14 +448,9 @@ const OrderManagement = () => {
       render: (status) => {
         const config = getStatusConfig(status);
         return (
-          <Badge
-            status={status === "delivered" || status === "completed" ? "success" : status === "cancelled" ? "error" : "processing"}
-            text={
-              <Tag color={config.color} style={{ borderRadius: 16, fontWeight: 500, padding: "4px 12px" }} icon={config.icon}>
-                {config.text}
-              </Tag>
-            }
-          />
+          <Tag color={config.color} style={{ borderRadius: 16, fontWeight: 500, padding: "4px 12px" }} icon={config.icon}>
+            {config.text}
+          </Tag>
         );
       },
     },
@@ -596,11 +597,8 @@ const OrderManagement = () => {
               suffixIcon={<FilterOutlined style={{ color: "#13C2C2" }} />}
             >
               <Select.Option value="all">Tất cả</Select.Option>
-              <Select.Option value="cod">Tiền mặt</Select.Option>
-              <Select.Option value="cash">Tiền mặt</Select.Option>
-              <Select.Option value="credit_card">Thẻ tín dụng</Select.Option>
-              <Select.Option value="bank_transfer">Chuyển khoản</Select.Option>
-              <Select.Option value="e_wallet">Ví điện tử</Select.Option>
+              <Select.Option value="cod">Thanh toán COD</Select.Option>
+              <Select.Option value="vnpay">VNPay</Select.Option>
             </Select>
             <Select
               value={(() => {
@@ -630,36 +628,6 @@ const OrderManagement = () => {
         </div>
 
         {/* Error and Success Messages */}
-        {error && (
-          <Alert
-            message={error}
-            type="error"
-            showIcon
-            closable
-            onClose={() => dispatch(orderClearMessages())}
-            style={{ 
-              marginBottom: 16, 
-              borderColor: "#ff4d4f", 
-              backgroundColor: "#fff2f0"
-            }}
-          />
-        )}
-        
-        {success && (
-          <Alert
-            message={success}
-            type="success"
-            showIcon
-            closable
-            onClose={() => dispatch(orderClearMessages())}
-            style={{ 
-              marginBottom: 16, 
-              borderColor: "#52c41a", 
-              backgroundColor: "#f6ffed"
-            }}
-          />
-        )}
-
         {/* Filter status indicator */}
         {hasActiveFilters && (
           <Alert

@@ -55,6 +55,7 @@ import ShowAboutUs from "../pages/CustomerVIew/ShowAboutUs";
 import FoundersManagement from "../pages/FoundersManagement/FoundersManagement";
 import FinanceLayout from "../layout/FinanceLayout";
 import StaffOrderManagement from "../pages/StaffOrderManagement/OrderManagement";
+import StaffReviewManagement from "../pages/StaffReviewManagement/StaffReviewManagement";
 import CheckoutPage from "../pages/CheckoutPage";
 import PaymentResultPage from "../pages/PaymentResultPage";
 
@@ -104,7 +105,6 @@ export const routes = [
     path: "/wishlist",
     element: <WishlistPage />,
   },
-
   // THÊM: Trang tin tức cho customer (public, chỉ published news)
   {
     path: "/news",
@@ -118,13 +118,11 @@ export const routes = [
     path: "/about",
     element: <ShowAboutUs />,
   },
-
   // Route public cho payment result (VNPay callback)
   {
     path: "/payment-result",
     element: <PaymentResultPage />,
   },
-
   // THÊM: Trang mã giảm giá cho user (public)
   {
     path: "/discounts",
@@ -178,6 +176,7 @@ export const routes = [
       { path: "order", element: <StaffOrderManagement /> },
       { path: "change-password", element: <UpdatePassword /> },
       { path: "profile", element: <ProfileManagement /> },
+      { path: "review", element: <StaffReviewManagement /> },
 
     ],
   },
