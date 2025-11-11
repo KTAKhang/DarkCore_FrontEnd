@@ -236,12 +236,37 @@ const OrderHistoryDetails = ({ isOpen, onClose, order, loading = false }) => {
                     </div>
                   </div>
                 ))}
-                <div className="flex justify-end pt-4 border-t border-gray-200">
-                  <div className="text-right">
-                    <p className="text-sm text-gray-500 mb-1">Tổng cộng:</p>
-                    <p className="text-2xl font-bold text-blue-600">
-                      {formatPrice(order.totalPrice)}
-                    </p>
+                <div className="pt-4 border-t border-gray-200">
+                  <div className="space-y-2">
+                    {/* Subtotal */}
+                    <div className="flex justify-between text-gray-700">
+                      <p className="text-sm">Tạm tính:</p>
+                      <p className="font-medium">{formatPrice(order.subtotal || order.totalPrice)}</p>
+                    </div>
+                    
+                    {/* Shipping Fee */}
+                    {order.shippingFee > 0 && (
+                      <div className="flex justify-between text-gray-700">
+                        <p className="text-sm">Phí vận chuyển:</p>
+                        <p className="font-medium">{formatPrice(order.shippingFee)}</p>
+                      </div>
+                    )}
+                    
+                    {/* Discount */}
+                    {order.discount > 0 && (
+                      <div className="flex justify-between text-green-600">
+                        <p className="text-sm">Giảm giá:</p>
+                        <p className="font-medium">-{formatPrice(order.discount)}</p>
+                      </div>
+                    )}
+                    
+                    {/* Total */}
+                    <div className="flex justify-between pt-2 border-t border-gray-200">
+                      <p className="text-base font-semibold text-gray-900">Tổng cộng:</p>
+                      <p className="text-2xl font-bold text-blue-600">
+                        {formatPrice(order.totalPrice)}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>

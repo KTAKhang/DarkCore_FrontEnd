@@ -44,7 +44,7 @@ export const founderPublicListSuccess = (items) => ({ type: FOUNDER_PUBLIC_LIST_
 export const founderPublicListFailure = (error) => ({ type: FOUNDER_PUBLIC_LIST_FAILURE, payload: error });
 
 export const founderListRequest = (query = {}) => ({ type: FOUNDER_LIST_REQUEST, payload: { query } });
-export const founderListSuccess = (items) => ({ type: FOUNDER_LIST_SUCCESS, payload: { items } });
+export const founderListSuccess = (items, pagination) => ({ type: FOUNDER_LIST_SUCCESS, payload: { items, pagination } });
 export const founderListFailure = (error) => ({ type: FOUNDER_LIST_FAILURE, payload: error });
 
 export const founderDetailRequest = (id) => ({ type: FOUNDER_DETAIL_REQUEST, payload: { id } });

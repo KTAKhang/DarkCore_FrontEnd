@@ -14,7 +14,6 @@ import {
   Space,
   Card,
   Upload,
-  message,
 } from "antd";
 import {
   SaveOutlined,
@@ -63,12 +62,12 @@ const UpdateFounderModal = ({ visible, onClose, onSuccess, founder }) => {
   const beforeUpload = (file) => {
     const isImage = file.type.startsWith("image/");
     if (!isImage) {
-      message.error("Chỉ được phép tải lên file hình ảnh!");
+      // Toast sẽ được hiển thị từ saga nếu có lỗi
       return Upload.LIST_IGNORE;
     }
     const isLt5M = file.size / 1024 / 1024 < 5;
     if (!isLt5M) {
-      message.error("Kích thước file phải nhỏ hơn 5MB!");
+      // Toast sẽ được hiển thị từ saga nếu có lỗi
       return Upload.LIST_IGNORE;
     }
     setAvatarFile(file);
@@ -90,12 +89,29 @@ const UpdateFounderModal = ({ visible, onClose, onSuccess, founder }) => {
     setPrevUpdating(updating);
   }, [updating, prevUpdating, successMessage, error, hasCalledSuccess, onSuccess]);
 
+  // Handle error from backend - display on form field if it's about fullName
+  useEffect(() => {
+    if (error && !updating) {
+      // Check if error is about duplicate fullName
+      if (error.includes("đã tồn tại") || error.includes("tồn tại trong hệ thống")) {
+        form.setFields([
+          {
+            name: 'fullName',
+            errors: [error],
+          },
+        ]);
+      }
+    }
+  }, [error, updating, form]);
+
   // Load founder data when modal opens
   useEffect(() => {
     if (visible) {
       setHasCalledSuccess(false);
       setAvatarFile(null);
       setAvatarRemoved(false);
+      // Clear any field errors
+      form.setFields([]);
 
       if (founder && founder._id) {
         form.setFieldsValue({
@@ -116,7 +132,7 @@ const UpdateFounderModal = ({ visible, onClose, onSuccess, founder }) => {
 
   const handleSubmit = (values) => {
     if (!founder || !founder._id) {
-      message.error("Không tìm thấy thông tin Founder!");
+      // Toast sẽ được hiển thị từ saga nếu có lỗi
       return;
     }
 
@@ -404,9 +420,16 @@ const UpdateFounderModal = ({ visible, onClose, onSuccess, founder }) => {
                 <Form.Item
                   label="Thứ tự hiển thị"
                   name="sortOrder"
-                  tooltip="Số thứ tự càng nhỏ sẽ hiển thị càng trước"
+                  tooltip="Số thứ tự càng nhỏ sẽ hiển thị càng trước (tối thiểu là 1)"
+                  rules={[
+                    {
+                      type: "number",
+                      min: 1,
+                      message: "Thứ tự hiển thị phải lớn hơn hoặc bằng 1!",
+                    },
+                  ]}
                 >
-                  <InputNumber min={0} style={{ width: "100%" }} />
+                  <InputNumber min={1} precision={0} style={{ width: "100%" }} />
                 </Form.Item>
               </Col>
               <Col xs={24} md={12}>

@@ -16,6 +16,11 @@ import repairRequestSaga from "./repairRequestSaga";
 import contactSaga from "./contactSaga";
 import discountSaga from "./discountSaga";
 import reviewSaga from "./reviewSaga";
+
+import reviewStaffSaga from "./reviewStaffSaga";
+
+import statisticsSaga from "./statisticsSaga";
+
 import aboutSaga from "./aboutSaga";
 import founderSaga from "./founderSaga";
 import orderStaffSaga from "./orderStaffSaga";
@@ -40,10 +45,17 @@ export default function* rootSaga() {
       contactSaga(),
       discountSaga(),
       reviewSaga(),
+
+      reviewStaffSaga(),
+
+      statisticsSaga(),
+
       aboutSaga(),
       founderSaga(),
       orderStaffSaga(),
+
       staffProductSaga(),
+
     ]);
   } catch (error) {
     console.error("🔴 rootSaga ERROR:", error);

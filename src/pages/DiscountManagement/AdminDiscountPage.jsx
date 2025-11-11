@@ -60,11 +60,11 @@ const AdminDiscountPage = () => {
     loadData();
   }, [currentPage, sortBy, sortOrder, statusFilter]);
 
-  // Debounced search effect
+  
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       if (searchTerm !== '') {
-        setCurrentPage(1); // Reset to first page when searching
+        setCurrentPage(1); // trả về trang 1 khi tìm kiếm
         loadData();
       } else {
         loadData();
@@ -73,7 +73,7 @@ const AdminDiscountPage = () => {
 
     return () => clearTimeout(timeoutId);
   }, [searchTerm]);
-
+  //thông báo lỗi và thành công khi thao tác với mã giảm giá
   useEffect(() => {
     if (error) {
       toast.error(error);
@@ -84,7 +84,7 @@ const AdminDiscountPage = () => {
       dispatch(discountClearMessages());
     }
   }, [error, success, dispatch]);
-
+//format giá tiền theo định dạng Việt Nam
   const formatPrice = (price) => {
     return new Intl.NumberFormat('vi-VN').format(price) + '₫';
   };
@@ -93,11 +93,23 @@ const AdminDiscountPage = () => {
     return new Date(date).toLocaleDateString('vi-VN');
   };
 
-  const isActive = (discount) => {
+  const getDiscountStatus = (discount) => {
     const now = new Date();
-    return discount.isActive && 
-           now >= new Date(discount.startDate) && 
-           now <= new Date(discount.endDate);
+    const startDate = new Date(discount.startDate);
+    const endDate = new Date(discount.endDate);
+    
+    if (now < startDate) {
+      return 'upcoming'; // Sắp diễn ra
+    } else if (now > endDate) {
+      return 'expired'; // Đã hết hạn
+    } else {
+      return 'active'; // Đang hoạt động
+    }
+  };
+
+  const isActive = (discount) => {
+    // Kiểm tra xem mã giảm giá có đang hoạt động không
+    return getDiscountStatus(discount) === 'active';
   };
 
   const handleCreate = () => {
@@ -144,7 +156,7 @@ const AdminDiscountPage = () => {
     setSearchTerm('');
     setCurrentPage(1);
   };
-
+// hiển thị biểu tượng sắp xếp dựa trên trường đã chọn
   const getSortIcon = (field) => {
     if (sortBy !== field) return null;
     return sortOrder === 'asc' ? <SortAsc className="w-4 h-4" /> : <SortDesc className="w-4 h-4" />;
@@ -155,7 +167,7 @@ const AdminDiscountPage = () => {
       dispatch(discountDeactivateRequest(discount._id));
     }
   };
-
+// Giao diện trang quản lý mã giảm giá
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="container mx-auto px-4">
@@ -204,10 +216,9 @@ const AdminDiscountPage = () => {
               className="px-3 py-1 border border-gray-200 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="all">Tất cả trạng thái</option>
-              <option value="active">Đang hoạt động</option>
               <option value="expired">Đã hết hạn</option>
               <option value="upcoming">Sắp diễn ra</option>
-              <option value="inactive">Không hoạt động</option>
+              <option value="active">Đang hoạt động</option>
             </select>
 
             {/* Sort Options */}
@@ -312,6 +323,7 @@ const AdminDiscountPage = () => {
                     </th>
                   </tr>
                 </thead>
+            
                 <tbody className="bg-white divide-y divide-gray-200">
                   {items.map((discount) => (
                     <tr key={discount._id} className="hover:bg-gray-50">
@@ -354,17 +366,31 @@ const AdminDiscountPage = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
-                          {isActive(discount) ? (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                              <CheckCircle className="w-3 h-3 mr-1" />
-                              Đang hoạt động
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                              <XCircle className="w-3 h-3 mr-1" />
-                              Không hoạt động
-                            </span>
-                          )}
+                          {(() => {
+                            const status = getDiscountStatus(discount);
+                            if (status === 'active') {
+                              return (
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                  <CheckCircle className="w-3 h-3 mr-1" />
+                                  Đang hoạt động
+                                </span>
+                              );
+                            } else if (status === 'upcoming') {
+                              return (
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                  <Clock className="w-3 h-3 mr-1" />
+                                  Sắp diễn ra
+                                </span>
+                              );
+                            } else {
+                              return (
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                  <XCircle className="w-3 h-3 mr-1" />
+                                  Đã hết hạn
+                                </span>
+                              );
+                            }
+                          })()}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -407,19 +433,11 @@ const AdminDiscountPage = () => {
             <div className="text-center py-12">
               <div className="text-6xl mb-4">🎫</div>
                 <h3 className="text-xl font-medium text-gray-900 mb-2">
-                  {searchTerm || statusFilter !== 'all' ? 'Không tìm thấy mã giảm giá' : 'Chưa có mã giảm giá nào'}
+                  Không tìm thấy mã giảm giá
                 </h3>
                 <p className="text-gray-600 mb-4">
-                  {searchTerm || statusFilter !== 'all' ? 'Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm' : 'Tạo mã giảm giá đầu tiên để bắt đầu'}
+                  Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm
                 </p>
-                {!searchTerm && statusFilter === 'all' && (
-                <button
-                  onClick={handleCreate}
-                  className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  Tạo mã giảm giá
-                </button>
-              )}
             </div>
           </div>
         )}

@@ -32,20 +32,20 @@ const DiscountListPage = () => {
   const filteredDiscounts = activeItems.filter(discount =>
     discount.code.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
+  // hàm phân loại mã giảm giá theo trạng thái đang hoạt động 
   const activeDiscounts = filteredDiscounts.filter(discount => {
     const now = new Date();
-    return discount.isActive && 
-           now >= new Date(discount.startDate) && 
-           now <= new Date(discount.endDate);
+    return discount.isActive &&
+      now >= new Date(discount.startDate) &&
+      now <= new Date(discount.endDate);
   });
-
+  // hàm phân loại mã giảm giá theo trạng thái đã hết hạn
   const expiredDiscounts = filteredDiscounts.filter(discount => {
     const now = new Date();
     return !discount.isActive || now > new Date(discount.endDate);
   });
 
-  // Carousel functions
+  // Carousel chuyển đến slide tiếp theo
   const nextSlide = (type) => {
     if (type === 'active') {
       const maxIndex = Math.ceil(activeDiscounts.length / itemsPerSlide) - 1;
@@ -55,7 +55,7 @@ const DiscountListPage = () => {
       setExpiredCarouselIndex(prev => prev < maxIndex ? prev + 1 : 0);
     }
   };
-
+  // Carousel chuyển đến slide trước đó
   const prevSlide = (type) => {
     if (type === 'active') {
       const maxIndex = Math.ceil(activeDiscounts.length / itemsPerSlide) - 1;
@@ -190,7 +190,7 @@ const DiscountListPage = () => {
                   {activeDiscounts.length} mã
                 </span>
               </div>
-              
+
               {/* Carousel Container */}
               <div className="relative">
                 {/* Previous Button */}
@@ -325,7 +325,7 @@ const DiscountListPage = () => {
                                 </div>
                               </div>
                             ))}
-                            {/* Fill empty slots if needed */}
+                            {/* Fill empty slots ifee nded */}
                             {Array.from({ length: itemsPerSlide - visibleItems.length }, (_, index) => (
                               <div key={`empty-${index}`} style={{ width: `${100 / itemsPerSlide}%`, minWidth: '200px', maxWidth: '300px', flexShrink: 0 }}></div>
                             ))}
@@ -348,7 +348,7 @@ const DiscountListPage = () => {
                 )}
               </div>
 
-              {/* Carousel Indicators */}
+              {/* Carousel điều hướng giữa các slide */}
               {activeDiscounts.length > itemsPerSlide && (
                 <div className="flex justify-center mt-6 space-x-2">
                   {Array.from({ length: Math.ceil(activeDiscounts.length / itemsPerSlide) }, (_, index) => (
@@ -363,194 +363,7 @@ const DiscountListPage = () => {
               )}
             </div>
           )}
-
-          {/* Expired Discounts */}
-          {!loadingActive && expiredDiscounts.length > 0 && (
-            <div className="mb-12">
-              <div className="flex items-center mb-6">
-                <div className="bg-gray-100 p-2 rounded-lg mr-3">
-                  <Calendar className="w-6 h-6 text-gray-600" />
-                </div>
-                <h2 className="text-2xl font-bold text-gray-900">Mã giảm giá đã hết hạn</h2>
-                <span className="ml-3 bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm font-medium">
-                  {expiredDiscounts.length} mã
-                </span>
-              </div>
-              
-              {/* Carousel Container */}
-              <div className="relative">
-                {/* Previous Button */}
-                {expiredDiscounts.length > itemsPerSlide && (
-                  <button
-                    onClick={() => prevSlide('expired')}
-                    className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-white shadow-lg rounded-full p-3 hover:bg-gray-50 transition-colors"
-                    style={{ marginLeft: '-20px' }}
-                  >
-                    <ChevronLeft className="w-6 h-6 text-gray-600" />
-                  </button>
-                )}
-
-                {/* Carousel Content */}
-                <div
-                  className="overflow-hidden cursor-grab active:cursor-grabbing"
-                  onTouchStart={onTouchStart}
-                  onTouchMove={onTouchMove}
-                  onTouchEnd={() => onTouchEnd('expired')}
-                  onMouseDown={onMouseDown}
-                  onMouseMove={onMouseMove}
-                  onMouseUp={() => onMouseUp('expired')}
-                  onMouseLeave={() => setIsDragging(false)}
-                >
-                  <div
-                    className="flex transition-transform duration-300 ease-in-out"
-                    style={{
-                      transform: `translateX(-${expiredCarouselIndex * 100}%)`,
-                      width: `${Math.ceil(expiredDiscounts.length / itemsPerSlide) * 100}%`
-                    }}
-                  >
-                    {Array.from({ length: Math.ceil(expiredDiscounts.length / itemsPerSlide) }, (_, slideIndex) => {
-                      const visibleItems = getVisibleItems(expiredDiscounts, slideIndex);
-
-                      return (
-                        <div key={slideIndex} className="w-full flex-shrink-0" style={{ width: '100%' }}>
-                          <div
-                            className="flex gap-3 px-2"
-                            style={{
-                              width: '100%',
-                              justifyContent: 'flex-start'
-                            }}
-                          >
-                            {visibleItems.map((discount) => (
-                              <div key={discount._id} style={{ width: `${100 / itemsPerSlide}%`, minWidth: '200px', maxWidth: '300px', flexShrink: 0 }}>
-                                <div className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200 overflow-hidden h-full">
-                                  {/* Header with code and copy button */}
-                                  <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-2 text-white">
-                                    <div className="flex items-center justify-between">
-                                      <div>
-                                        <h3 className="text-base font-bold">{discount.code}</h3>
-                                        <p className="text-blue-100 text-sm">Mã giảm giá</p>
-                                      </div>
-                                      <button
-                                        onClick={() => {
-                                          navigator.clipboard.writeText(discount.code);
-                                          toast.success('Đã sao chép mã giảm giá!');
-                                        }}
-                                        className="bg-white bg-opacity-20 hover:bg-opacity-30 p-1 rounded-lg transition-colors"
-                                        title="Sao chép mã"
-                                      >
-                                        <Copy className="w-3 h-3" />
-                                      </button>
-                                    </div>
-                                  </div>
-
-                                  {/* Content */}
-                                  <div className="p-3">
-                                    {/* Discount percentage */}
-                                    <div className="flex items-center mb-2">
-                                      <div className="bg-green-100 p-1.5 rounded-lg mr-2">
-                                        <Percent className="w-4 h-4 text-green-600" />
-                                      </div>
-                                      <div>
-                                        <p className="text-sm text-gray-600">Giảm giá</p>
-                                        <p className="text-xl font-bold text-green-600">{discount.discountPercent}%</p>
-                                      </div>
-                                    </div>
-
-                                    {/* Minimum order value */}
-                                    <div className="flex items-center mb-2">
-                                      <div className="bg-blue-100 p-1.5 rounded-lg mr-2">
-                                        <DollarSign className="w-4 h-4 text-blue-600" />
-                                      </div>
-                                      <div>
-                                        <p className="text-sm text-gray-600">Tối thiểu</p>
-                                        <p className="text-sm font-semibold text-blue-600">{new Intl.NumberFormat('vi-VN').format(discount.minOrderValue)}₫</p>
-                                      </div>
-                                    </div>
-
-                                    {/* Maximum discount limit */}
-                                    {discount.maxDiscountAmount && (
-                                      <div className="flex items-center mb-2">
-                                        <div className="bg-red-100 p-1.5 rounded-lg mr-2">
-                                          <DollarSign className="w-4 h-4 text-red-600" />
-                                        </div>
-                                        <div>
-                                          <p className="text-sm text-gray-600">Tối đa</p>
-                                          <p className="text-sm font-semibold text-red-600">{new Intl.NumberFormat('vi-VN').format(discount.maxDiscountAmount)}₫</p>
-                                        </div>
-                                      </div>
-                                    )}
-
-                                    {/* Validity period */}
-                                    <div className="space-y-1 mb-2">
-                                      <div className="flex items-center">
-                                        <Calendar className="w-3 h-3 text-gray-400 mr-1" />
-                                        <div>
-                                          <p className="text-sm text-gray-600">Từ</p>
-                                          <p className="text-sm font-medium text-gray-900">{new Date(discount.startDate).toLocaleDateString('vi-VN')}</p>
-                                        </div>
-                                      </div>
-                                      <div className="flex items-center">
-                                        <Clock className="w-3 h-3 text-gray-400 mr-1" />
-                                        <div>
-                                          <p className="text-sm text-gray-600">Đến</p>
-                                          <p className="text-sm font-medium text-gray-900">{new Date(discount.endDate).toLocaleDateString('vi-VN')}</p>
-                                        </div>
-                                      </div>
-                                    </div>
-
-                                    {/* Status */}
-                                    <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-                                      <div className="flex items-center">
-                                        <CheckCircle className={`w-3 h-3 mr-1 ${discount.isActive ? 'text-green-500' : 'text-gray-400'}`} />
-                                        <span className={`text-sm font-medium px-2 py-1 rounded-full border ${discount.isActive ? 'bg-green-100 text-green-800 border-green-200' : 'bg-gray-100 text-gray-600 border-gray-200'}`}>
-                                          {discount.isActive ? 'Hoạt động' : 'Không hoạt động'}
-                                        </span>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                            {/* Fill empty slots if needed */}
-                            {Array.from({ length: itemsPerSlide - visibleItems.length }, (_, index) => (
-                              <div key={`empty-${index}`} style={{ width: `${100 / itemsPerSlide}%`, minWidth: '200px', maxWidth: '300px', flexShrink: 0 }}></div>
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Next Button */}
-                {expiredDiscounts.length > itemsPerSlide && (
-                  <button
-                    onClick={() => nextSlide('expired')}
-                    className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-white shadow-lg rounded-full p-3 hover:bg-gray-50 transition-colors"
-                    style={{ marginRight: '-20px' }}
-                  >
-                    <ChevronRight className="w-6 h-6 text-gray-600" />
-                  </button>
-                )}
-              </div>
-
-              {/* Carousel Indicators */}
-              {expiredDiscounts.length > itemsPerSlide && (
-                <div className="flex justify-center mt-6 space-x-2">
-                  {Array.from({ length: Math.ceil(expiredDiscounts.length / itemsPerSlide) }, (_, index) => (
-                    <button
-                      key={index}
-                      onClick={() => setExpiredCarouselIndex(index)}
-                      className={`w-3 h-3 rounded-full transition-colors ${index === expiredCarouselIndex ? 'bg-gray-600' : 'bg-gray-300'
-                        }`}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* No Results */}
+          {/*không có kết quả, hiển thị khi không tìm được mã giảm giá */}
           {!loadingActive && filteredDiscounts.length === 0 && (
             <div className="text-center py-12">
               <div className="text-6xl mb-4">🎫</div>
@@ -571,7 +384,7 @@ const DiscountListPage = () => {
             </div>
           )}
 
-          {/* Info Section */}
+          {/* hướng dẫn sử dụng mã giảm giá */}
           <div className="bg-blue-50 rounded-xl p-8 mt-12">
             <div className="text-center">
               <h3 className="text-2xl font-bold text-blue-900 mb-4">Cách sử dụng mã giảm giá</h3>

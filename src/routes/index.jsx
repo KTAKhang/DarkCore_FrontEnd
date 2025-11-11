@@ -55,6 +55,7 @@ import ShowAboutUs from "../pages/CustomerVIew/ShowAboutUs";
 import FoundersManagement from "../pages/FoundersManagement/FoundersManagement";
 import FinanceLayout from "../layout/FinanceLayout";
 import StaffOrderManagement from "../pages/StaffOrderManagement/OrderManagement";
+import StaffReviewManagement from "../pages/StaffReviewManagement/StaffReviewManagement";
 import CheckoutPage from "../pages/CheckoutPage";
 import PaymentResultPage from "../pages/PaymentResultPage";
 import StaffProductManagement from "../pages/StaffProduct/StaffProductManagement";
@@ -173,7 +174,13 @@ export const routes = [
     ),
     children: [
       { path: "order", element: <StaffOrderManagement /> },
+
       { path: "product", element: <StaffProductManagement /> }
+
+      { path: "change-password", element: <UpdatePassword /> },
+      { path: "profile", element: <ProfileManagement /> },
+      { path: "review", element: <StaffReviewManagement /> },
+
     ],
   },
 
@@ -224,6 +231,8 @@ export const routes = [
       { path: "jobs", element: <RepairStaffJobs /> },
       { path: "jobs/:id", element: <RepairStaffJobDetail /> },
       { path: "services", element: <RepairStaffServices /> },
+      { path: "change-password", element: <UpdatePassword /> },
+      { path: "profile", element: <ProfileManagement /> },
     ],
   },
 

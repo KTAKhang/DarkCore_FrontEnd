@@ -14,7 +14,6 @@ import {
   Space,
   Card,
   Upload,
-  message,
 } from "antd";
 import {
   SaveOutlined,
@@ -62,12 +61,12 @@ const CreateFounderModal = ({ visible, onClose, onSuccess }) => {
   const beforeUpload = (file) => {
     const isImage = file.type.startsWith("image/");
     if (!isImage) {
-      message.error("Chỉ được phép tải lên file hình ảnh!");
+      // Toast sẽ được hiển thị từ saga nếu có lỗi
       return Upload.LIST_IGNORE;
     }
     const isLt5M = file.size / 1024 / 1024 < 5;
     if (!isLt5M) {
-      message.error("Kích thước file phải nhỏ hơn 5MB!");
+      // Toast sẽ được hiển thị từ saga nếu có lỗi
       return Upload.LIST_IGNORE;
     }
     setAvatarFile(file);
@@ -87,14 +86,30 @@ const CreateFounderModal = ({ visible, onClose, onSuccess }) => {
     setPrevCreating(creating);
   }, [creating, prevCreating, successMessage, error, hasCalledSuccess, onSuccess]);
 
+  // Handle error from backend - display on form field if it's about fullName
+  useEffect(() => {
+    if (error && !creating) {
+      // Check if error is about duplicate fullName
+      if (error.includes("đã tồn tại") || error.includes("tồn tại trong hệ thống")) {
+        form.setFields([
+          {
+            name: 'fullName',
+            errors: [error],
+          },
+        ]);
+      }
+    }
+  }, [error, creating, form]);
+
   // Reset form when modal opens
   useEffect(() => {
     if (visible) {
       setHasCalledSuccess(false);
       form.resetFields();
+      // Clear any field errors
+      form.setFields([]);
       form.setFieldsValue({
         status: true,
-        sortOrder: 0,
       });
       setSocialMedia({});
       setAchievements([]);
@@ -374,27 +389,15 @@ const CreateFounderModal = ({ visible, onClose, onSuccess }) => {
 
           {/* Settings */}
           <Card title="Cài đặt" size="small">
-            <Row gutter={16}>
-              <Col xs={24} md={12}>
-                <Form.Item
-                  label="Thứ tự hiển thị"
-                  name="sortOrder"
-                  tooltip="Số thứ tự càng nhỏ sẽ hiển thị càng trước"
-                >
-                  <InputNumber min={0} style={{ width: "100%" }} />
-                </Form.Item>
-              </Col>
-              <Col xs={24} md={12}>
-                <Form.Item
-                  label="Hiển thị"
-                  name="status"
-                  valuePropName="checked"
-                  tooltip="Bật để hiển thị Founder trên trang web"
-                >
-                  <Switch />
-                </Form.Item>
-              </Col>
-            </Row>
+            <Form.Item
+              label="Hiển thị"
+              name="status"
+              valuePropName="checked"
+              tooltip="Bật để hiển thị Founder trên trang web"
+            >
+              <Switch />
+            </Form.Item>
+  
           </Card>
 
           {/* Submit Button */}
