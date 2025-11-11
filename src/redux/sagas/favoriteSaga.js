@@ -33,8 +33,8 @@ const handleError = (error) => {
         console.log('🚫 401 error handled by axios interceptor');
         return errorMessage;
     } else if (error.response?.status === 403) {
-        console.log('🚫 403 error - access denied');
-        toast.error("Không có quyền truy cập. Vui lòng đăng nhập!");
+        console.log('🚫 403 error handled by axios interceptor');
+        return errorMessage;
     } else {
         toast.error(errorMessage);
     }
