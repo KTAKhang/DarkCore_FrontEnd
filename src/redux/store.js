@@ -27,7 +27,7 @@ import aboutReducer from "./reducers/aboutReducer";
 import founderReducer from "./reducers/founderReducer";
 import orderStaffReducer from "./reducers/orderStaffReducer";
 import rootSaga from "./sagas/rootSaga";
-
+import staffProductReducer from "./reducers/staffProductReducer";
 const rootReducer = combineReducers({
   auth: authReducer,
   category: categoryReducer,
@@ -54,6 +54,7 @@ const rootReducer = combineReducers({
   about: aboutReducer,
   founder: founderReducer,
   orderStaffReducer: orderStaffReducer,
+  staffProduct: staffProductReducer,
 });
 
 const sagaMiddleware = createSagaMiddleware();
