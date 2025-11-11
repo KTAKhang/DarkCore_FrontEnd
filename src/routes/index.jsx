@@ -57,7 +57,7 @@ import FinanceLayout from "../layout/FinanceLayout";
 import StaffOrderManagement from "../pages/StaffOrderManagement/OrderManagement";
 import CheckoutPage from "../pages/CheckoutPage";
 import PaymentResultPage from "../pages/PaymentResultPage";
-
+import StaffProductManagement from "../pages/StaffProduct/StaffProductManagement";
 
 export const routes = [
   // Trang chủ
@@ -173,7 +173,7 @@ export const routes = [
     ),
     children: [
       { path: "order", element: <StaffOrderManagement /> },
-
+      { path: "product", element: <StaffProductManagement /> }
     ],
   },
 

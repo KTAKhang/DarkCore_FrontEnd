@@ -19,6 +19,7 @@ import reviewSaga from "./reviewSaga";
 import aboutSaga from "./aboutSaga";
 import founderSaga from "./founderSaga";
 import orderStaffSaga from "./orderStaffSaga";
+import staffProductSaga from "./staffProductSaga";
 export default function* rootSaga() {
   try {
     yield all([
@@ -42,6 +43,7 @@ export default function* rootSaga() {
       aboutSaga(),
       founderSaga(),
       orderStaffSaga(),
+      staffProductSaga(),
     ]);
   } catch (error) {
     console.error("🔴 rootSaga ERROR:", error);
