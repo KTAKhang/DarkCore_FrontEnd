@@ -2,11 +2,13 @@ import { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import PropTypes from 'prop-types';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Header from '../../components/Header/Header';
 import Footer from '../../components/Footer/Footer';
 import {
     favoriteListRequest,
     favoriteToggleRequest,
+    favoriteRemoveAllRequest,
     favoriteClearMessages
 } from '../../redux/actions/favoriteActions';
 
@@ -19,6 +21,7 @@ const WishlistPage = () => {
 
     let favorites, favoritesLoading, favoritesError, favoritesPagination;
     let toggleFavoriteLoading, toggleFavoriteError;
+    let removeAllLoading, removeAllError;
 
     try {
         favorites = favoriteState.items || [];
@@ -29,6 +32,9 @@ const WishlistPage = () => {
         toggleFavoriteLoading = favoriteState.toggleLoading || false;
         toggleFavoriteError = favoriteState.toggleError || null;
         
+        removeAllLoading = favoriteState.removeAllLoading || false;
+        removeAllError = favoriteState.removeAllError || null;
+        
     } catch (error) {
         console.error('❌ Error destructuring Redux state:', error);
         favorites = [];
@@ -37,15 +43,18 @@ const WishlistPage = () => {
         favoritesPagination = null;
         toggleFavoriteLoading = false;
         toggleFavoriteError = null;
+        removeAllLoading = false;
+        removeAllError = null;
     }
 
     // Local state
     const [searchTerm, setSearchTerm] = useState('');
-    const [cartItems, setCartItems] = useState(3);
+    const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
     const [sortBy, setSortBy] = useState('default');
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize] = useState(8);
     const [shouldReloadFavorites, setShouldReloadFavorites] = useState(false);
+    const [hasRemovedAll, setHasRemovedAll] = useState(false);
 
     const formatPrice = (price) => {
         return new Intl.NumberFormat('vi-VN').format(price) + '₫';
@@ -53,7 +62,6 @@ const WishlistPage = () => {
 
 
     const addToCart = () => {
-        setCartItems(prev => prev + 1);
         // Add cart logic here
     };
 
@@ -65,6 +73,58 @@ const WishlistPage = () => {
         dispatch(favoriteToggleRequest(productId));
         setShouldReloadFavorites(true);
     };
+
+    const handleClearAll = () => {
+        if (!favorites || favorites.length === 0) return;
+
+        const totalCount = favoritesPagination?.total || favorites.length;
+        const confirmMessage = `Bạn có chắc chắn muốn xóa tất cả ${totalCount} sản phẩm khỏi danh sách yêu thích?\n\nLưu ý: Thao tác này sẽ xóa tất cả sản phẩm trong danh sách yêu thích của bạn.`;
+        if (!window.confirm(confirmMessage)) return;
+
+        // Dispatch action để xóa tất cả
+        dispatch(favoriteRemoveAllRequest());
+        setCurrentPage(1);
+        setHasRemovedAll(true);
+    };
+
+    // Reload danh sách sau khi xóa tất cả thành công
+    useEffect(() => {
+        if (hasRemovedAll && !removeAllLoading && !removeAllError) {
+            // Đã xóa xong, reload để đảm bảo UI được cập nhật
+            const query = {
+                page: 1,
+                limit: pageSize
+            };
+
+            if (debouncedSearchTerm.trim()) {
+                query.keyword = debouncedSearchTerm.trim();
+            }
+
+            switch (sortBy) {
+                case 'price-low':
+                    query.sortBy = 'price';
+                    query.sortOrder = 'asc';
+                    break;
+                case 'price-high':
+                    query.sortBy = 'price';
+                    query.sortOrder = 'desc';
+                    break;
+                case 'rating':
+                    query.sortBy = 'rating';
+                    query.sortOrder = 'desc';
+                    break;
+                case 'newest':
+                    query.sortBy = 'createdat';
+                    query.sortOrder = 'desc';
+                    break;
+                default:
+                    break;
+            }
+            
+            dispatch(favoriteListRequest(query));
+            setHasRemovedAll(false); // Reset flag
+        }
+    }, [hasRemovedAll, removeAllLoading, removeAllError, dispatch, pageSize, debouncedSearchTerm, sortBy]);
 
 
     // Fallback products data when API fails
@@ -124,24 +184,42 @@ const WishlistPage = () => {
         return (favoritesError || !favorites || !Array.isArray(favorites)) ? fallbackProducts : favorites;
     }, [favoritesError, favorites, fallbackProducts]);
 
-    // Load favorites from API on component mount
-    useEffect(() => {
-        dispatch(favoriteListRequest({
-            page: currentPage,
-            limit: pageSize
-        }));
-    }, [dispatch, currentPage, pageSize]);
+    // Calculate total pages
+    const totalPages = useMemo(() => {
+        if (!favoritesPagination || !favoritesPagination.total) return 1;
+        return Math.ceil(favoritesPagination.total / pageSize);
+    }, [favoritesPagination, pageSize]);
 
-    // Load favorites with filters when search/sort changes
+    // Handler for page change
+    const handlePageChange = (newPage) => {
+        if (newPage < 1 || newPage > totalPages) return;
+        setCurrentPage(newPage);
+    };
+
+    // Debounce searchTerm để tránh gọi API quá nhiều khi user đang gõ
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearchTerm(searchTerm);
+        }, 500); // Đợi 500ms sau khi user ngừng gõ
+
+        return () => clearTimeout(timer);
+    }, [searchTerm]);
+
+    // Reset currentPage về 1 khi search hoặc sort thay đổi
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [debouncedSearchTerm, sortBy]);
+
+    // Load favorites with filters when search/sort/page changes
     useEffect(() => {
         const query = {
             page: currentPage,
             limit: pageSize
         };
 
-        // Add search keyword
-        if (searchTerm.trim()) {
-            query.keyword = searchTerm.trim();
+        // Add search keyword (sử dụng debouncedSearchTerm)
+        if (debouncedSearchTerm.trim()) {
+            query.keyword = debouncedSearchTerm.trim();
         }
 
         // Add sort parameters
@@ -167,18 +245,7 @@ const WishlistPage = () => {
         }
 
         dispatch(favoriteListRequest(query));
-    }, [dispatch, currentPage, pageSize, searchTerm, sortBy]);
-
-    // Reset currentPage về 1 khi filter thay đổi (with debounce)
-    useEffect(() => {
-        const timeoutId = setTimeout(() => {
-            if (currentPage !== 1) {
-                setCurrentPage(1);
-            }
-        }, 100);
-
-        return () => clearTimeout(timeoutId);
-    }, [searchTerm, sortBy, currentPage]);
+    }, [dispatch, currentPage, pageSize, debouncedSearchTerm, sortBy]);
 
     // Use displayProducts directly as favorites from API
     const wishlistProducts = displayProducts;
@@ -192,9 +259,9 @@ const WishlistPage = () => {
                 limit: pageSize
             };
 
-            // Add search keyword
-            if (searchTerm.trim()) {
-                query.keyword = searchTerm.trim();
+            // Add search keyword (sử dụng debouncedSearchTerm)
+            if (debouncedSearchTerm.trim()) {
+                query.keyword = debouncedSearchTerm.trim();
             }
 
             // Add sort parameters
@@ -222,7 +289,7 @@ const WishlistPage = () => {
             dispatch(favoriteListRequest(query));
             setShouldReloadFavorites(false);
         }
-    }, [shouldReloadFavorites, toggleFavoriteLoading, toggleFavoriteError, dispatch, currentPage, pageSize, searchTerm, sortBy]);
+    }, [shouldReloadFavorites, toggleFavoriteLoading, toggleFavoriteError, dispatch, currentPage, pageSize, debouncedSearchTerm, sortBy]);
 
     // Clear errors when component unmounts
     useEffect(() => {
@@ -381,7 +448,7 @@ const WishlistPage = () => {
     return (
         <div className="min-h-screen bg-gray-50">
             {/* Header */}
-            <Header searchTerm={searchTerm} setSearchTerm={setSearchTerm} cartItems={cartItems} />
+            <Header />
 
             {/* Main Content */}
             <main className="container mx-auto px-4 py-8">
@@ -433,23 +500,27 @@ const WishlistPage = () => {
                                 <option value="default">Mặc định</option>
                                 <option value="price-low">Giá thấp đến cao</option>
                                 <option value="price-high">Giá cao đến thấp</option>
-                                <option value="rating">Đánh giá cao</option>
-                                <option value="newest">Mới nhất</option>
                             </select>
                         </div>
 
                         {/* Clear Wishlist Button */}
                         {favoritesPagination && favoritesPagination.total > 0 && (
                             <button
-                                onClick={() => {
-                                    // Clear all favorites by calling toggle for each product
-                                    favorites.forEach(product => {
-                                        dispatch(favoriteToggleRequest(product._id));
-                                    });
-                                }}
-                                className="bg-red-100 text-red-600 px-4 py-2 rounded-lg hover:bg-red-200 transition-colors text-sm font-medium"
+                                onClick={handleClearAll}
+                                disabled={removeAllLoading || favoritesLoading || toggleFavoriteLoading}
+                                className="bg-red-100 text-red-600 px-4 py-2 rounded-lg hover:bg-red-200 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                             >
-                                Xóa tất cả
+                                {removeAllLoading ? (
+                                    <>
+                                        <span className="animate-spin">⏳</span>
+                                        <span>Đang xóa...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <span>🗑️</span>
+                                        <span>Xóa tất cả ({favoritesPagination.total})</span>
+                                    </>
+                                )}
                             </button>
                         )}
                     </div>
@@ -462,9 +533,16 @@ const WishlistPage = () => {
                             <span>Đang tải sản phẩm yêu thích...</span>
                         ) : (
                             <>
-                                Hiển thị <span className="font-medium text-gray-900">{wishlistProducts.length}</span> sản phẩm yêu thích
-                                {favoritesPagination && favoritesPagination.total && (
-                                    <span> / {favoritesPagination.total} tổng cộng</span>
+                                {favoritesPagination && favoritesPagination.total ? (
+                                    <>
+                                        Trang <span className="font-medium text-gray-900">{currentPage}</span> / <span className="font-medium text-gray-900">{totalPages}</span>
+                                        {' - '}
+                                        Hiển thị <span className="font-medium text-gray-900">{wishlistProducts.length}</span> trong tổng số <span className="font-medium text-gray-900">{favoritesPagination.total}</span> sản phẩm yêu thích
+                                    </>
+                                ) : (
+                                    <>
+                                        Hiển thị <span className="font-medium text-gray-900">{wishlistProducts.length}</span> sản phẩm yêu thích
+                                    </>
                                 )}
                                 {favoritesError && (
                                     <span className="text-orange-500 ml-2">(Sử dụng dữ liệu mẫu)</span>
@@ -502,6 +580,19 @@ const WishlistPage = () => {
                     </div>
                 )}
 
+                {/* Remove All Error */}
+                {removeAllError && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                        <div className="flex items-center space-x-2">
+                            <span className="text-red-500 text-lg">❌</span>
+                            <div>
+                                <h4 className="text-red-800 font-medium">Lỗi xóa tất cả sản phẩm yêu thích</h4>
+                                <p className="text-red-700 text-sm">{removeAllError}</p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* Products Grid */}
                 {favoritesLoading ? (
                     <div className="text-center py-12">
@@ -527,11 +618,75 @@ const WishlistPage = () => {
                         </button>
                     </div>
                 ) : wishlistProducts.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                        {wishlistProducts.map(product => (
-                            <ProductCard key={product._id} product={product} />
-                        ))}
-                    </div>
+                    <>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                            {wishlistProducts.map(product => (
+                                <ProductCard key={product._id} product={product} />
+                            ))}
+                        </div>
+
+                        {/* Pagination */}
+                        {!favoritesError && favoritesPagination && favoritesPagination.total > pageSize && (
+                            <div className="mt-8 bg-white rounded-lg shadow-sm border border-gray-200 px-6 py-4">
+                                <div className="flex items-center justify-between">
+                                    <div className="text-sm text-gray-700">
+                                        Hiển thị {((currentPage - 1) * pageSize) + 1} đến {Math.min(currentPage * pageSize, favoritesPagination.total)} trong tổng số {favoritesPagination.total} sản phẩm
+                                    </div>
+                                    
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={() => handlePageChange(currentPage - 1)}
+                                            disabled={currentPage === 1 || favoritesLoading}
+                                            className="px-3 py-1 text-sm border border-gray-200 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 transition-colors"
+                                        >
+                                            <ChevronLeft className="w-4 h-4" />
+                                            Trước
+                                        </button>
+                                        
+                                        {/* Page Numbers */}
+                                        <div className="flex items-center gap-1">
+                                            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                                                let pageNum;
+                                                if (totalPages <= 5) {
+                                                    pageNum = i + 1;
+                                                } else if (currentPage <= 3) {
+                                                    pageNum = i + 1;
+                                                } else if (currentPage >= totalPages - 2) {
+                                                    pageNum = totalPages - 4 + i;
+                                                } else {
+                                                    pageNum = currentPage - 2 + i;
+                                                }
+                                                
+                                                return (
+                                                    <button
+                                                        key={pageNum}
+                                                        onClick={() => handlePageChange(pageNum)}
+                                                        disabled={favoritesLoading}
+                                                        className={`px-3 py-1 text-sm border rounded-md transition-colors ${
+                                                            currentPage === pageNum
+                                                                ? 'bg-blue-600 text-white border-blue-600'
+                                                                : 'border-gray-200 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed'
+                                                        }`}
+                                                    >
+                                                        {pageNum}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                        
+                                        <button
+                                            onClick={() => handlePageChange(currentPage + 1)}
+                                            disabled={currentPage === totalPages || favoritesLoading}
+                                            className="px-3 py-1 text-sm border border-gray-200 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 transition-colors"
+                                        >
+                                            Sau
+                                            <ChevronRight className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </>
                 ) : (
                     <div className="text-center py-16">
                         <div className="text-8xl mb-6">❤️</div>

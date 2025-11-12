@@ -17,6 +17,9 @@ import {
     FAVORITE_REMOVE_REQUEST,
     FAVORITE_REMOVE_SUCCESS,
     FAVORITE_REMOVE_FAILURE,
+    FAVORITE_REMOVE_ALL_REQUEST,
+    FAVORITE_REMOVE_ALL_SUCCESS,
+    FAVORITE_REMOVE_ALL_FAILURE,
     FAVORITE_CLEAR_MESSAGES,
 } from "../actions/favoriteActions";
 
@@ -44,6 +47,8 @@ const initialState = {
     // Add/Remove
     addLoading: false,
     removeLoading: false,
+    removeAllLoading: false,
+    removeAllError: null,
     
     // Messages
     message: null,
@@ -263,6 +268,41 @@ const favoriteReducer = (state = initialState, action) => {
                 error: action.payload,
             };
 
+        // Remove all favorites actions
+        case FAVORITE_REMOVE_ALL_REQUEST:
+            return {
+                ...state,
+                removeAllLoading: true,
+                removeAllError: null,
+            };
+        
+        case FAVORITE_REMOVE_ALL_SUCCESS: {
+            const { message } = action.payload;
+            
+            // Clear all items and reset pagination
+            return {
+                ...state,
+                removeAllLoading: false,
+                removeAllError: null,
+                items: [],
+                pagination: {
+                    ...state.pagination,
+                    total: 0,
+                    page: 1,
+                },
+                favoriteStatus: {},
+                favoriteProductIds: [],
+                message: message,
+            };
+        }
+        
+        case FAVORITE_REMOVE_ALL_FAILURE:
+            return {
+                ...state,
+                removeAllLoading: false,
+                removeAllError: action.payload,
+            };
+
         // Clear messages
         case FAVORITE_CLEAR_MESSAGES:
             return {
@@ -272,6 +312,7 @@ const favoriteReducer = (state = initialState, action) => {
                 toggleError: null,
                 checkError: null,
                 checkMultipleError: null,
+                removeAllError: null,
             };
 
         default:
