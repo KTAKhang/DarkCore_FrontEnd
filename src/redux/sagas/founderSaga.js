@@ -207,7 +207,7 @@ function* getFounderDetailWorker(action) {
     let data;
     try {
       data = yield call(apiGetPublicFounderDetail, action.payload.id);
-    } catch (publicError) {
+    } catch {
       // Nếu public endpoint fail (có thể do không có auth), thử admin endpoint
       data = yield call(apiGetFounderDetail, action.payload.id);
     }

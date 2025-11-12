@@ -1,4 +1,4 @@
-import { call, put, takeLatest } from "redux-saga/effects";
+import { call, put, takeLatest, takeEvery } from "redux-saga/effects";
 import apiClient from "../../utils/axiosConfig"; // Use authenticated axios
 import { toast } from "react-toastify";
 import {
@@ -8,6 +8,7 @@ import {
     FAVORITE_CHECK_MULTIPLE_REQUEST,
     FAVORITE_ADD_REQUEST,
     FAVORITE_REMOVE_REQUEST,
+    FAVORITE_REMOVE_ALL_REQUEST,
     favoriteListSuccess,
     favoriteListFailure,
     favoriteToggleSuccess,
@@ -20,6 +21,8 @@ import {
     favoriteAddFailure,
     favoriteRemoveSuccess,
     favoriteRemoveFailure,
+    favoriteRemoveAllSuccess,
+    favoriteRemoveAllFailure,
 } from "../actions/favoriteActions";
 
 // Helper function để xử lý lỗi
@@ -105,6 +108,11 @@ const apiAddFavorite = async (productId) => {
 
 const apiRemoveFavorite = async (productId) => {
     const res = await apiClient.delete(`/api/favorites/${productId}`);
+    return res.data;
+};
+
+const apiRemoveAllFavorites = async () => {
+    const res = await apiClient.delete(`/api/favorites/all`);
     return res.data;
 };
 
@@ -200,18 +208,38 @@ function* addWorker(action) {
 // Remove favorite
 function* removeWorker(action) {
     try {
-        const { productId } = action.payload;
+        const { productId, silent = false } = action.payload;
         const data = yield call(apiRemoveFavorite, productId);
         
         if (data.status === "OK") {
             yield put(favoriteRemoveSuccess(productId, data.message));
-            toast.success(data.message || "Đã xóa khỏi danh sách yêu thích");
+            // Chỉ hiển thị toast nếu không phải silent mode (batch delete)
+            if (!silent) {
+                toast.success(data.message || "Đã xóa khỏi danh sách yêu thích");
+            }
         } else {
             throw new Error(data.message || "Không thể xóa khỏi yêu thích");
         }
     } catch (error) {
         const errorMessage = handleError(error);
         yield put(favoriteRemoveFailure(errorMessage));
+    }
+}
+
+// Remove all favorites
+function* removeAllWorker() {
+    try {
+        const data = yield call(apiRemoveAllFavorites);
+        
+        if (data.status === "OK") {
+            yield put(favoriteRemoveAllSuccess(data.deletedCount || 0, data.message));
+            toast.success(data.message || `Đã xóa ${data.deletedCount || 0} sản phẩm khỏi danh sách yêu thích`);
+        } else {
+            throw new Error(data.message || "Không thể xóa tất cả sản phẩm yêu thích");
+        }
+    } catch (error) {
+        const errorMessage = handleError(error);
+        yield put(favoriteRemoveAllFailure(errorMessage));
     }
 }
 
@@ -222,6 +250,8 @@ export default function* favoriteSaga() {
     yield takeLatest(FAVORITE_CHECK_REQUEST, checkWorker);
     yield takeLatest(FAVORITE_CHECK_MULTIPLE_REQUEST, checkMultipleWorker);
     yield takeLatest(FAVORITE_ADD_REQUEST, addWorker);
-    yield takeLatest(FAVORITE_REMOVE_REQUEST, removeWorker);
+    // Sử dụng takeEvery cho remove để có thể xóa nhiều items cùng lúc
+    yield takeEvery(FAVORITE_REMOVE_REQUEST, removeWorker);
+    yield takeLatest(FAVORITE_REMOVE_ALL_REQUEST, removeAllWorker);
 }
 

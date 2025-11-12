@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import PropTypes from 'prop-types';
@@ -139,14 +139,31 @@ const ShowAllProduct = () => {
         navigate(`/product/${productId}`);
     };
 
-    const handleToggleFavorite = (productId) => {
+    const handleToggleFavorite = (e, productId) => {
+        // Prevent default behavior và stop propagation để tránh scroll
+        e.preventDefault();
+        e.stopPropagation();
+        
         const token = localStorage.getItem('token');
         if (!token) {
             toast.error('Vui lòng đăng nhập để thêm vào yêu thích');
             navigate('/login');
             return;
         }
+        
+        // Lưu scroll position trước khi toggle
+        const scrollPosition = window.scrollY || window.pageYOffset;
+        
         dispatch(favoriteToggleRequest(productId));
+        
+        // Restore scroll position sau một chút để đảm bảo không bị scroll to top
+        setTimeout(() => {
+            window.scrollTo({
+                top: scrollPosition,
+                behavior: 'auto' // Không dùng smooth để tránh animation
+            });
+        }, 0);
+        
         setShouldReloadFavorites(true);
     };
 
@@ -164,13 +181,31 @@ const ShowAllProduct = () => {
     }, [dispatch, currentPage, pageSize]);
 
     // Check favorite status for displayed products
+    // Luôn check lại khi products thay đổi (chuyển trang, filter) để đảm bảo sync với Redux state
+    const checkedProductsRef = useRef(new Map()); // Dùng Map với key là currentPage để track theo từng trang
+    const previousPageRef = useRef(currentPage);
+    
     useEffect(() => {
         const token = localStorage.getItem('token');
         if (token && products && products.length > 0) {
             const productIds = products.map(p => p._id);
-            dispatch(favoriteCheckMultipleRequest(productIds));
+            const productIdsString = productIds.sort().join(',');
+            
+            // Nếu chuyển trang, clear checked products của trang cũ và check lại
+            if (previousPageRef.current !== currentPage) {
+                checkedProductsRef.current.clear();
+                previousPageRef.current = currentPage;
+            }
+            
+            // Luôn check lại khi chuyển trang hoặc products thay đổi
+            // Chỉ skip nếu đã check trong cùng một lần render (tránh duplicate calls)
+            const pageKey = `${currentPage}-${productIdsString}`;
+            if (!checkedProductsRef.current.has(pageKey)) {
+                dispatch(favoriteCheckMultipleRequest(productIds));
+                checkedProductsRef.current.set(pageKey, true);
+            }
         }
-    }, [products, dispatch]);
+    }, [products, dispatch, currentPage]);
 
     // Reset selectedBrand khi brands data thay đổi (nếu selectedBrand không còn hợp lệ)
     useEffect(() => {
@@ -370,9 +405,10 @@ const ShowAllProduct = () => {
                         </div>
                     )}
                     <button
-                        onClick={() => handleToggleFavorite(product._id)}
+                        onClick={(e) => handleToggleFavorite(e, product._id)}
                         disabled={toggleFavoriteLoading}
-                        className="absolute bottom-3 right-3 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="absolute bottom-3 right-3 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed z-10"
+                        type="button"
                     >
                         <span className={`text-lg ${favoriteProductIds.includes(product._id) ? 'text-red-500' : 'text-gray-600'}`}>
                             {favoriteProductIds.includes(product._id) ? '❤️' : '🤍'}

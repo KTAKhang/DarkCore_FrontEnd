@@ -30,6 +30,11 @@ export const FAVORITE_REMOVE_REQUEST = "FAVORITE_REMOVE_REQUEST";
 export const FAVORITE_REMOVE_SUCCESS = "FAVORITE_REMOVE_SUCCESS";
 export const FAVORITE_REMOVE_FAILURE = "FAVORITE_REMOVE_FAILURE";
 
+// Remove all favorites
+export const FAVORITE_REMOVE_ALL_REQUEST = "FAVORITE_REMOVE_ALL_REQUEST";
+export const FAVORITE_REMOVE_ALL_SUCCESS = "FAVORITE_REMOVE_ALL_SUCCESS";
+export const FAVORITE_REMOVE_ALL_FAILURE = "FAVORITE_REMOVE_ALL_FAILURE";
+
 // Clear messages/errors
 export const FAVORITE_CLEAR_MESSAGES = "FAVORITE_CLEAR_MESSAGES";
 
@@ -116,9 +121,9 @@ export const favoriteAddFailure = (error) => ({
 });
 
 // Remove favorite
-export const favoriteRemoveRequest = (productId) => ({
+export const favoriteRemoveRequest = (productId, silent = false) => ({
     type: FAVORITE_REMOVE_REQUEST,
-    payload: { productId }
+    payload: { productId, silent }
 });
 
 export const favoriteRemoveSuccess = (productId, message) => ({
@@ -128,6 +133,21 @@ export const favoriteRemoveSuccess = (productId, message) => ({
 
 export const favoriteRemoveFailure = (error) => ({
     type: FAVORITE_REMOVE_FAILURE,
+    payload: error
+});
+
+// Remove all favorites
+export const favoriteRemoveAllRequest = () => ({
+    type: FAVORITE_REMOVE_ALL_REQUEST
+});
+
+export const favoriteRemoveAllSuccess = (deletedCount, message) => ({
+    type: FAVORITE_REMOVE_ALL_SUCCESS,
+    payload: { deletedCount, message }
+});
+
+export const favoriteRemoveAllFailure = (error) => ({
+    type: FAVORITE_REMOVE_ALL_FAILURE,
     payload: error
 });
 
