@@ -65,7 +65,8 @@ const ProfileManager = () => {
     const roleMap = {
       'admin': 'Quản trị viên',
       'customer': 'Khách hàng',
-      'moderator': 'Điều hành viên'
+      'sales-staff': 'Nhân viên bán hàng',
+      'repair-staff': 'Nhân viên sửa chữa'
     };
     return roleMap[roleName] || roleName;
   };

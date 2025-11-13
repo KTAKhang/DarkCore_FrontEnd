@@ -33,7 +33,7 @@ const LoginPage = () => {
                 navigate("/staff", { replace: true });
             }
             if (role === "sales-staff") {
-                navigate("/sale-staff/order", { replace: true });
+                navigate("/sale-staff", { replace: true });
             }
         }
     }, [isAuthenticated, role, navigate]);
