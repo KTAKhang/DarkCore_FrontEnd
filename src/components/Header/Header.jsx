@@ -99,10 +99,10 @@ const Header = ({ searchTerm, setSearchTerm }) => {
                         >
                             Liên hệ
                         </button>
-                        
+
                     </nav>
 
-                  
+
                     <div className="flex items-center space-x-4">
                         {storedUser ? (
                             <>
@@ -249,13 +249,13 @@ const Header = ({ searchTerm, setSearchTerm }) => {
                                     to="/login"
                                     className="px-3 py-2 text-gray-600 hover:text-blue-600"
                                 >
-                                    Login
+                                    Đăng nhập
                                 </Link>
                                 <Link
                                     to="/register"
                                     className="px-3 py-2 text-gray-600 hover:text-blue-600"
                                 >
-                                    Register
+                                    Đăng ký
                                 </Link>
                             </>
                         )}

@@ -41,7 +41,8 @@ const Navbar = () => {
   const toggleDropdown = () => setIsDropdownOpen((open) => !open);
 
   const handleHome = () => {
-    navigate("/");
+    if (roleName === "admin") navigate("/admin");
+    if (roleName === "sales-staff") navigate("/sale-staff");
   };
 
   const handleLogout = () => {
@@ -85,18 +86,29 @@ const Navbar = () => {
 
             <button
               onClick={handleHome}
-              className="group relative overflow-hidden rounded-2xl p-2 transition-all duration-300 hover:scale-105"
-              style={{
-                background:
-                  "linear-gradient(45deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05))",
-              }}
+
             >
-              <img
-                alt="Toy Shop Logo"
-                src="https://images-platform.99static.com/1_9hhxdHPqAoIOKFOW0erbmIBtM=/0x2050:2000x4050/fit-in/99designs-contests-attachments/124/124456/attachment_124456078"
-                className="w-28 h-10 transition-transform duration-300 group-hover:scale-110"
-              />
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+              <div
+                className="group relative overflow-hidden rounded-2xl p-2 transition-all duration-300 hover:scale-105"
+                style={{
+                  background: "linear-gradient(45deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05))",
+                }}
+              >
+                <div className="flex items-center space-x-2">
+                  <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
+                    {roleName === "admin" && <span className="text-white text-lg">👑</span>}
+                    {roleName === "sales-staff" && <span className="text-white text-lg">💼</span>}
+                  </div>
+
+                  <span className="text-white font-bold text-lg">
+                    {roleName === "admin" && "Administrator"}
+                    {roleName === "sales-staff" && "Sales Staff"}
+                  </span>
+                </div>
+
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+              </div>
+
             </button>
           </div>
 
