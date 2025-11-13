@@ -83,9 +83,18 @@ const Header = ({ searchTerm, setSearchTerm }) => {
                         <Link to="/about" className="text-gray-700 hover:text-blue-600">
                             Về chúng tôi
                         </Link>
-                        <Link to="/contact" className="text-gray-700 hover:text-blue-600">
+                        <button
+                            onClick={() => {
+                                if (storedUser) {
+                                    navigate("/customer/contact");
+                                } else {
+                                    navigate("/register");
+                                }
+                            }}
+                            className="text-gray-700 hover:text-blue-600 bg-transparent border-none cursor-pointer p-0"
+                        >
                             Liên hệ
-                        </Link>
+                        </button>
                         
                     </nav>
 
