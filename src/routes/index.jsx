@@ -9,7 +9,6 @@ import AdminPage from "../pages/AdminPage";
 import RepairPage from "../pages/RepairPage";
 import CategoryManagement from "../pages/Categorymanagement/CategoryManagement";
 import ProductManagement from "../pages/Productmanagement/ProductManagement";
-import StaffManagement from "../pages/Staffmanagement/StaffManagement";
 import CustomerDetail from "../pages/CustomerManagement/CustomerDetail";
 import CustomerManagement from "../pages/CustomerManagement/CustomerManagement";
 import OrderManagement from "../pages/OrderManagement/OrderManagement";
@@ -111,10 +110,6 @@ export const routes = [
     element: <NewsPage />,
   },
   {
-    path: "/contact",
-    element: <ContactPage />,
-  },
-  {
     path: "/about",
     element: <ShowAboutUs />,
   },
@@ -162,6 +157,7 @@ export const routes = [
         element: <ContactHistory />,
       },
       { path: "review/:id", element: <OrderReviewPage /> },
+      { path: "contact", element: <ContactPage /> },
     ],
   },
 
@@ -175,11 +171,14 @@ export const routes = [
     children: [
       { path: "order", element: <StaffOrderManagement /> },
 
-      { path: "product", element: <StaffProductManagement /> }
+
+      { path: "product", element: <StaffProductManagement /> },
+
 
       { path: "change-password", element: <UpdatePassword /> },
       { path: "profile", element: <ProfileManagement /> },
       { path: "review", element: <StaffReviewManagement /> },
+
 
     ],
   },
@@ -200,7 +199,6 @@ export const routes = [
       { path: "repair/services", element: <RepairAdminServices /> },
       { path: "category", element: <CategoryManagement /> },
       { path: "product", element: <ProductManagement /> },
-      { path: "staff", element: <StaffManagement /> },
       { path: "customer", element: <CustomerManagement /> },
       { path: "customer/:id", element: <CustomerDetail /> },
       { path: "order", element: <OrderManagement /> },

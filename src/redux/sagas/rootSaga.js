@@ -24,7 +24,9 @@ import statisticsSaga from "./statisticsSaga";
 import aboutSaga from "./aboutSaga";
 import founderSaga from "./founderSaga";
 import orderStaffSaga from "./orderStaffSaga";
-import staffProductSaga from "./staffProductSaga";
+
+import staffProductSaga from "./staffProductSage";
+
 export default function* rootSaga() {
   try {
     yield all([
@@ -53,6 +55,7 @@ export default function* rootSaga() {
       aboutSaga(),
       founderSaga(),
       orderStaffSaga(),
+      staffProductSaga(),
 
       staffProductSaga(),
 
