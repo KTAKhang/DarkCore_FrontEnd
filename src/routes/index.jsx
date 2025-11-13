@@ -171,7 +171,9 @@ export const routes = [
     children: [
       { path: "order", element: <StaffOrderManagement /> },
 
+
       { path: "product", element: <StaffProductManagement /> },
+
 
       { path: "change-password", element: <UpdatePassword /> },
       { path: "profile", element: <ProfileManagement /> },

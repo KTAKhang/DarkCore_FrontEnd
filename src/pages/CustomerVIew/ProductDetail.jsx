@@ -28,7 +28,7 @@ export default function ProductDetail() {
     const error = detail?.error || null;
 
     // cart / favorite redux
-    const { cart, loading: cartLoading, error: cartError } = useSelector((state) => state.cart || {});
+    const { loading: cartLoading, error: cartError } = useSelector((state) => state.cart || {});
     const favoriteState = useSelector((state) => state.favorite || {});
     const isFavorite = favoriteState.favoriteStatus?.[id] || false;
     const toggleFavoriteLoading = favoriteState.toggleLoading || false;
@@ -57,7 +57,6 @@ export default function ProductDetail() {
 
     const productId = product?._id || product?.id || id;
     const isInStock = product?.stockQuantity > 0;
-    const user = JSON.parse(localStorage.getItem("user") || "null");
 
     useEffect(() => {
         if (cartError) {
@@ -276,7 +275,7 @@ export default function ProductDetail() {
                                 <button onClick={() => addToCart(productId)} disabled={!isInStock || cartLoading} className={`flex-1 py-3 px-6 rounded-lg text-sm font-medium transition-colors ${isInStock && !cartLoading ? "bg-blue-600 text-white hover:bg-blue-700" : "bg-gray-400 text-gray-200 cursor-not-allowed"}`}>
                                     {isInStock ? (cartLoading ? "Đang thêm..." : "Thêm giỏ hàng") : "Hết hàng"}
                                 </button>
-                                <button className="flex-1 border border-blue-600 text-blue-600 py-3 px-6 rounded-lg hover:bg-blue-50 transition-colors font-medium">Mua ngay</button>
+                               
                             </div>
 
                             {(!product.stockQuantity || product.stockQuantity <= 0 || !product.status) && <div className="bg-red-50 border border-red-200 rounded-lg p-4"><p className="text-red-600 font-medium">{!product.status ? "Sản phẩm tạm ngừng kinh doanh" : "Sản phẩm hiện đang hết hàng"}</p><p className="text-red-500 text-sm mt-1">Vui lòng liên hệ để được thông báo khi có hàng</p></div>}

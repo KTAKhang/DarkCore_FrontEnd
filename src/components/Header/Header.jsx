@@ -11,6 +11,10 @@ const Header = ({ searchTerm, setSearchTerm }) => {
     const dispatch = useDispatch();
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
+    // Search bar removed - keep props to avoid breaking parent components
+    void searchTerm;
+    void setSearchTerm;
+
     // Lấy cart state từ Redux store
     const { cart } = useSelector((state) => state.cart || {});
 
@@ -98,22 +102,8 @@ const Header = ({ searchTerm, setSearchTerm }) => {
                         
                     </nav>
 
-                    {/* Search + Cart + User */}
+                  
                     <div className="flex items-center space-x-4">
-                        {/* Search */}
-                        <div className="relative w-64 transition-all duration-300">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
-                                🔍
-                            </span>
-                            <input
-                                type="text"
-                                placeholder="Tìm kiếm laptop, máy tính bảng..."
-                                className="w-full pl-10 pr-4 py-2 text-sm border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                            />
-                        </div>
-
                         {storedUser ? (
                             <>
                                 {/* Wishlist */}

@@ -363,15 +363,7 @@ const OrderHistoryDetails = ({ isOpen, onClose, order, loading = false }) => {
                 Mua lại
               </button>
             )}
-            <button
-              onClick={() => {
-                // TODO: Implement contact support
-                console.log('Contact support');
-              }}
-              className="flex-1 border border-blue-600 text-blue-600 py-2 px-4 rounded-lg hover:bg-blue-50 transition-colors font-medium"
-            >
-              Liên hệ hỗ trợ
-            </button>
+      
             <button
               onClick={onClose}
               className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors font-medium"
