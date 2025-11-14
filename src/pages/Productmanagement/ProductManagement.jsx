@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   Card,
@@ -131,21 +131,27 @@ const ProductManagement = () => {
   }, [sort, fetchProducts, isInitialLoad]);
 
   // Simplified data mapping
-  const products = useMemo(() => {
-    return (productItems || []).map(product => ({
+  const products = (productItems || []).map((product) => {
+    const categoryInfo = product.category
+      ? {
+          _id: product.category._id,
+          name: product.category.name,
+          status: product.category.status,
+        }
+      : null;
+
+    const fallbackCategoryId = typeof product.category === "string" ? product.category : null;
+
+    return {
       ...product,
       quantity: product.stockQuantity,
-      category_id: product.category?._id,
-      categoryDetail: product.category ? { 
-        _id: product.category._id, 
-        name: product.category.name, 
-        status: product.category.status
-      } : null,
-      image: product.images?.[0] || "",
+      category_id: categoryInfo ? categoryInfo._id : fallbackCategoryId,
+      categoryDetail: categoryInfo,
+      image: Array.isArray(product.images) && product.images.length > 0 ? product.images[0] : "",
       short_desc: product.short_desc ?? product.description ?? "",
       detail_desc: product.detail_desc ?? product.warrantyDetails ?? "",
-    }));
-  }, [productItems]);
+    };
+  });
 
   // Simplified filter checks
   const hasActiveFilters = filters.searchText.trim() || filters.status !== "all" || filters.category !== "all";
@@ -190,17 +196,55 @@ const ProductManagement = () => {
   };
 
   // Simplified create/update handlers
-  const mapProductData = (product) => ({
-    name: product.name,
-    price: product.price,
-    stockQuantity: product.quantity || 1,
-    category: product.category_id,
-    status: product.status !== undefined ? product.status : true,
-    short_desc: product.short_desc?.trim() || "",
-    detail_desc: product.detail_desc?.trim() || "",
-    brand: product.brand?.trim() || "",
-    images: Array.isArray(product.images) ? product.images : (product.image ? [product.image] : [])
-  });
+  const mapProductData = (product) => {
+    const safeName = product.name ? product.name.trim() : "";
+    const safeShortDesc = product.short_desc ? product.short_desc.trim() : product.description?.trim() || "";
+    const safeDetailDesc = product.detail_desc ? product.detail_desc.trim() : product.warrantyDetails?.trim() || "";
+    const safeBrand = product.brand ? product.brand.trim() : "";
+    const rawImages = Array.isArray(product.images)
+      ? product.images
+      : product.image
+      ? [product.image]
+      : [];
+    const sanitizedImages = rawImages
+      .map((img) => {
+        if (!img) return null;
+        if (typeof img === "string") return img;
+        if (typeof File !== "undefined" && img instanceof File) return img;
+        if (img?.originFileObj) return img.originFileObj;
+        if (typeof img === "object" && img.url) return img.url;
+        return null;
+      })
+      .filter(Boolean);
+    let resolvedCategory = null;
+    if (product.category && typeof product.category === "object") {
+      resolvedCategory = product.category._id;
+    } else if (product.category) {
+      resolvedCategory = product.category;
+    } else if (product.category_id) {
+      resolvedCategory = product.category_id;
+    } else if (product.categoryDetail) {
+      resolvedCategory = product.categoryDetail._id;
+    }
+    const resolvedStock = Number.isFinite(product.stockQuantity)
+      ? product.stockQuantity
+      : Number(product.quantity) || 0;
+
+    const payload = {
+      name: safeName,
+      price: typeof product.price === "number" ? product.price : Number(product.price) || 0,
+      stockQuantity: resolvedStock,
+      category: resolvedCategory,
+      status: typeof product.status === "boolean" ? product.status : true,
+      short_desc: safeShortDesc,
+      detail_desc: safeDetailDesc,
+      brand: safeBrand,
+    };
+    if (sanitizedImages.length > 0) {
+      payload.images = sanitizedImages;
+    }
+    return payload;
+  };
 
   const handleCreateSuccess = useCallback((created) => {
     dispatch(productCreateRequest(mapProductData(created)));
@@ -253,17 +297,28 @@ const ProductManagement = () => {
     {
       title: "Sản phẩm",
       key: "product",
+      width: 360,
       render: (_, record) => (
         <Space>
           <Avatar src={record.image} icon={<ShoppingCartOutlined />} style={{ backgroundColor: "#13C2C2" }} onError={() => false} />
-          <div>
-            <Text strong style={{ color: "#0D364C", display: "block", fontSize: 16 }}>{record.name}</Text>
-            <Text type="secondary" style={{ fontSize: 12, cursor: "pointer" }} onClick={() => {
-              navigator.clipboard.writeText(record._id);
-              message.success("Đã copy ID vào clipboard");
-            }} title="Click để copy ID">
-              <ShoppingCartOutlined style={{ marginRight: 4 }} />ID: {record._id}
-            </Text>
+          <div style={{ maxWidth: 280, wordBreak: "break-word" }}>
+            <Tooltip title={record.name}>
+              <Text strong style={{ color: "#0D364C", display: "block", fontSize: 16, lineHeight: 1.3 }}>
+                {record.name}
+              </Text>
+            </Tooltip>
+            <Tooltip title="Click để copy ID">
+              <Text
+                type="secondary"
+                style={{ fontSize: 12, cursor: "pointer", display: "inline-block", wordBreak: "break-word" }}
+                onClick={() => {
+                  navigator.clipboard.writeText(record._id);
+                  message.success("Đã copy ID vào clipboard");
+                }}
+              >
+                <ShoppingCartOutlined style={{ marginRight: 4 }} />ID: {record._id}
+              </Text>
+            </Tooltip>
           </div>
         </Space>
       ),
@@ -338,7 +393,7 @@ const ProductManagement = () => {
   ];
 
   // Simplified pagination
-  const tablePagination = useMemo(() => ({
+  const tablePagination = {
     current: apiPagination?.page || pagination.current,
     pageSize: apiPagination?.limit || pagination.pageSize,
     total: apiPagination?.total || 0,
@@ -359,7 +414,7 @@ const ProductManagement = () => {
       setPagination({ current, pageSize: size });
       fetchProducts({ page: current, limit: size });
     },
-  }), [apiPagination, pagination, hasActiveFilters, fetchProducts]);
+  };
 
   // Backend handles pagination, so we use products directly
   const dataForPage = products;
@@ -499,10 +554,23 @@ const ProductManagement = () => {
         </Spin>
       </Card>
 
-      <CreateProduct visible={isCreateModalVisible} onClose={() => setIsCreateModalVisible(false)} onSuccess={handleCreateSuccess} categories={(categoryItems || []).filter((c) => c.status === true)} />
+      <CreateProduct
+        visible={isCreateModalVisible}
+        onClose={() => setIsCreateModalVisible(false)}
+        onSuccess={handleCreateSuccess}
+        categories={(categoryItems || []).filter((c) => c.status === true)}
+        existingProducts={products}
+      />
 
       {selectedProduct && (
-        <UpdateProduct visible={isUpdateModalVisible} productData={selectedProduct} onClose={() => { setIsUpdateModalVisible(false); setSelectedProduct(null); }} onSuccess={handleUpdateSuccess} categories={(categoryItems || []).filter((c) => c.status === true)} />
+        <UpdateProduct
+          visible={isUpdateModalVisible}
+          productData={selectedProduct}
+          onClose={() => { setIsUpdateModalVisible(false); setSelectedProduct(null); }}
+          onSuccess={handleUpdateSuccess}
+          categories={(categoryItems || []).filter((c) => c.status === true)}
+          existingProducts={products}
+        />
       )}
 
       {selectedProduct && (

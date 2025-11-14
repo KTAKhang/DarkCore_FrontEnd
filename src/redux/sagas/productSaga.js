@@ -106,8 +106,8 @@ const apiCreate = async (payload) => {
     formData.append("name", payload.name);
     if (payload.short_desc !== undefined && payload.short_desc !== "") formData.append("short_desc", payload.short_desc);
     formData.append("price", payload.price);
-    formData.append("quantity", payload.stockQuantity);
-    if (payload.category) formData.append("category_id", payload.category);
+    formData.append("stockQuantity", payload.stockQuantity);
+    if (payload.category) formData.append("category", payload.category);
     if (payload.brand !== undefined && payload.brand !== "") formData.append("brand", payload.brand);
     if (payload.detail_desc !== undefined && payload.detail_desc !== "") formData.append("detail_desc", payload.detail_desc);
     if (payload.status !== undefined) formData.append("status", payload.status);
@@ -143,8 +143,8 @@ const apiUpdate = async (id, payload) => {
     formData.append("name", payload.name);
     if (payload.short_desc !== undefined && payload.short_desc !== "") formData.append("short_desc", payload.short_desc);
     formData.append("price", payload.price);
-    formData.append("quantity", payload.stockQuantity);
-    if (payload.category) formData.append("category_id", payload.category);
+    formData.append("stockQuantity", payload.stockQuantity);
+    if (payload.category) formData.append("category", payload.category);
     if (payload.brand !== undefined && payload.brand !== "") formData.append("brand", payload.brand);
     if (payload.detail_desc !== undefined && payload.detail_desc !== "") formData.append("detail_desc", payload.detail_desc);
     if (payload.status !== undefined) formData.append("status", payload.status);

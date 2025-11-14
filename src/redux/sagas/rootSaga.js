@@ -20,6 +20,7 @@ import reviewSaga from "./reviewSaga";
 import reviewStaffSaga from "./reviewStaffSaga";
 
 import statisticsSaga from "./statisticsSaga";
+import statisticsStaffSaga from "./statisticsStaffSaga";
 
 import aboutSaga from "./aboutSaga";
 import founderSaga from "./founderSaga";
@@ -51,6 +52,7 @@ export default function* rootSaga() {
       reviewStaffSaga(),
 
       statisticsSaga(),
+      statisticsStaffSaga(),
 
       aboutSaga(),
       founderSaga(),
