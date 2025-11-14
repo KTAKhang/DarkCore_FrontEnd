@@ -331,13 +331,13 @@ const OrderManagement = () => {
 
   const handleSortChange = (value) => {
     const sortMap = {
-      default: { sortBy: "createdat_desc" },
-      cnewest: { sortBy: "createdat_asc" },
-      coldest: { sortBy: "createdat_desc" },
-      unewest: { sortBy: "updatedat_asc" },
-      uoldest: { sortBy: "updatedat_desc" },
-      high: { sortBy: "totalprice_asc" },
-      low: { sortBy: "totalprice_desc" }
+      default: { sortBy: "createdat_asc" },
+      cnewest: { sortBy: "createdat_desc" },
+      coldest: { sortBy: "createdat_asc" },
+      unewest: { sortBy: "updatedat_desc" },
+      uoldest: { sortBy: "updatedat_asc" },
+      high: { sortBy: "totalprice_desc" },
+      low: { sortBy: "totalprice_asc" }
     };
 
     setSort(sortMap[value] || sortMap.default);
@@ -419,6 +419,21 @@ const OrderManagement = () => {
           </Text>
           <Text type="secondary" style={{ fontSize: 12 }}>
             {createdAt ? new Date(createdAt).toLocaleTimeString("vi-VN", { hour: '2-digit', minute: '2-digit' }) : ""}
+          </Text>
+        </div>
+      ),
+    },
+    {
+      title: "Thời gian cập nhật",
+      dataIndex: "updatedAt",
+      key: "updatedAt",
+      render: (updatedAt) => (
+        <div>
+          <Text style={{ color: "#0D364C", fontSize: 14, display: "block" }}>
+            {updatedAt ? new Date(updatedAt).toLocaleDateString("vi-VN") : "N/A"}
+          </Text>
+          <Text type="secondary" style={{ fontSize: 12 }}>
+            {updatedAt ? new Date(updatedAt).toLocaleTimeString("vi-VN", { hour: '2-digit', minute: '2-digit' }) : ""}
           </Text>
         </div>
       ),
@@ -578,18 +593,12 @@ const OrderManagement = () => {
               <Select.Option value="returned">Trả hàng</Select.Option>
             </Select>
             <Select
-              value={(() => {
-                if (sort.sortBy === "default") return "default";
-                if (sort.sortBy === "createdat" && sort.sortOrder === "desc") return "newest";
-                if (sort.sortBy === "createdat" && sort.sortOrder === "asc") return "oldest";
-                return "default";
-              })()}
               onChange={handleSortChange}
               style={{ width: 200 }}
               size="large"
               placeholder="Sắp xếp"
-              suffixIcon={<FilterOutlined style={{ color: "#13C2C2" }} />}
-            >
+              suffixIcon={<FilterOutlined style={{ color: "#13C2C2" }} />}>
+
               <Select.Option value="default">Mặc định</Select.Option>
               <Select.Option value="cnewest">Ngày tạo mới nhất</Select.Option>
               <Select.Option value="coldest">Ngày tạo cũ nhất</Select.Option>
