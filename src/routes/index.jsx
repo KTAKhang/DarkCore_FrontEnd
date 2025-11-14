@@ -56,6 +56,7 @@ import FoundersManagement from "../pages/FoundersManagement/FoundersManagement";
 import FinanceLayout from "../layout/FinanceLayout";
 import StaffOrderManagement from "../pages/StaffOrderManagement/OrderManagement";
 import StaffReviewManagement from "../pages/StaffReviewManagement/StaffReviewManagement";
+import StatisticsStaff from "../pages/StatisticsStaff/StatisticsStaff";
 import CheckoutPage from "../pages/CheckoutPage";
 import PaymentResultPage from "../pages/PaymentResultPage";
 
@@ -173,6 +174,7 @@ export const routes = [
       </PrivateRoute>
     ),
     children: [
+      { index: true, element: <StatisticsStaff /> },
       { path: "order", element: <StaffOrderManagement /> },
       { path: "change-password", element: <UpdatePassword /> },
       { path: "profile", element: <ProfileManagement /> },

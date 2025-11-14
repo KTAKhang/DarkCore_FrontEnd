@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import { Form, Input, Button, Card, Upload, Modal, InputNumber, Select, Typography, Space, Divider, message, Switch } from "antd";
 import { EditOutlined, CameraOutlined, AppstoreOutlined, ShoppingOutlined, DollarOutlined, InfoCircleOutlined } from "@ant-design/icons";
@@ -14,13 +14,58 @@ function getBase64(file) {
   });
 }
 
-const UpdateProduct = ({ visible, onClose, onSuccess, productData, categories = [] }) => {
+const customStyles = {
+  card: { borderRadius: 8, border: "none", boxShadow: "none" },
+  primaryButton: { backgroundColor: "#13C2C2", borderColor: "#13C2C2", height: 44, borderRadius: 8, fontWeight: 600, fontSize: 16 },
+  title: { color: "#0D364C", marginBottom: 24, fontWeight: 700 },
+  label: { color: "#0D364C", fontWeight: 600, fontSize: 14 },
+  input: { borderRadius: 8, height: 40, borderColor: "#d9d9d9" },
+  divider: { borderColor: "#13C2C2", opacity: 0.3 },
+};
+
+const UpdateProduct = ({ visible, onClose, onSuccess, productData, categories = [], existingProducts = [] }) => {
   const [form] = Form.useForm();
   const [previewImage, setPreviewImage] = useState(productData?.image || "");
   const [modalVisible, setModalVisible] = useState(false);
   const [fileList, setFileList] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [switchValue, setSwitchValue] = useState(true);
+
+  const buildInitialFileList = (sourceImages) => {
+    if (!sourceImages) return [];
+    const list = Array.isArray(sourceImages) ? sourceImages : [sourceImages];
+    return list
+      .map((img, index) => {
+        if (!img) return null;
+        if (typeof img === "string") {
+          return {
+            uid: `existing-${index}`,
+            name: `image-${index}`,
+            status: "done",
+            url: img,
+          };
+        }
+        if (typeof File !== "undefined" && img instanceof File) {
+          return {
+            uid: `existing-${index}`,
+            name: img.name || `image-${index}`,
+            status: "done",
+            url: URL.createObjectURL(img),
+            originFileObj: img,
+          };
+        }
+        if (typeof img === "object" && img.url) {
+          return {
+            uid: `existing-${index}`,
+            name: img.name || `image-${index}`,
+            status: "done",
+            url: img.url,
+          };
+        }
+        return null;
+      })
+      .filter(Boolean);
+  };
 
   useEffect(() => {
     if (visible && productData) {
@@ -34,8 +79,16 @@ const UpdateProduct = ({ visible, onClose, onSuccess, productData, categories = 
         quantity: productData.quantity,
         status: productData.status !== false,
       });
+      const initialFiles = buildInitialFileList(
+        Array.isArray(productData.images) && productData.images.length > 0
+          ? productData.images
+          : productData.image
+      );
+      setFileList(initialFiles);
       setPreviewImage(productData.image || "");
       setSwitchValue(productData.status !== false);
+    } else if (!visible) {
+      setFileList([]);
     }
   }, [visible, productData, form]);
 
@@ -51,16 +104,53 @@ const UpdateProduct = ({ visible, onClose, onSuccess, productData, categories = 
         .map((f) => f?.originFileObj || f)
         .filter((f) => f instanceof File);
 
+      const trimmedName = values.name ? values.name.trim() : "";
+      const trimmedShortDesc = values.short_desc ? values.short_desc.trim() : "";
+      const trimmedDetailDesc = values.detail_desc ? values.detail_desc.trim() : "";
+      const trimmedBrand = values.brand ? values.brand.trim() : "";
+      const normalizedPrice = Number(values.price);
+      const normalizedQuantity = Number(values.quantity);
+
+      if (!trimmedName) {
+        message.error("Tên sản phẩm không hợp lệ");
+        setIsSubmitting(false);
+        return;
+      }
+
+      if (!Number.isFinite(normalizedPrice) || normalizedPrice < 0) {
+        message.error("Giá sản phẩm phải là số không âm");
+        setIsSubmitting(false);
+        return;
+      }
+
+      if (!Number.isInteger(normalizedQuantity) || normalizedQuantity < 0) {
+        message.error("Tồn kho phải là số nguyên không âm");
+        setIsSubmitting(false);
+        return;
+      }
+
+      const duplicateName = existingProducts.some((product) => {
+        if (!product?._id || product._id === productData?._id) return false;
+        if (!product?.name) return false;
+        return product.name.trim().toLowerCase() === trimmedName.toLowerCase();
+      });
+
+      if (duplicateName) {
+        message.error("Tên sản phẩm đã tồn tại. Vui lòng nhập tên khác.");
+        setIsSubmitting(false);
+        return;
+      }
+
       const payload = {
         _id: productData?._id,
-        name: values.name.trim(),
-        category_id: values.category_id,
-        price: values.price,
-        short_desc: (values.short_desc || "").trim(),
-        detail_desc: (values.detail_desc || "").trim(),
-        brand: (values.brand || "").trim(),
-        quantity: values.quantity,
-        status: values.status !== undefined ? values.status : true,
+        name: trimmedName,
+        category: values.category_id,
+        price: normalizedPrice,
+        short_desc: trimmedShortDesc,
+        detail_desc: trimmedDetailDesc,
+        brand: trimmedBrand,
+        stockQuantity: normalizedQuantity,
+        status: typeof values.status === "boolean" ? values.status : true,
       };
 
       if (images.length > 0) {
@@ -82,18 +172,6 @@ const UpdateProduct = ({ visible, onClose, onSuccess, productData, categories = 
     setPreviewImage(file.url || file.preview || "");
     setModalVisible(true);
   };
-
-  const customStyles = useMemo(
-    () => ({
-      card: { borderRadius: 8, border: "none", boxShadow: "none" },
-      primaryButton: { backgroundColor: "#13C2C2", borderColor: "#13C2C2", height: 44, borderRadius: 8, fontWeight: 600, fontSize: 16 },
-      title: { color: "#0D364C", marginBottom: 24, fontWeight: 700 },
-      label: { color: "#0D364C", fontWeight: 600, fontSize: 14 },
-      input: { borderRadius: 8, height: 40, borderColor: "#d9d9d9" },
-      divider: { borderColor: "#13C2C2", opacity: 0.3 },
-    }),
-    []
-  );
 
   return (
     <>
@@ -145,15 +223,38 @@ const UpdateProduct = ({ visible, onClose, onSuccess, productData, categories = 
                 </Form.Item>
 
                 <Form.Item label={<span style={customStyles.label}>Hình ảnh sản phẩm</span>} name="image" valuePropName="fileList" getValueFromEvent={(e) => (Array.isArray(e) ? e : e?.fileList)}>
-                  <Upload listType="picture-card" maxCount={1} beforeUpload={() => false} onPreview={handlePreview} onChange={({ fileList: newFileList }) => setFileList(newFileList)} fileList={fileList}>
-                    {fileList.length < 1 && (
-                      <div style={{ padding: "20px 0" }}>
-                        <CameraOutlined style={{ color: "#13C2C2", fontSize: 24 }} />
-                        <div style={{ marginTop: 8, color: "#13C2C2", fontWeight: 500, fontSize: 14 }}>Tải ảnh lên</div>
-                        <div style={{ color: "#999", fontSize: 12, marginTop: 4 }}>PNG, JPG tối đa 2MB</div>
+                  <Upload
+                    listType="picture-card"
+                    maxCount={1}
+                    beforeUpload={() => false}
+                    onPreview={handlePreview}
+                    onChange={({ fileList: newFileList }) => setFileList(newFileList)}
+                    onRemove={(file) => {
+                      setFileList((prev) => prev.filter((item) => item.uid !== file.uid));
+                      return true;
+                    }}
+                    fileList={fileList}
+                  >
+                    <div style={{ padding: "20px 0" }}>
+                      <CameraOutlined style={{ color: "#13C2C2", fontSize: 24 }} />
+                      <div style={{ marginTop: 8, color: "#13C2C2", fontWeight: 500, fontSize: 14 }}>
+                        {fileList.length > 0 ? "Chọn ảnh khác" : "Tải ảnh lên"}
                       </div>
-                    )}
+                      <div style={{ color: "#999", fontSize: 12, marginTop: 4 }}>PNG, JPG tối đa 2MB</div>
+                    </div>
                   </Upload>
+                  {fileList.length > 0 && (
+                    <Button
+                      type="link"
+                      style={{ padding: 0 }}
+                      onClick={() => {
+                        setFileList([]);
+                        form.setFieldsValue({ image: [] });
+                      }}
+                    >
+                      Xóa ảnh hiện tại để tải ảnh mới
+                    </Button>
+                  )}
                 </Form.Item>
 
                 <Form.Item label={<span style={customStyles.label}>Trạng thái hiển thị</span>} name="status" valuePropName="checked">
@@ -197,6 +298,7 @@ UpdateProduct.propTypes = {
   onSuccess: PropTypes.func,
   productData: PropTypes.object,
   categories: PropTypes.array,
+  existingProducts: PropTypes.array,
 };
 
 export default UpdateProduct;

@@ -22,6 +22,7 @@ import reviewReducer from "./reducers/reviewReducer";
 import reviewStaffReducer from "./reducers/reviewStaffReducer";
 
 import statisticsReducer from "./reducers/statisticsReducer";
+import statisticsStaffReducer from "./reducers/statisticsStaffReducer";
 
 import aboutReducer from "./reducers/aboutReducer";
 import founderReducer from "./reducers/founderReducer";
@@ -50,6 +51,7 @@ const rootReducer = combineReducers({
   reviewStaff: reviewStaffReducer,
 
   statistics: statisticsReducer,
+  statisticsStaff: statisticsStaffReducer,
 
   about: aboutReducer,
   founder: founderReducer,

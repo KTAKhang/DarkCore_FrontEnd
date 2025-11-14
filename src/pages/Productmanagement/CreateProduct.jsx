@@ -14,7 +14,7 @@ function getBase64(file) {
   });
 }
 
-const CreateProduct = ({ visible, onClose, onSuccess, categories = [] }) => {
+const CreateProduct = ({ visible, onClose, onSuccess, categories = [], existingProducts = [] }) => {
   const [form] = Form.useForm();
   const [previewImage, setPreviewImage] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
@@ -59,17 +59,51 @@ const CreateProduct = ({ visible, onClose, onSuccess, categories = [] }) => {
       .map((f) => f?.originFileObj || f)
       .filter((f) => f instanceof File);
 
+    const trimmedName = values.name ? values.name.trim() : "";
+    const trimmedShortDesc = values.short_desc ? values.short_desc.trim() : "";
+    const trimmedDetailDesc = values.detail_desc ? values.detail_desc.trim() : "";
+    const trimmedBrand = values.brand ? values.brand.trim() : "";
+    const normalizedPrice = Number(values.price);
+    const normalizedQuantity = Number(values.quantity);
+
+    if (!trimmedName) {
+      message.error("Tên sản phẩm không hợp lệ");
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (!Number.isFinite(normalizedPrice) || normalizedPrice < 0) {
+      message.error("Giá sản phẩm phải là số không âm");
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (!Number.isInteger(normalizedQuantity) || normalizedQuantity < 0) {
+      message.error("Tồn kho phải là số nguyên không âm");
+      setIsSubmitting(false);
+      return;
+    }
+
+    const duplicateName = existingProducts.some((product) => {
+      if (!product?.name) return false;
+      return product.name.trim().toLowerCase() === trimmedName.toLowerCase();
+    });
+    if (duplicateName) {
+      message.error("Tên sản phẩm đã tồn tại. Vui lòng nhập tên khác.");
+      setIsSubmitting(false);
+      return;
+    }
+
     // Create payload with trimmed values
     const payload = {
-      _id: undefined,
-      name: values.name?.trim(),
-      category_id: values.category_id,
-      price: values.price,
-      short_desc: values.short_desc?.trim(),
-      detail_desc: values.detail_desc?.trim(),
-      brand: values.brand?.trim(),
-      quantity: values.quantity,
-      status: values.status !== undefined ? values.status : true,
+      name: trimmedName,
+      category: values.category_id,
+      price: normalizedPrice,
+      short_desc: trimmedShortDesc,
+      detail_desc: trimmedDetailDesc,
+      brand: trimmedBrand,
+      stockQuantity: normalizedQuantity,
+      status: typeof values.status === "boolean" ? values.status : true,
       images,
     };
 
@@ -216,6 +250,7 @@ CreateProduct.propTypes = {
   onClose: PropTypes.func.isRequired,
   onSuccess: PropTypes.func,
   categories: PropTypes.array,
+  existingProducts: PropTypes.array,
 };
 
 export default CreateProduct;
