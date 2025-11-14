@@ -8,9 +8,9 @@ export const EXPORT_DASHBOARD_EXCEL_SUCCESS = "EXPORT_DASHBOARD_EXCEL_SUCCESS";
 export const EXPORT_DASHBOARD_EXCEL_FAILURE = "EXPORT_DASHBOARD_EXCEL_FAILURE";
 
 // Action Creators
-export const fetchDashboardDataRequest = (year) => ({
+export const fetchDashboardDataRequest = (year, customerDate = null) => ({
   type: FETCH_DASHBOARD_DATA_REQUEST,
-  payload: { year }
+  payload: { year, customerDate }
 });
 
 export const fetchDashboardDataSuccess = (data) => ({
