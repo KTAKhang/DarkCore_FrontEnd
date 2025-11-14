@@ -14,6 +14,7 @@ import CustomerManagement from "../pages/CustomerManagement/CustomerManagement";
 import OrderManagement from "../pages/OrderManagement/OrderManagement";
 import NewsManagement from "../pages/NewsManagement/NewsManagement";
 import ContactManagement from "../pages/ContactManagement/ContactManagement";
+import StaffManagement from "../pages/Staffmanagement/StaffManagement";
 
 
 //Repair customer client
@@ -208,6 +209,7 @@ export const routes = [
       { path: "review", element: <ProductReviewManagement /> },
       { path: "review/:id", element: <AdminProductReviewDetailPage /> },
       { path: "change-password", element: <UpdatePassword /> },
+      { path: "staff", element: <StaffManagement /> },
       { path: "news", element: <NewsManagement /> },
       { path: "contact", element: <ContactManagement /> },
       { path: "discounts", element: <AdminDiscountPage /> },
