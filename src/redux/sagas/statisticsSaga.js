@@ -13,10 +13,11 @@ import {
 // Fetch Dashboard Data
 function* fetchDashboardDataSaga(action) {
   try {
-    const { year } = action.payload;
+    const { year, customerDate } = action.payload;
     const currentDate = new Date().toISOString().split('T')[0];
+    const customerQueryDate = customerDate || currentDate;
 
-    console.log('🔍 Fetching dashboard data for year:', year);
+    console.log('Fetching dashboard data for year:', year, 'customerDate:', customerQueryDate);
 
     // Fetch all data in parallel
     const [
@@ -26,25 +27,22 @@ function* fetchDashboardDataSaga(action) {
       newCustomersRes,
       salesDailyRes,
       topProductsRes,
+      topCustomersRes,
       pendingOrdersRes,
       repairYearlyRes
     ] = yield all([
       call(apiClient.get, '/statistics/overview'),
       call(apiClient.get, `/statistics/revenue/monthly?year=${year}`),
       call(apiClient.get, `/statistics/revenue/daily?date=${currentDate}`),
-      call(apiClient.get, `/statistics/customers/new?date=${currentDate}`),
+      call(apiClient.get, `/statistics/customers/new?date=${customerQueryDate}`),
       call(apiClient.get, `/statistics/sales/daily?date=${currentDate}`),
       call(apiClient.get, '/statistics/products/top?limit=3'),
+      call(apiClient.get, `/statistics/customers/top-trends?month=0&year=${year}&limit=3`),
       call(apiClient.get, '/statistics/orders/pending-count'),
       call(apiClient.get, `/statistics/repair/yearly?year=${year}`)
     ]);
 
     console.log('✅ All API calls successful');
-    console.log('📊 Raw API Responses:', {
-      overview: overviewRes,
-      revenueByMonth: revenueMonthlyRes,
-      topProducts: topProductsRes
-    });
 
     // Combine all data
     const dashboardData = {
@@ -54,6 +52,7 @@ function* fetchDashboardDataSaga(action) {
       newCustomers: newCustomersRes?.data?.data || [],
       salesByDate: salesDailyRes?.data?.data || [],
       topProducts: topProductsRes?.data?.data || [],
+      topCustomers: topCustomersRes?.data?.data || [],
       pendingOrdersCount: pendingOrdersRes?.data?.data || 0,
       repairRevenueByYear: repairYearlyRes?.data?.data || []
     };

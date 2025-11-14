@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import PropTypes from 'prop-types';
 import { useDispatch, useSelector } from 'react-redux';
-import { Card, Row, Col, Typography, Input, Button, Spin, Badge } from "antd";
+import { Card, Row, Col, Typography, Input, Button, Spin, Badge, DatePicker, Modal } from "antd";
 import {
   UserOutlined,
   ShoppingCartOutlined,
@@ -10,10 +10,18 @@ import {
   GiftOutlined,
   ClockCircleOutlined,
   DownloadOutlined,
+  CalendarOutlined,
 } from "@ant-design/icons";
 import { fetchDashboardDataRequest, exportDashboardExcelRequest } from '../redux/actions/statisticsActions';
+import dayjs from 'dayjs';
 
 const { Text, Title } = Typography;
+
+// Helper function to get current date in YYYY-MM-DD format
+const getCurrentDate = () => {
+  const today = new Date();
+  return today.toISOString().split('T')[0];
+};
 
 const AdminDashboard = () => {
   const dispatch = useDispatch();
@@ -22,12 +30,8 @@ const AdminDashboard = () => {
   const [hoveredCard, setHoveredCard] = useState(null);
   const [hoveredStat, setHoveredStat] = useState(null);
   const [selectedYear, setSelectedYear] = useState(2025);
-
-  // Helper function to get current date in YYYY-MM-DD format
-  const getCurrentDate = () => {
-    const today = new Date();
-    return today.toISOString().split('T')[0];
-  };
+  const [selectedCustomerDate, setSelectedCustomerDate] = useState(getCurrentDate());
+  const [showCustomerDateModal, setShowCustomerDateModal] = useState(false);
 
   // Helper function to compare dates safely
   const isSameDate = (date1, date2) => {
@@ -109,14 +113,31 @@ const AdminDashboard = () => {
 
   const getTodayNewCustomers = () => {
     if (dashboardData?.newCustomers && dashboardData.newCustomers.length > 0) {
-      const today = getCurrentDate();
       const todayData = dashboardData.newCustomers.find(item => {
-        const isToday = isSameDate(item.date, today);
+        const isToday = isSameDate(item.date, selectedCustomerDate);
         return isToday;
       });
       return todayData?.newCustomers || todayData?.newCustomerCount || todayData?.count || todayData?.totalNewCustomers || 0;
     }
     return 0;
+  };
+
+  // Format date for display
+  const formatDisplayDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  };
+
+  // Handle customer date change
+  const handleCustomerDateChange = (date) => {
+    if (date && date.isValid()) {
+      // Convert dayjs to YYYY-MM-DD format
+      const formattedDate = date.format('YYYY-MM-DD');
+      setSelectedCustomerDate(formattedDate);
+      setShowCustomerDateModal(false);
+      // Refresh data with new date
+      dispatch(fetchDashboardDataRequest(selectedYear, formattedDate));
+    }
   };
 
   const getTodaySales = () => {
@@ -139,10 +160,14 @@ const AdminDashboard = () => {
       bgColor: "linear-gradient(135deg, #13C2C2 0%, #0D364C 100%)",
     },
     {
-      title: "Khách hàng mới hôm nay",
+      title: selectedCustomerDate === getCurrentDate() 
+        ? "Khách hàng mới hôm nay" 
+        : `Khách hàng mới ${formatDisplayDate(selectedCustomerDate)}`,
       value: getTodayNewCustomers(),
       icon: <UserOutlined style={{ fontSize: 28 }} />,
       bgColor: "linear-gradient(135deg, #52c41a 0%, #389e0d 100%)",
+      hasDatePicker: true,
+      onCardClick: () => setShowCustomerDateModal(true),
     },
     {
       title: "Doanh số hôm nay",
@@ -194,6 +219,7 @@ const AdminDashboard = () => {
 
   const StatCard = ({ stat, index }) => (
     <Card
+      onClick={stat.onCardClick}
       onMouseEnter={() => setHoveredCard(index)}
       onMouseLeave={() => setHoveredCard(null)}
       style={{
@@ -207,6 +233,7 @@ const AdminDashboard = () => {
         transform: hoveredCard === index ? "translateY(-8px)" : "translateY(0)",
         overflow: "hidden",
         position: "relative",
+        cursor: stat.onCardClick ? "pointer" : "default",
       }}
       bodyStyle={{ padding: "24px" }}
     >
@@ -222,9 +249,14 @@ const AdminDashboard = () => {
 
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ flex: 1 }}>
-          <Text style={{ color: "rgba(255,255,255,0.9)", fontSize: 14, fontWeight: 700 }}>
-            {stat.title}
-          </Text>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <Text style={{ color: "rgba(255,255,255,0.9)", fontSize: 14, fontWeight: 700 }}>
+              {stat.title}
+            </Text>
+            {stat.hasDatePicker && (
+              <CalendarOutlined style={{ color: "rgba(255,255,255,0.9)", fontSize: 14 }} />
+            )}
+          </div>
           <div style={{
             fontSize: 28,
             fontWeight: 700,
@@ -256,6 +288,8 @@ const AdminDashboard = () => {
       value: PropTypes.number.isRequired,
       icon: PropTypes.element.isRequired,
       bgColor: PropTypes.string.isRequired,
+      hasDatePicker: PropTypes.bool,
+      onCardClick: PropTypes.func,
     }).isRequired,
     index: PropTypes.number.isRequired,
   };
@@ -554,6 +588,7 @@ const AdminDashboard = () => {
                       onMouseLeave={() => setHoveredStat(null)}
                       style={{
                         display: "flex",
+                        flexDirection: "column",
                         alignItems: "center",
                         justifyContent: "space-between",
                         padding: "20px 24px",
@@ -570,8 +605,6 @@ const AdminDashboard = () => {
                           : "0 2px 8px rgba(13, 54, 76, 0.08)",
                         animation: `fadeInLeft 0.6s ease-out ${index * 0.1}s forwards`,
                         opacity: 0,
-                        flexDirection: "column",
-                        alignItems: "center",
                         textAlign: "center",
                         gap: 12
                       }}
@@ -665,17 +698,19 @@ const AdminDashboard = () => {
                         boxShadow: `0 8px 25px ${index === 0 ? 'rgba(19, 194, 194, 0.15)' : index === 1 ? 'rgba(82, 196, 26, 0.15)' : 'rgba(250, 140, 22, 0.15)'}`,
                         background: `linear-gradient(135deg, ${index === 0 ? '#f0f9ff' : index === 1 ? '#f6ffed' : '#fff7e6'} 0%, ${index === 0 ? '#e0f7fa' : index === 1 ? '#f6ffed' : '#fff2e8'} 100%)`,
                         transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
+                        height: "100%",
                         ":hover": {
                           transform: "translateY(-8px) scale(1.02)",
                           boxShadow: `0 12px 40px ${index === 0 ? 'rgba(19, 194, 194, 0.25)' : index === 1 ? 'rgba(82, 196, 26, 0.25)' : 'rgba(250, 140, 22, 0.25)'}`
                         }
                       }}
-                      bodyStyle={{ padding: "24px", background: "white", margin: "3px", borderRadius: "16px" }}
+                      bodyStyle={{ padding: "24px", background: "white", margin: "3px", borderRadius: "16px", height: "calc(100% - 6px)", display: "flex", flexDirection: "column" }}
                     >
-                      <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                      <div style={{ display: "flex", alignItems: "flex-start", gap: 16, minHeight: 90 }}>
                         <div style={{
                           width: 70,
                           height: 70,
+                          flexShrink: 0,
                           borderRadius: 20,
                           background: `linear-gradient(135deg, ${index === 0 ? '#13C2C2' : index === 1 ? '#52C41A' : '#FA8C16'} 0%, ${index === 0 ? '#0D364C' : index === 1 ? '#389e0d' : '#d4380d'} 100%)`,
                           display: "flex",
@@ -689,14 +724,24 @@ const AdminDashboard = () => {
                         }}>
                           #{index + 1}
                         </div>
-                        <div style={{ flex: 1 }}>
-                          <Text style={{
-                            fontSize: 18,
-                            fontWeight: 700,
-                            color: "#0D364C",
-                            display: "block",
-                            marginBottom: 6
-                          }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <Text 
+                            title={product.productName}
+                            style={{
+                              fontSize: 18,
+                              fontWeight: 700,
+                              color: "#0D364C",
+                              display: "-webkit-box",
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: "vertical",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              lineHeight: "1.4",
+                              marginBottom: 6,
+                              minHeight: 50,
+                              maxHeight: 50
+                            }}
+                          >
                             {product.productName}
                           </Text>
                           <Text style={{ color: "#13C2C2", fontSize: 14, fontWeight: 500 }}>
@@ -761,6 +806,183 @@ const AdminDashboard = () => {
         </Row>
         </>
       )}
+
+      {/* Top Customers Section */}
+      {dashboardData?.topCustomers && dashboardData.topCustomers.length > 0 && (
+        <>
+          <Row gutter={[24, 24]} style={{ marginTop: 32 }}>
+            <Col span={24}>
+              <Card
+                style={{
+                  borderRadius: 20,
+                  border: `2px solid #722ED1`,
+                  boxShadow: "0 8px 32px rgba(114, 46, 209, 0.15)",
+                  background: "linear-gradient(135deg, #f9f0ff 0%, #efdbff 100%)",
+                }}
+                bodyStyle={{ padding: "32px", background: "white", margin: "4px", borderRadius: "16px" }}
+              >
+                <div style={{ marginBottom: 32 }}>
+                  <Title level={4} style={{ color: "#0D364C", marginBottom: 8, fontSize: 22, fontWeight: 700 }}>
+                    Khách hàng VIP ({dashboardData.topCustomers.length})
+                  </Title>
+                  <Text style={{ color: "#722ED1", fontSize: 16, fontWeight: 500 }}>
+                    Top khách hàng có chi tiêu cao nhất
+                  </Text>
+                </div>
+
+                <Row gutter={[16, 16]}>
+                  {dashboardData.topCustomers.map((customer, index) => (
+                    <Col xs={24} sm={12} lg={8} key={customer.userId || index}>
+                      <Card
+                        style={{
+                          borderRadius: 20,
+                          border: `2px solid ${index === 0 ? '#722ED1' : index === 1 ? '#EB2F96' : '#FA541C'}`,
+                          boxShadow: `0 8px 25px ${index === 0 ? 'rgba(114, 46, 209, 0.15)' : index === 1 ? 'rgba(235, 47, 150, 0.15)' : 'rgba(250, 84, 28, 0.15)'}`,
+                          background: `linear-gradient(135deg, ${index === 0 ? '#f9f0ff' : index === 1 ? '#fff0f6' : '#fff2e8'} 0%, ${index === 0 ? '#efdbff' : index === 1 ? '#ffd6e7' : '#ffe7ba'} 100%)`,
+                          transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
+                          height: "100%",
+                          ":hover": {
+                            transform: "translateY(-8px) scale(1.02)",
+                            boxShadow: `0 12px 40px ${index === 0 ? 'rgba(114, 46, 209, 0.25)' : index === 1 ? 'rgba(235, 47, 150, 0.25)' : 'rgba(250, 84, 28, 0.25)'}`
+                          }
+                        }}
+                        bodyStyle={{ padding: "24px", background: "white", margin: "3px", borderRadius: "16px", height: "calc(100% - 6px)", display: "flex", flexDirection: "column" }}
+                      >
+                        <div style={{ display: "flex", alignItems: "flex-start", gap: 16, minHeight: 90 }}>
+                          <div style={{
+                            width: 70,
+                            height: 70,
+                            flexShrink: 0,
+                            borderRadius: 20,
+                            background: `linear-gradient(135deg, ${index === 0 ? '#722ED1' : index === 1 ? '#EB2F96' : '#FA541C'} 0%, ${index === 0 ? '#531dab' : index === 1 ? '#c41d7f' : '#d4380d'} 100%)`,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontSize: 28,
+                            fontWeight: "bold",
+                            color: "white",
+                            boxShadow: `0 4px 15px ${index === 0 ? 'rgba(114, 46, 209, 0.4)' : index === 1 ? 'rgba(235, 47, 150, 0.4)' : 'rgba(250, 84, 28, 0.4)'}`,
+                            border: "3px solid rgba(255,255,255,0.3)"
+                          }}>
+                            #{index + 1}
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <Text 
+                              title={customer.name || customer.customerName}
+                              style={{
+                                fontSize: 18,
+                                fontWeight: 700,
+                                color: "#0D364C",
+                                display: "-webkit-box",
+                                WebkitLineClamp: 2,
+                                WebkitBoxOrient: "vertical",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                lineHeight: "1.4",
+                                marginBottom: 6,
+                                minHeight: 50,
+                                maxHeight: 50
+                              }}
+                            >
+                              {customer.name || customer.customerName}
+                            </Text>
+                            <Text 
+                              title={customer.email}
+                              style={{ 
+                                color: "#722ED1", 
+                                fontSize: 13, 
+                                fontWeight: 500,
+                                display: "block",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap"
+                              }}
+                            >
+                              📧 {customer.email}
+                            </Text>
+                          </div>
+                        </div>
+
+                        <div style={{
+                          marginTop: 20,
+                          paddingTop: 20,
+                          borderTop: `2px solid ${index === 0 ? '#722ED120' : index === 1 ? '#EB2F9620' : '#FA541C20'}`,
+                          background: `linear-gradient(135deg, ${index === 0 ? '#722ED105' : index === 1 ? '#EB2F9605' : '#FA541C05'} 0%, transparent 100%)`,
+                          borderRadius: 12,
+                          padding: "16px"
+                        }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <div>
+                              <Text style={{
+                                color: index === 0 ? "#722ED1" : index === 1 ? "#EB2F96" : "#FA541C",
+                                fontSize: 14,
+                                display: "block",
+                                fontWeight: 600,
+                                marginBottom: 4
+                              }}>
+                                Tổng chi tiêu
+                              </Text>
+                              <Text style={{
+                                fontSize: 20,
+                                fontWeight: 700,
+                                color: "#0D364C"
+                              }}>
+                                {customer.totalSpent.toLocaleString()}
+                              </Text>
+                            </div>
+                            <div style={{ textAlign: "right" }}>
+                              <Text style={{
+                                color: index === 0 ? "#722ED1" : index === 1 ? "#EB2F96" : "#FA541C",
+                                fontSize: 14,
+                                display: "block",
+                                fontWeight: 600,
+                                marginBottom: 4
+                              }}>
+                                Số đơn hàng
+                              </Text>
+                              <Text style={{
+                                fontSize: 20,
+                                fontWeight: 700,
+                                color: "#0D364C"
+                              }}>
+                                {customer.totalOrders.toLocaleString()}
+                              </Text>
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+                    </Col>
+                  ))}
+                </Row>
+              </Card>
+            </Col>
+          </Row>
+        </>
+      )}
+
+      {/* Date Picker Modal for New Customers */}
+      <Modal
+        title="Chọn ngày xem khách hàng mới"
+        open={showCustomerDateModal}
+        onCancel={() => setShowCustomerDateModal(false)}
+        footer={null}
+        centered
+      >
+        <div style={{ padding: "20px 0" }}>
+          <DatePicker
+            value={selectedCustomerDate ? dayjs(selectedCustomerDate, 'YYYY-MM-DD') : null}
+            onChange={handleCustomerDateChange}
+            format="DD/MM/YYYY"
+            style={{ width: "100%" }}
+            size="large"
+            disabledDate={(current) => current && current > dayjs().endOf('day')}
+            placeholder="Chọn ngày"
+          />
+          <div style={{ marginTop: 16, color: "#666" }}>
+            <Text>Chọn một ngày để xem số lượng khách hàng mới đăng ký trong ngày đó.</Text>
+          </div>
+        </div>
+      </Modal>
 
       <style>{`
         @keyframes slideInUp {
