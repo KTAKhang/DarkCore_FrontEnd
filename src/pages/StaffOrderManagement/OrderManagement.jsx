@@ -54,104 +54,74 @@ const OrderManagement = () => {
   const [pagination, setPagination] = useState({ current: 1, pageSize: 5 });
   const [sort, setSort] = useState({ sortBy: "createdat_desc" });
 
-  // Quản lý hiển thị modal
-  const [isUpdateModalVisible, setIsUpdateModalVisible] = useState(false); // Modal cập nhật đơn hàng
-  const [isViewDetailModalVisible, setIsViewDetailModalVisible] = useState(false); // Modal xem chi tiết đơn hàng
-  const [selectedOrder, setSelectedOrder] = useState(null); // Đơn hàng đang được chọn
+  const [isUpdateModalVisible, setIsUpdateModalVisible] = useState(false);
+  const [isViewDetailModalVisible, setIsViewDetailModalVisible] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState(null);
 
-  // Sử dụng refs để lưu giá trị hiện tại và tránh dependency loops trong useEffect
   const filtersRef = useRef(filters);
   const paginationRef = useRef(pagination);
   const sortRef = useRef(sort);
 
-  // Cập nhật refs khi giá trị thay đổi
   useEffect(() => { filtersRef.current = filters; }, [filters]);
   useEffect(() => { paginationRef.current = pagination; }, [pagination]);
   useEffect(() => { sortRef.current = sort; }, [sort]);
 
-  /**
-   * Hàm gọi API lấy danh sách đơn hàng
-   * Sử dụng useCallback để tránh re-render không cần thiết
-   */
+
   const fetchOrders = useCallback((params = {}) => {
     const currentFilters = filtersRef.current;
     const currentPagination = paginationRef.current;
     const currentSort = sortRef.current;
-
-    // Tạo query parameters cho API
     const query = {
       page: currentPagination.current,
       limit: currentPagination.pageSize,
       sortBy: currentSort.sortBy,
       ...params
     };
-
-    // Thêm filter theo trạng thái nếu có
     if (currentFilters.status !== "all") query.status = currentFilters.status;
-
-    // Thêm tìm kiếm nếu có - backend hỗ trợ search theo receiverName
     if (currentFilters.searchText.trim()) {
       query.search = currentFilters.searchText.trim();
     }
-
     dispatch(staffOrderListRequest(query));
   }, [dispatch]);
 
 
   useEffect(() => {
-    fetchOrders({ page: 1 });
+    // fetchOrders({ page: 1 });
     dispatch(staffOrderStatsRequest());
     dispatch(staffOrderStatusesRequest());
-  }, [dispatch, fetchOrders]);
+  }, []);
 
 
   useEffect(() => {
     if (success && success.includes("cập nhật thành công")) {
-      setTimeout(() => {
-        fetchOrders(); // Refresh danh sách đơn hàng
-        dispatch(staffOrderStatsRequest()); // Refresh thống kê
-      }, 100); // Delay nhỏ để đảm bảo backend đã xử lý xong
+      const t = setTimeout(() => {
+        fetchOrders();
+        dispatch(staffOrderStatsRequest());
+        dispatch(staffOrderClearMessages());
+      }, 100);
+      return () => clearTimeout(t);
     }
-  }, [success, fetchOrders, dispatch]);
+  }, [success]);
 
-
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   useEffect(() => {
-    // Bỏ qua lần render đầu tiên để tránh gọi API 2 lần
-    if (isInitialLoad) {
-      setIsInitialLoad(false);
-      return;
-    }
-
     const timeoutId = setTimeout(() => {
-      setPagination(prev => ({ ...prev, current: 1 })); // Reset về trang 1
       fetchOrders({ page: 1 });
-    }, filters.searchText.trim() ? 800 : 0); // Debounce 800ms nếu có search text
+    }, filters.searchText.trim() ? 800 : 0);
 
     return () => clearTimeout(timeoutId);
-  }, [filters, fetchOrders, isInitialLoad]);
+  }, [filters, fetchOrders]);
 
-  /**
-   * Effect: Xử lý thay đổi sắp xếp
-   * Gọi lại API khi user thay đổi cách sắp xếp
-   */
+
+
   useEffect(() => {
-    if (isInitialLoad) return;
-    fetchOrders();
-  }, [sort, fetchOrders, isInitialLoad]);
+    fetchOrders({ page: 1 });
+  }, [sort, fetchOrders]);
 
-  /**
-   * Hàm lấy thông tin trạng thái từ orderStatusId
-   * Xử lý cả trường hợp orderStatusId là object (populated) hoặc string (ID)
-   */
   const getStatusInfo = useCallback((orderStatusId) => {
-    // Trường hợp không có orderStatusId hoặc chưa load statuses
     if (!orderStatusId || !statuses || statuses.length === 0) {
       return { name: "pending", color: "#faad14", description: "Chờ xác nhận" };
     }
-
-    // Trường hợp orderStatusId đã được populate (là object)
     if (typeof orderStatusId === 'object' && orderStatusId.name) {
       return {
         name: orderStatusId.name,
@@ -161,7 +131,6 @@ const OrderManagement = () => {
       };
     }
 
-    // Trường hợp orderStatusId chỉ là ID string, tìm trong mảng statuses
     const statusInfo = statuses.find(status => status._id === orderStatusId);
     if (statusInfo) {
       return {
@@ -172,20 +141,15 @@ const OrderManagement = () => {
       };
     }
 
-    // Fallback mặc định
     return { name: "pending", color: "#faad14", description: "Chờ xác nhận" };
   }, [statuses]);
 
-  /**
-   * Mapping dữ liệu từ backend để hiển thị
-   * Chuẩn hóa tên các trường và thêm các field cần thiết cho UI
-   */
+
   const orders = (orderItems || []).map((order) => {
     const statusInfo = getStatusInfo(order.orderStatusId);
 
     return {
-      ...order, // Giữ nguyên tất cả field gốc
-      // Thông tin khách hàng/người nhận (ưu tiên receiverName/Phone từ order)
+      ...order,
       customerName: order.receiverName || order.userId?.user_name || "N/A",
       customerEmail: order.userId?.email || "N/A",
       customerPhone: order.receiverPhone || order.userId?.phone || "N/A",
@@ -195,27 +159,21 @@ const OrderManagement = () => {
         email: order.userId?.email,
         phone: order.receiverPhone || order.userId?.phone
       },
-      // Thông tin trạng thái
       status: statusInfo.name,
       statusColor: statusInfo.color,
       statusId: statusInfo.id,
       statusDescription: statusInfo.description,
-      // Thông tin giá (để tương thích với cả totalPrice và totalAmount)
       totalAmount: order.totalPrice,
       totalPrice: order.totalPrice,
-      // Thông tin sản phẩm
       itemsCount: order.orderDetails?.length || 0,
       items: order.orderDetails || [],
-      // Địa chỉ giao hàng (để tương thích)
       shippingAddress: order.receiverAddress,
       receiverAddress: order.receiverAddress,
       receiverName: order.receiverName,
       receiverPhone: order.receiverPhone,
-      // Thông tin chi phí
       subtotal: order.subtotal,
       shippingFee: order.shippingFee || 0,
       discount: order.discount || 0,
-      // Thông tin khác
       paymentStatus: order.paymentStatus,
       trackingNumber: order.trackingNumber,
       deliveredAt: order.deliveredAt,
@@ -224,10 +182,9 @@ const OrderManagement = () => {
     };
   });
 
-  // Kiểm tra có filter đang active không
   const hasActiveFilters = filters.searchText.trim() || filters.status !== "all";
 
-  // Map tên trạng thái sang tiếng Việt
+
   const statusMap = {
     pending: "Chờ xác nhận",
     confirmed: "Đã xác nhận",
@@ -238,10 +195,7 @@ const OrderManagement = () => {
     returned: "Trả hàng"
   };
 
-  /**
-   * Tạo chuỗi tóm tắt các filter đang active
-   * Hiển thị trong alert box để user biết đang filter gì
-   */
+
   const getFilterSummary = () => {
     const activeFilters = [];
     if (filters.status !== "all") {
@@ -265,39 +219,27 @@ const OrderManagement = () => {
   };
 
 
-  /**
-   * Handler: Làm mới dữ liệu
-   * Gọi lại API để lấy danh sách và thống kê mới nhất
-   */
   const handleRefresh = useCallback(() => {
     setLoading(true);
-    fetchOrders();
+    fetchOrders({ page: 1 });
     dispatch(staffOrderStatsRequest());
-    setTimeout(() => setLoading(false), 450); // Delay nhỏ để hiển thị loading
+    setTimeout(() => setLoading(false), 450);
   }, [dispatch, fetchOrders]);
 
-  /**
-   * Handler: Mở modal cập nhật đơn hàng
-   */
+
   const handleOpenUpdateModal = (order) => {
     setSelectedOrder(order);
     setIsUpdateModalVisible(true);
   };
 
-  /**
-   * Handler: Mở modal xem chi tiết đơn hàng
-   * Gọi API detail để lấy đầy đủ thông tin (bao gồm orderDetails)
-   */
+
   const handleOpenViewDetailModal = (order) => {
     setSelectedOrder(order);
     setIsViewDetailModalVisible(true);
     dispatch(staffOrderDetailRequest(order._id));
   };
 
-  /**
-   * Handler: Xử lý khi cập nhật đơn hàng thành công
-   * Gọi API update và đóng modal
-   */
+
   const handleUpdateSuccess = useCallback((updated) => {
     if (!updated?._id) return;
     dispatch(staffOrderUpdateStatusRequest(updated._id, {
@@ -308,25 +250,7 @@ const OrderManagement = () => {
     setSelectedOrder(null);
   }, [dispatch]);
 
-  /**
-   * Handler: Xử lý khi thay đổi sorting/filtering trong table
-   * Chỉ xử lý sorting cho cột "Ngày tạo"
-   */
-  const handleTableChange = (paginationData, tableFilters, sorter) => {
-    if (sorter?.field && sorter?.order) {
-      const sortMap = {
-        createdAt: { field: 'createdat', order: sorter.order === 'ascend' ? 'asc' : 'desc' }
-      };
 
-      const sortConfig = sortMap[sorter.field];
-      if (sortConfig) {
-        setSort({ sortBy: sortConfig.field, sortOrder: sortConfig.order });
-      }
-    } else if (sorter?.field && !sorter?.order) {
-      // Reset sorting về mặc định
-      setSort({ sortBy: "createdat_desc" });
-    }
-  };
 
 
   const handleSortChange = (value) => {
@@ -343,10 +267,6 @@ const OrderManagement = () => {
     setSort(sortMap[value] || sortMap.default);
   };
 
-  /**
-   * Helper: Lấy config hiển thị cho từng trạng thái đơn hàng
-   * Trả về: { color, icon, text }
-   */
   const getStatusConfig = (status) => {
     const statusMap = {
       pending: { color: "#faad14", icon: <ClockCircleOutlined />, text: "Chờ xác nhận" },
@@ -363,10 +283,6 @@ const OrderManagement = () => {
   };
 
 
-  /**
-   * Định nghĩa các cột cho bảng đơn hàng
-   * Bao gồm: Đơn hàng, Khách hàng, Tổng tiền, Ngày tạo, Trạng thái, Hành động
-   */
   const columns = [
     {
       title: "Đơn hàng",
@@ -684,7 +600,6 @@ const OrderManagement = () => {
             columns={columns}
             dataSource={dataForPage}
             pagination={tablePagination}
-            onChange={handleTableChange}
             style={{ borderRadius: 12, overflow: "hidden" }}
             scroll={{ x: true }}
             size="middle"
@@ -715,7 +630,7 @@ const OrderManagement = () => {
         selectedOrder && (
           <ViewOrderDetail
             visible={isViewDetailModalVisible}
-            orderData={currentOrder || selectedOrder} // Ưu tiên currentOrder từ API detail
+            orderData={currentOrder || selectedOrder}
             loading={loadingDetail}
             onClose={() => {
               setIsViewDetailModalVisible(false);
