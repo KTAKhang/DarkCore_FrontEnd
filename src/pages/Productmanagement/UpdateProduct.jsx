@@ -5,22 +5,67 @@ import { EditOutlined, CameraOutlined, AppstoreOutlined, ShoppingOutlined, Dolla
 
 const { Title, Text } = Typography;
 
-function getBase64(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = (error) => reject(error);
-  });
-}
-
-const customStyles = {
+const styles = {
   card: { borderRadius: 8, border: "none", boxShadow: "none" },
   primaryButton: { backgroundColor: "#13C2C2", borderColor: "#13C2C2", height: 44, borderRadius: 8, fontWeight: 600, fontSize: 16 },
   title: { color: "#0D364C", marginBottom: 24, fontWeight: 700 },
   label: { color: "#0D364C", fontWeight: 600, fontSize: 14 },
   input: { borderRadius: 8, height: 40, borderColor: "#d9d9d9" },
   divider: { borderColor: "#13C2C2", opacity: 0.3 },
+};
+
+const customStyles = styles;
+
+const getBase64 = (file) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = (error) => reject(error);
+  });
+};
+
+const buildInitialFileList = (sourceImages) => {
+  if (!sourceImages) return [];
+  const list = Array.isArray(sourceImages) ? sourceImages : [sourceImages];
+  return list
+    .map((img, index) => {
+      if (!img) return null;
+      if (typeof img === "string") {
+        return { uid: `existing-${index}`, name: `image-${index}`, status: "done", url: img };
+      }
+      if (typeof File !== "undefined" && img instanceof File) {
+        return {
+          uid: `existing-${index}`,
+          name: img.name || `image-${index}`,
+          status: "done",
+          url: URL.createObjectURL(img),
+          originFileObj: img,
+        };
+      }
+      if (typeof img === "object" && img.url) {
+        return { uid: `existing-${index}`, name: img.name || `image-${index}`, status: "done", url: img.url };
+      }
+      return null;
+    })
+    .filter(Boolean);
+};
+
+const normalizeProductValues = (values) => {
+  return {
+    name: values.name ? values.name.trim() : "",
+    short_desc: values.short_desc ? values.short_desc.trim() : "",
+    detail_desc: values.detail_desc ? values.detail_desc.trim() : "",
+    brand: values.brand ? values.brand.trim() : "",
+    price: Number(values.price),
+    quantity: Number(values.quantity),
+  };
+};
+
+const filterImagesFromFileList = (fileList) => {
+  return (fileList || [])
+    .map((file) => file?.originFileObj || file)
+    .filter((file) => file instanceof File);
 };
 
 const UpdateProduct = ({ visible, onClose, onSuccess, productData, categories = [], existingProducts = [] }) => {
@@ -31,44 +76,13 @@ const UpdateProduct = ({ visible, onClose, onSuccess, productData, categories = 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [switchValue, setSwitchValue] = useState(true);
 
-  const buildInitialFileList = (sourceImages) => {
-    if (!sourceImages) return [];
-    const list = Array.isArray(sourceImages) ? sourceImages : [sourceImages];
-    return list
-      .map((img, index) => {
-        if (!img) return null;
-        if (typeof img === "string") {
-          return {
-            uid: `existing-${index}`,
-            name: `image-${index}`,
-            status: "done",
-            url: img,
-          };
-        }
-        if (typeof File !== "undefined" && img instanceof File) {
-          return {
-            uid: `existing-${index}`,
-            name: img.name || `image-${index}`,
-            status: "done",
-            url: URL.createObjectURL(img),
-            originFileObj: img,
-          };
-        }
-        if (typeof img === "object" && img.url) {
-          return {
-            uid: `existing-${index}`,
-            name: img.name || `image-${index}`,
-            status: "done",
-            url: img.url,
-          };
-        }
-        return null;
-      })
-      .filter(Boolean);
-  };
-
   useEffect(() => {
-    if (visible && productData) {
+    if (!visible) {
+      setFileList([]);
+      return;
+    }
+
+    if (productData) {
       form.setFieldsValue({
         name: productData.name,
         category_id: productData.category_id || productData.categoryDetail?._id,
@@ -79,16 +93,12 @@ const UpdateProduct = ({ visible, onClose, onSuccess, productData, categories = 
         quantity: productData.quantity,
         status: productData.status !== false,
       });
-      const initialFiles = buildInitialFileList(
-        Array.isArray(productData.images) && productData.images.length > 0
-          ? productData.images
-          : productData.image
-      );
-      setFileList(initialFiles);
+
+      const imagesSource =
+        (Array.isArray(productData.images) && productData.images.length > 0 ? productData.images : productData.image) || [];
+      setFileList(buildInitialFileList(imagesSource));
       setPreviewImage(productData.image || "");
       setSwitchValue(productData.status !== false);
-    } else if (!visible) {
-      setFileList([]);
     }
   }, [visible, productData, form]);
 
@@ -96,73 +106,59 @@ const UpdateProduct = ({ visible, onClose, onSuccess, productData, categories = 
 
   const handleFinish = async (values) => {
     if (isSubmitting) return;
-    try {
-      setIsSubmitting(true);
+    setIsSubmitting(true);
 
-      // Build images array from fileList (File objects) if user uploaded new ones
-      const images = (fileList || [])
-        .map((f) => f?.originFileObj || f)
-        .filter((f) => f instanceof File);
+    const normalized = normalizeProductValues(values);
+    const images = filterImagesFromFileList(fileList);
 
-      const trimmedName = values.name ? values.name.trim() : "";
-      const trimmedShortDesc = values.short_desc ? values.short_desc.trim() : "";
-      const trimmedDetailDesc = values.detail_desc ? values.detail_desc.trim() : "";
-      const trimmedBrand = values.brand ? values.brand.trim() : "";
-      const normalizedPrice = Number(values.price);
-      const normalizedQuantity = Number(values.quantity);
-
-      if (!trimmedName) {
-        message.error("Tên sản phẩm không hợp lệ");
-        setIsSubmitting(false);
-        return;
-      }
-
-      if (!Number.isFinite(normalizedPrice) || normalizedPrice < 0) {
-        message.error("Giá sản phẩm phải là số không âm");
-        setIsSubmitting(false);
-        return;
-      }
-
-      if (!Number.isInteger(normalizedQuantity) || normalizedQuantity < 0) {
-        message.error("Tồn kho phải là số nguyên không âm");
-        setIsSubmitting(false);
-        return;
-      }
-
-      const duplicateName = existingProducts.some((product) => {
-        if (!product?._id || product._id === productData?._id) return false;
-        if (!product?.name) return false;
-        return product.name.trim().toLowerCase() === trimmedName.toLowerCase();
-      });
-
-      if (duplicateName) {
-        message.error("Tên sản phẩm đã tồn tại. Vui lòng nhập tên khác.");
-        setIsSubmitting(false);
-        return;
-      }
-
-      const payload = {
-        _id: productData?._id,
-        name: trimmedName,
-        category: values.category_id,
-        price: normalizedPrice,
-        short_desc: trimmedShortDesc,
-        detail_desc: trimmedDetailDesc,
-        brand: trimmedBrand,
-        stockQuantity: normalizedQuantity,
-        status: typeof values.status === "boolean" ? values.status : true,
-      };
-
-      if (images.length > 0) {
-        payload.images = images;
-      }
-
-      onSuccess && onSuccess(payload);
+    if (!normalized.name) {
+      message.error("Tên sản phẩm không hợp lệ");
       setIsSubmitting(false);
-    } catch {
-      message.error("Có lỗi xảy ra khi cập nhật sản phẩm");
-      setIsSubmitting(false);
+      return;
     }
+
+    if (!Number.isFinite(normalized.price) || normalized.price < 0) {
+      message.error("Giá sản phẩm phải là số không âm");
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (!Number.isInteger(normalized.quantity) || normalized.quantity < 0) {
+      message.error("Tồn kho phải là số nguyên không âm");
+      setIsSubmitting(false);
+      return;
+    }
+
+    const duplicateName = existingProducts.some((product) => {
+      if (!product?._id || product._id === productData?._id) return false;
+      if (!product?.name) return false;
+      return product.name.trim().toLowerCase() === normalized.name.toLowerCase();
+    });
+
+    if (duplicateName) {
+      message.error("Tên sản phẩm đã tồn tại. Vui lòng nhập tên khác.");
+      setIsSubmitting(false);
+      return;
+    }
+
+    const payload = {
+      _id: productData?._id,
+      name: normalized.name,
+      category: values.category_id,
+      price: normalized.price,
+      short_desc: normalized.short_desc,
+      detail_desc: normalized.detail_desc,
+      brand: normalized.brand,
+      stockQuantity: normalized.quantity,
+      status: typeof values.status === "boolean" ? values.status : true,
+    };
+
+    if (images.length > 0) {
+      payload.images = images;
+    }
+
+    onSuccess?.(payload);
+    setIsSubmitting(false);
   };
 
   const handlePreview = async (file) => {

@@ -134,12 +134,6 @@ const Sidebar = ({ isAdmin = false, isSaleStaff = false }) => {
       path: "/sale-staff/order",
       icon: <ShoppingCartOutlined />,
       color: "#5F27CD"
-    },
-    {
-      title: "Quản Lý Liên Hệ",
-      path: "/sale-staff/contact",
-      icon: <MessageOutlined />,
-      color: "#FF6B6B"
     }
   ];
 

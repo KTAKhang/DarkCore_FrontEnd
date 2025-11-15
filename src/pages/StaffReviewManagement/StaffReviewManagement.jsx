@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import {
@@ -37,6 +37,38 @@ import StaffReviewUpdate from "./StaffReviewUpdate";
 
 const { Title, Text } = Typography;
 
+const getSortValue = (option) => {
+  if (option === "newest") return "desc";
+  if (option === "oldest") return "asc";
+  return null;
+};
+
+const createReviewQuery = ({ page, limit, statusFilter, ratingFilter, searchText, sortOption }) => {
+  const query = {
+    page,
+    limit,
+  };
+
+  if (statusFilter !== "all") {
+    query.status = statusFilter;
+  }
+
+  if (ratingFilter !== "all") {
+    query.rating = parseInt(ratingFilter, 10);
+  }
+
+  if (searchText?.trim()) {
+    query.search = searchText.trim();
+  }
+
+  const sortValue = getSortValue(sortOption);
+  if (sortValue) {
+    query.sort = sortValue;
+  }
+
+  return query;
+};
+
 const StaffReviewManagement = () => {
   const dispatch = useDispatch();
   const { reviews, pagination, loading, error } = useSelector((state) => state.reviewStaff);
@@ -48,80 +80,57 @@ const StaffReviewManagement = () => {
 
   const [selectedReview, setSelectedReview] = useState(null);
   const [isDetailModalVisible, setIsDetailModalVisible] = useState(false);
-  const [searchInput, setSearchInput] = useState("");
-  const [searchKeyword, setSearchKeyword] = useState("");
+  const [searchText, setSearchText] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [ratingFilter, setRatingFilter] = useState("all");
   const [sortOption, setSortOption] = useState("default");
-  const [tablePagination, setTablePagination] = useState({ current: 1, pageSize: 5 });
-  const paginationRef = useRef(tablePagination);
-
-  useEffect(() => {
-    paginationRef.current = tablePagination;
-  }, [tablePagination]);
-
-  // Load data with filters and pagination
-  const loadReviews = useCallback(
-    (paginationParams = {}) => {
-      const currentPagination = paginationRef.current;
-      const params = {
-        page: paginationParams.page || currentPagination.current,
-        limit: paginationParams.limit || currentPagination.pageSize,
-      };
-
-      if (statusFilter !== "all") {
-        params.status = statusFilter;
-      }
-      if (ratingFilter !== "all") {
-        params.rating = parseInt(ratingFilter, 10);
-      }
-      if (searchKeyword) {
-        params.search = searchKeyword;
-      }
-
-      const sortMap = {
-        newest: "desc",
-        oldest: "asc",
-      };
-      const sortValue = sortMap[sortOption];
-      if (sortValue) {
-        params.sort = sortValue;
-      }
-
-      dispatch(getAllReviewsForStaffRequest(params));
-    },
-    [dispatch, statusFilter, ratingFilter, searchKeyword, sortOption]
-  );
-
-  // Load data on mount
-  useEffect(() => {
-    loadReviews({ page: 1 });
-  }, [loadReviews]);
-
-  // Reload when filters change
-  useEffect(() => {
-    setTablePagination((prev) => ({ ...prev, current: 1 }));
-    loadReviews({ page: 1 });
-  }, [statusFilter, ratingFilter, sortOption, searchKeyword, loadReviews]);
-
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setSearchKeyword(searchInput.trim());
-    }, 1000);
-
-    return () => clearTimeout(handler);
-  }, [searchInput]);
+  const [pageInfo, setPageInfo] = useState({ current: 1, size: 5 });
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Reload data after successful update
   useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchText.trim());
+    }, searchText.trim() ? 700 : 0);
+
+    return () => clearTimeout(timer);
+  }, [searchText]);
+
+  useEffect(() => {
+    const query = createReviewQuery({
+      page: pageInfo.current,
+      limit: pageInfo.size,
+      statusFilter,
+      ratingFilter,
+      searchText: debouncedSearch,
+      sortOption,
+    });
+
+    dispatch(getAllReviewsForStaffRequest(query));
+  }, [dispatch, pageInfo, statusFilter, ratingFilter, debouncedSearch, sortOption]);
+
+  useEffect(() => {
+    setPageInfo((prev) => (prev.current === 1 ? prev : { ...prev, current: 1 }));
+  }, [debouncedSearch]);
+
+  useEffect(() => {
     if (updatedStatusData) {
       dispatch(clearReviewStaffMessages());
-      loadReviews({ page: paginationRef.current.current });
+      const query = createReviewQuery({
+        page: pageInfo.current,
+        limit: pageInfo.size,
+        statusFilter,
+        ratingFilter,
+        searchText: debouncedSearch,
+        sortOption,
+      });
+      dispatch(getAllReviewsForStaffRequest(query));
     }
     if (updateStatusError) {
       dispatch(clearReviewStaffMessages());
     }
-  }, [updatedStatusData, updateStatusError, dispatch, loadReviews]);
+  }, [updatedStatusData, updateStatusError, dispatch, pageInfo, statusFilter, ratingFilter, debouncedSearch, sortOption]);
 
   const handleViewDetail = (review) => {
     setSelectedReview(review);
@@ -130,37 +139,53 @@ const StaffReviewManagement = () => {
   };
 
   const handleRefresh = () => {
-    loadReviews({ page: paginationRef.current.current });
+    setIsRefreshing(true);
+    const query = createReviewQuery({
+      page: pageInfo.current,
+      limit: pageInfo.size,
+      statusFilter,
+      ratingFilter,
+      searchText: debouncedSearch,
+      sortOption,
+    });
+    dispatch(getAllReviewsForStaffRequest(query));
+    setTimeout(() => setIsRefreshing(false), 400);
   };
 
   const handleSearch = (value) => {
-    setSearchInput(value);
-    setSearchKeyword(value.trim());
+    setSearchText(value);
+    setDebouncedSearch(value.trim());
   };
 
   const handleStatusFilterChange = (value) => {
     setStatusFilter(value);
+    setPageInfo((prev) => ({ ...prev, current: 1 }));
   };
 
   const handleRatingFilterChange = (value) => {
     setRatingFilter(value);
+    setPageInfo((prev) => ({ ...prev, current: 1 }));
   };
 
   const handleSortChange = (value) => {
     setSortOption(value);
+    setPageInfo((prev) => ({ ...prev, current: 1 }));
   };
 
   const handleClearFilters = () => {
-    setSearchInput("");
-    setSearchKeyword("");
+    setSearchText("");
     setStatusFilter("all");
     setRatingFilter("all");
     setSortOption("default");
+    setPageInfo((prev) => ({ ...prev, current: 1 }));
   };
 
   // Check if has active filters
   const hasActiveFilters =
-    statusFilter !== "all" || ratingFilter !== "all" || searchKeyword || sortOption !== "default";
+    statusFilter !== "all" ||
+    ratingFilter !== "all" ||
+    Boolean(debouncedSearch) ||
+    sortOption !== "default";
 
   const getFilterSummary = () => {
     const activeFilters = [];
@@ -174,8 +199,8 @@ const StaffReviewManagement = () => {
       const sortLabel = sortOption === "oldest" ? "Cũ nhất" : "Mới nhất";
       activeFilters.push(`Sắp xếp: ${sortLabel}`);
     }
-    if (searchKeyword) {
-      activeFilters.push(`Tìm kiếm: "${searchKeyword}"`);
+    if (debouncedSearch) {
+      activeFilters.push(`Tìm kiếm: "${debouncedSearch}"`);
     }
     return activeFilters.join(" • ");
   };
@@ -347,8 +372,8 @@ const StaffReviewManagement = () => {
           <Space size="middle" style={{ flex: 1, flexWrap: "wrap" }}>
             <Input.Search
               placeholder="Tìm kiếm theo sản phẩm, người dùng, email, nội dung..."
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
               onSearch={handleSearch}
               style={{ width: 360, maxWidth: "100%" }}
               size="large"
@@ -399,7 +424,7 @@ const StaffReviewManagement = () => {
             <Button
               onClick={handleRefresh}
               icon={<ReloadOutlined />}
-              loading={loading}
+              loading={loading || isRefreshing}
               style={{ borderColor: "#13C2C2", color: "#13C2C2" }}
             >
               Làm mới
@@ -446,14 +471,14 @@ const StaffReviewManagement = () => {
         )}
 
         {/* Table */}
-        <Spin spinning={loading} tip="Đang tải đánh giá...">
+        <Spin spinning={loading || isRefreshing} tip="Đang tải đánh giá...">
           <Table
             columns={columns}
             dataSource={reviews}
             rowKey="_id"
             pagination={{
-              current: pagination?.page || tablePagination.current,
-              pageSize: pagination?.limit || tablePagination.pageSize,
+              current: pagination?.page || pageInfo.current,
+              pageSize: pagination?.limit || pageInfo.size,
               total: pagination?.total || 0,
               showSizeChanger: false,
               showQuickJumper: true,
@@ -464,13 +489,8 @@ const StaffReviewManagement = () => {
                   {hasActiveFilters && <span style={{ color: "#13C2C2" }}> (đã lọc)</span>}
                 </Text>
               ),
-              onChange: (page, pageSize) => {
-                setTablePagination({ current: page, pageSize });
-                loadReviews({ page, limit: pageSize });
-              },
-              onShowSizeChange: (current, size) => {
-                setTablePagination({ current, pageSize: size });
-                loadReviews({ page: current, limit: size });
+              onChange: (page) => {
+                setPageInfo((prev) => ({ ...prev, current: page }));
               },
             }}
             scroll={{ x: 1200 }}
