@@ -166,3 +166,23 @@ export const orderCreateFailed = (error) => ({
   type: ORDER_CREATE_FAILED,
   payload: error
 });
+
+// ==================== CANCEL ORDER (Customer) ====================
+export const ORDER_CANCEL_REQUEST = 'ORDER_CANCEL_REQUEST';
+export const ORDER_CANCEL_SUCCESS = 'ORDER_CANCEL_SUCCESS';
+export const ORDER_CANCEL_FAILURE = 'ORDER_CANCEL_FAILURE';
+
+export const orderCancelRequest = (orderId, cancelledReason = '') => ({
+  type: ORDER_CANCEL_REQUEST,
+  payload: { orderId, cancelledReason }
+});
+
+export const orderCancelSuccess = (data) => ({
+  type: ORDER_CANCEL_SUCCESS,
+  payload: data
+});
+
+export const orderCancelFailure = (error) => ({
+  type: ORDER_CANCEL_FAILURE,
+  payload: error
+});
