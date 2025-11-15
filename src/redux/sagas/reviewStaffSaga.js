@@ -109,7 +109,7 @@ function* getAllReviewsForStaffSaga(action) {
         if (params.search) q.append("search", String(params.search));
         if (params.sort) q.append("sort", String(params.sort));
 
-        const response = yield call(() => apiCall("get", `/review-staff/staff/viewlist?${q.toString()}`));
+        const response = yield call(() => apiCall("get", `/review-staff/api/reviews/staff/viewlist?${q.toString()}`));
         if (response && response.status === "OK") {
             yield put(getAllReviewsForStaffSuccess(response));
         } else {
@@ -125,7 +125,7 @@ function* getReviewDetailStaffSaga(action) {
     try {
         const reviewId = action.payload;
         if (!reviewId) throw new Error("Missing review id");
-        const response = yield call(() => apiCall("get", `/review-staff/detail/${reviewId}`));
+        const response = yield call(() => apiCall("get", `/review-staff/api/reviews/detail/${reviewId}`));
         if (response && response.status === "OK") {
             yield put(getReviewDetailStaffSuccess(response));
         } else {
@@ -141,7 +141,7 @@ function* updateReviewStatusStaffSaga(action) {
     try {
         const { reviewId, status } = action.payload || {};
         if (!reviewId) throw new Error("Missing reviewId");
-        const response = yield call(() => apiCall("put", `/review-staff/hidden/${reviewId}`, { status }));
+        const response = yield call(() => apiCall("put", `/review-staff/api/reviews/hidden/${reviewId}`, { status }));
         if (response && response.status === "OK") {
             const data = response.data || response.review || response;
             yield put(updateReviewStatusStaffSuccess(data));

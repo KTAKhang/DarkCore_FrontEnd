@@ -30,7 +30,32 @@ const ShowAboutUs = () => {
     setSelectedFounderId(null);
   };
 
-  if (publicLoading || publicLoadingList) {
+  const isLoading = publicLoading || publicLoadingList;
+  const hasAboutInfo = Boolean(aboutData);
+  const aboutInfo = aboutData || {};
+  const founderList = Array.isArray(founders) ? founders : [];
+  const hasFounders = founderList.length > 0;
+
+  const statsCards = aboutInfo.stats
+    ? [
+        { label: "Năm hoạt động", value: aboutInfo.stats.yearsOfOperation, suffix: "+" },
+        { label: "Khách hàng", value: aboutInfo.stats.totalCustomers, suffix: "+", formatNumber: true },
+        { label: "Sản phẩm", value: aboutInfo.stats.totalProducts, suffix: "+", formatNumber: true },
+        { label: "Đơn hàng", value: aboutInfo.stats.totalOrders, suffix: "+", formatNumber: true },
+      ].filter((item) => item.value > 0)
+    : [];
+
+  const socialLinks = aboutInfo.socialMedia
+    ? [
+        { label: "Facebook", href: aboutInfo.socialMedia.facebook, className: "bg-blue-600 hover:bg-blue-700" },
+        { label: "Instagram", href: aboutInfo.socialMedia.instagram, className: "bg-pink-600 hover:bg-pink-700" },
+        { label: "Twitter", href: aboutInfo.socialMedia.twitter, className: "bg-blue-400 hover:bg-blue-500" },
+        { label: "YouTube", href: aboutInfo.socialMedia.youtube, className: "bg-red-600 hover:bg-red-700" },
+        { label: "LinkedIn", href: aboutInfo.socialMedia.linkedin, className: "bg-blue-700 hover:bg-blue-800" },
+      ].filter((link) => link.href)
+    : [];
+
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col">
         <Header searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
@@ -42,7 +67,7 @@ const ShowAboutUs = () => {
     );
   }
 
-  if (!aboutData) {
+  if (!hasAboutInfo) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col">
         <Header searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
@@ -63,29 +88,29 @@ const ShowAboutUs = () => {
       <section className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-20">
         <div className="container mx-auto px-4">
           <div className="text-center max-w-4xl mx-auto">
-            {aboutData.logo && (
+            {aboutInfo.logo && (
               <img
-                src={aboutData.logo}
-                alt={aboutData.storeName}
+                src={aboutInfo.logo}
+                alt={aboutInfo.storeName}
                 className="w-32 h-32 mx-auto mb-6 rounded-full bg-white p-2 object-contain"
               />
             )}
-            <h1 className="text-5xl font-bold mb-4">{aboutData.storeName}</h1>
-            {aboutData.slogan && (
-              <p className="text-xl text-blue-100 mb-8">{aboutData.slogan}</p>
+            <h1 className="text-5xl font-bold mb-4">{aboutInfo.storeName}</h1>
+            {aboutInfo.slogan && (
+              <p className="text-xl text-blue-100 mb-8">{aboutInfo.slogan}</p>
             )}
           </div>
         </div>
       </section>
 
       {/* Story Section */}
-      {aboutData.story && (
+      {aboutInfo.story && (
         <section className="py-16 bg-white">
           <div className="container mx-auto px-4">
             <div className="max-w-4xl mx-auto">
               <h2 className="text-3xl font-bold text-gray-900 mb-6 text-center">Câu chuyện của chúng tôi</h2>
               <div className="prose prose-lg max-w-none text-gray-700 leading-relaxed">
-                <p className="whitespace-pre-line">{aboutData.story}</p>
+                <p className="whitespace-pre-line">{aboutInfo.story}</p>
               </div>
             </div>
           </div>
@@ -93,26 +118,26 @@ const ShowAboutUs = () => {
       )}
 
       {/* Mission & Vision */}
-      {(aboutData.mission || aboutData.vision) && (
+      {(aboutInfo.mission || aboutInfo.vision) && (
         <section className="py-16 bg-gray-50">
           <div className="container mx-auto px-4">
             <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-              {aboutData.mission && (
+              {aboutInfo.mission && (
                 <div className="bg-white p-8 rounded-xl shadow-lg">
                   <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-6">
                     <span className="text-3xl">🎯</span>
                   </div>
                   <h3 className="text-2xl font-bold text-gray-900 mb-4">Sứ mệnh</h3>
-                  <p className="text-gray-700 leading-relaxed whitespace-pre-line">{aboutData.mission}</p>
+                  <p className="text-gray-700 leading-relaxed whitespace-pre-line">{aboutInfo.mission}</p>
                 </div>
               )}
-              {aboutData.vision && (
+              {aboutInfo.vision && (
                 <div className="bg-white p-8 rounded-xl shadow-lg">
                   <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mb-6">
                     <span className="text-3xl">👁️</span>
                   </div>
                   <h3 className="text-2xl font-bold text-gray-900 mb-4">Tầm nhìn</h3>
-                  <p className="text-gray-700 leading-relaxed whitespace-pre-line">{aboutData.vision}</p>
+                  <p className="text-gray-700 leading-relaxed whitespace-pre-line">{aboutInfo.vision}</p>
                 </div>
               )}
             </div>
@@ -121,12 +146,12 @@ const ShowAboutUs = () => {
       )}
 
       {/* Core Values */}
-      {aboutData.coreValues && aboutData.coreValues.length > 0 && (
+      {aboutInfo.coreValues && aboutInfo.coreValues.length > 0 && (
         <section className="py-16 bg-white">
           <div className="container mx-auto px-4">
             <h2 className="text-3xl font-bold text-gray-900 mb-12 text-center">Giá trị cốt lõi</h2>
             <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-              {aboutData.coreValues.map((value, index) => (
+              {aboutInfo.coreValues.map((value, index) => (
                 <div key={index} className="bg-gradient-to-br from-blue-50 to-purple-50 p-6 rounded-xl hover:shadow-lg transition-shadow">
                   {value.icon && (
                     <img
@@ -148,47 +173,32 @@ const ShowAboutUs = () => {
       )}
 
       {/* Statistics */}
-      {aboutData.stats && (
+      {statsCards.length > 0 && (
         <section className="py-16 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
           <div className="container mx-auto px-4">
             <h2 className="text-3xl font-bold mb-12 text-center">Thành tựu của chúng tôi</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-5xl mx-auto">
-              {aboutData.stats.yearsOfOperation > 0 && (
-                <div className="text-center">
-                  <div className="text-5xl font-bold mb-2">{aboutData.stats.yearsOfOperation}+</div>
-                  <div className="text-blue-100">Năm hoạt động</div>
+              {statsCards.map((stat) => (
+                <div key={stat.label} className="text-center">
+                  <div className="text-5xl font-bold mb-2">
+                    {stat.formatNumber ? stat.value.toLocaleString() : stat.value}
+                    {stat.suffix}
+                  </div>
+                  <div className="text-blue-100">{stat.label}</div>
                 </div>
-              )}
-              {aboutData.stats.totalCustomers > 0 && (
-                <div className="text-center">
-                  <div className="text-5xl font-bold mb-2">{aboutData.stats.totalCustomers.toLocaleString()}+</div>
-                  <div className="text-blue-100">Khách hàng</div>
-                </div>
-              )}
-              {aboutData.stats.totalProducts > 0 && (
-                <div className="text-center">
-                  <div className="text-5xl font-bold mb-2">{aboutData.stats.totalProducts.toLocaleString()}+</div>
-                  <div className="text-blue-100">Sản phẩm</div>
-                </div>
-              )}
-              {aboutData.stats.totalOrders > 0 && (
-                <div className="text-center">
-                  <div className="text-5xl font-bold mb-2">{aboutData.stats.totalOrders.toLocaleString()}+</div>
-                  <div className="text-blue-100">Đơn hàng</div>
-                </div>
-              )}
+              ))}
             </div>
           </div>
         </section>
       )}
 
       {/* Founders Section */}
-      {founders && founders.length > 0 && (
+      {hasFounders && (
         <section className="py-16 bg-white">
           <div className="container mx-auto px-4">
             <h2 className="text-3xl font-bold text-gray-900 mb-12 text-center">Đội ngũ sáng lập</h2>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-              {founders.map((founder) => (
+              {founderList.map((founder) => (
                 <div
                   key={founder._id}
                   onClick={() => handleFounderClick(founder._id)}
@@ -260,51 +270,37 @@ const ShowAboutUs = () => {
             <div className="grid md:grid-cols-2 gap-8">
               <div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-4">Địa chỉ</h3>
-                <p className="text-gray-700 mb-6">{aboutData.address}</p>
-                {aboutData.workingHours && (
+                <p className="text-gray-700 mb-6">{aboutInfo.address}</p>
+                {aboutInfo.workingHours && (
                   <>
                     <h3 className="text-xl font-semibold text-gray-900 mb-4">Giờ làm việc</h3>
-                    <p className="text-gray-700">{aboutData.workingHours}</p>
+                    <p className="text-gray-700">{aboutInfo.workingHours}</p>
                   </>
                 )}
               </div>
               <div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-4">Liên hệ</h3>
                 <p className="text-gray-700 mb-2">
-                  <strong>Email:</strong> <a href={`mailto:${aboutData.email}`} className="text-blue-600 hover:underline">{aboutData.email}</a>
+                  <strong>Email:</strong> <a href={`mailto:${aboutInfo.email}`} className="text-blue-600 hover:underline">{aboutInfo.email}</a>
                 </p>
                 <p className="text-gray-700 mb-6">
-                  <strong>Điện thoại:</strong> <a href={`tel:${aboutData.phone}`} className="text-blue-600 hover:underline">{aboutData.phone}</a>
+                  <strong>Điện thoại:</strong> <a href={`tel:${aboutInfo.phone}`} className="text-blue-600 hover:underline">{aboutInfo.phone}</a>
                 </p>
-                {aboutData.socialMedia && (
+                {socialLinks.length > 0 && (
                   <>
                     <h3 className="text-xl font-semibold text-gray-900 mb-4">Mạng xã hội</h3>
                     <div className="flex flex-wrap gap-3">
-                      {aboutData.socialMedia.facebook && (
-                        <a href={aboutData.socialMedia.facebook} target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                          Facebook
+                      {socialLinks.map((link) => (
+                        <a
+                          key={link.label}
+                          href={link.href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={`px-4 py-2 text-white rounded-lg transition-colors ${link.className}`}
+                        >
+                          {link.label}
                         </a>
-                      )}
-                      {aboutData.socialMedia.instagram && (
-                        <a href={aboutData.socialMedia.instagram} target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition-colors">
-                          Instagram
-                        </a>
-                      )}
-                      {aboutData.socialMedia.twitter && (
-                        <a href={aboutData.socialMedia.twitter} target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-blue-400 text-white rounded-lg hover:bg-blue-500 transition-colors">
-                          Twitter
-                        </a>
-                      )}
-                      {aboutData.socialMedia.youtube && (
-                        <a href={aboutData.socialMedia.youtube} target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
-                          YouTube
-                        </a>
-                      )}
-                      {aboutData.socialMedia.linkedin && (
-                        <a href={aboutData.socialMedia.linkedin} target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-blue-700 text-white rounded-lg hover:bg-blue-800 transition-colors">
-                          LinkedIn
-                        </a>
-                      )}
+                      ))}
                     </div>
                   </>
                 )}

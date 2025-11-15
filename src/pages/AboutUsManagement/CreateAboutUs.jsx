@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import {
@@ -24,24 +24,31 @@ const CreateAboutUs = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { data: aboutData, loading, creating, error } = useSelector((state) => state.about);
-  const isCreatingRef = useRef(false); // Track xem có đang trong quá trình tạo không
+  const [isCreating, setIsCreating] = useState(false);
 
   useEffect(() => {
     dispatch(aboutInfoRequest());
   }, [dispatch]);
 
-  // Kiểm tra nếu AboutUs đã tồn tại VÀ KHÔNG PHẢI đang trong quá trình tạo
   useEffect(() => {
-    if (aboutData && !loading && !isCreatingRef.current) {
-      toast.error("About Us đã tồn tại! Vui lòng sử dụng chức năng cập nhật.", {
-        toastId: "aboutus-exists"
-      });
+    if (!loading && aboutData && !isCreating) {
+      toast.error("About Us đã tồn tại! Vui lòng sử dụng chức năng cập nhật.", { toastId: "aboutus-exists" });
       navigate("/admin/about-us");
     }
-  }, [aboutData, loading, navigate]);
+  }, [aboutData, loading, isCreating, navigate]);
+
+  useEffect(() => {
+    if (!creating && !error && aboutData && isCreating) {
+      const timer = setTimeout(() => {
+        setIsCreating(false);
+        navigate("/admin/about-us");
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [creating, error, aboutData, isCreating, navigate]);
 
   const handleCreate = (values) => {
-    isCreatingRef.current = true; // Đánh dấu là đang tạo
+    setIsCreating(true);
     dispatch(aboutCreateOrUpdateRequest(values));
   };
 
@@ -49,18 +56,6 @@ const CreateAboutUs = () => {
     navigate("/admin/about-us");
   };
 
-  // Redirect sau khi tạo thành công
-  useEffect(() => {
-    if (!creating && !error && aboutData && isCreatingRef.current) {
-      // Delay nhỏ để toast từ saga hiển thị trước khi redirect
-      const timer = setTimeout(() => {
-        navigate("/admin/about-us");
-      }, 500);
-      return () => clearTimeout(timer);
-    }
-  }, [creating, error, aboutData, navigate]);
-
-  // Nếu đang loading hoặc AboutUs đã tồn tại, không hiển thị form
   if (loading || aboutData) {
     return null;
   }

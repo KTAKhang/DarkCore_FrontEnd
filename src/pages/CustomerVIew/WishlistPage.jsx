@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import PropTypes from 'prop-types';
@@ -11,6 +11,91 @@ import {
     favoriteRemoveAllRequest,
     favoriteClearMessages
 } from '../../redux/actions/favoriteActions';
+
+const FALLBACK_PRODUCTS = [
+    {
+        _id: 'sample-1',
+        name: 'MacBook Pro M3 14 inch',
+        price: 52990000,
+        originalPrice: 59990000,
+        discount: 12,
+        rating: 4.8,
+        reviews: 124,
+        images: ['https://cdn2.cellphones.com.vn/x/media/catalog/product/t/e/text_ng_n_3__8_97_1.png'],
+        tags: ['Chip M3', '16GB RAM', '512GB SSD'],
+        badges: ['Mới nhất'],
+        category: 'laptops',
+        stockQuantity: 10,
+        brand: 'Apple',
+        description: 'MacBook Pro M3 với hiệu năng vượt trội cho công việc chuyên nghiệp'
+    },
+    {
+        _id: 'sample-2',
+        name: 'iPad Pro 12.9 inch M2',
+        price: 28990000,
+        originalPrice: 32990000,
+        discount: 12,
+        rating: 4.9,
+        reviews: 89,
+        images: ['https://cdn2.fptshop.com.vn/unsafe/750x0/filters:format(webp):quality(75)/i_Pad_A16_Wi_Fi_Blue_PDP_Image_Position_1_VN_VI_7db84c95a3.jpg'],
+        tags: ['Chip M2', 'Liquid Retina XDR', 'Hỗ trợ Apple Pencil'],
+        badges: ['Bán chạy'],
+        category: 'tablets',
+        stockQuantity: 15,
+        brand: 'Apple',
+        description: 'iPad Pro với màn hình Liquid Retina XDR tuyệt đẹp'
+    },
+    {
+        _id: 'sample-3',
+        name: 'ASUS ROG Strix G15',
+        price: 25990000,
+        originalPrice: 29990000,
+        discount: 13,
+        rating: 4.7,
+        reviews: 156,
+        images: ['https://cdn2.cellphones.com.vn/x/media/catalog/product/t/e/text_ng_n_3__8_97_1.png'],
+        tags: ['RTX 4060', 'AMD Ryzen 7', '16GB DDR5'],
+        badges: ['Gaming'],
+        category: 'laptops',
+        stockQuantity: 8,
+        brand: 'ASUS',
+        description: 'Laptop gaming mạnh mẽ với RTX 4060'
+    }
+];
+
+const getSortQuery = (option) => {
+    switch (option) {
+        case 'price-low':
+            return { sortBy: 'price', sortOrder: 'asc' };
+        case 'price-high':
+            return { sortBy: 'price', sortOrder: 'desc' };
+        case 'rating':
+            return { sortBy: 'rating', sortOrder: 'desc' };
+        case 'newest':
+            return { sortBy: 'createdat', sortOrder: 'desc' };
+        default:
+            return {};
+    }
+};
+
+const createFavoriteQuery = ({ page, limit, keyword, sortOption }) => {
+    const query = {
+        page,
+        limit
+    };
+
+    if (keyword?.trim()) {
+        query.keyword = keyword.trim();
+    }
+
+    const sortParams = getSortQuery(sortOption);
+    if (sortParams.sortBy) {
+        query.sortBy = sortParams.sortBy;
+        query.sortOrder = sortParams.sortOrder;
+    }
+
+    return query;
+};
 
 const WishlistPage = () => {
     const dispatch = useDispatch();
@@ -90,36 +175,12 @@ const WishlistPage = () => {
     // Reload danh sách sau khi xóa tất cả thành công
     useEffect(() => {
         if (hasRemovedAll && !removeAllLoading && !removeAllError) {
-            // Đã xóa xong, reload để đảm bảo UI được cập nhật
-            const query = {
+            const query = createFavoriteQuery({
                 page: 1,
-                limit: pageSize
-            };
-
-            if (debouncedSearchTerm.trim()) {
-                query.keyword = debouncedSearchTerm.trim();
-            }
-
-            switch (sortBy) {
-                case 'price-low':
-                    query.sortBy = 'price';
-                    query.sortOrder = 'asc';
-                    break;
-                case 'price-high':
-                    query.sortBy = 'price';
-                    query.sortOrder = 'desc';
-                    break;
-                case 'rating':
-                    query.sortBy = 'rating';
-                    query.sortOrder = 'desc';
-                    break;
-                case 'newest':
-                    query.sortBy = 'createdat';
-                    query.sortOrder = 'desc';
-                    break;
-                default:
-                    break;
-            }
+                limit: pageSize,
+                keyword: debouncedSearchTerm,
+                sortOption: sortBy
+            });
             
             dispatch(favoriteListRequest(query));
             setHasRemovedAll(false); // Reset flag
@@ -127,68 +188,12 @@ const WishlistPage = () => {
     }, [hasRemovedAll, removeAllLoading, removeAllError, dispatch, pageSize, debouncedSearchTerm, sortBy]);
 
 
-    // Fallback products data when API fails
-    const fallbackProducts = useMemo(() => [
-        {
-            _id: 'sample-1',
-            name: 'MacBook Pro M3 14 inch',
-            price: 52990000,
-            originalPrice: 59990000,
-            discount: 12,
-            rating: 4.8,
-            reviews: 124,
-            images: ['https://cdn2.cellphones.com.vn/x/media/catalog/product/t/e/text_ng_n_3__8_97_1.png'],
-            tags: ['Chip M3', '16GB RAM', '512GB SSD'],
-            badges: ['Mới nhất'],
-            category: 'laptops',
-            stockQuantity: 10,
-            brand: 'Apple',
-            description: 'MacBook Pro M3 với hiệu năng vượt trội cho công việc chuyên nghiệp'
-        },
-        {
-            _id: 'sample-2',
-            name: 'iPad Pro 12.9 inch M2',
-            price: 28990000,
-            originalPrice: 32990000,
-            discount: 12,
-            rating: 4.9,
-            reviews: 89,
-            images: ['https://cdn2.fptshop.com.vn/unsafe/750x0/filters:format(webp):quality(75)/i_Pad_A16_Wi_Fi_Blue_PDP_Image_Position_1_VN_VI_7db84c95a3.jpg'],
-            tags: ['Chip M2', 'Liquid Retina XDR', 'Hỗ trợ Apple Pencil'],
-            badges: ['Bán chạy'],
-            category: 'tablets',
-            stockQuantity: 15,
-            brand: 'Apple',
-            description: 'iPad Pro với màn hình Liquid Retina XDR tuyệt đẹp'
-        },
-        {
-            _id: 'sample-3',
-            name: 'ASUS ROG Strix G15',
-            price: 25990000,
-            originalPrice: 29990000,
-            discount: 13,
-            rating: 4.7,
-            reviews: 156,
-            images: ['https://cdn2.cellphones.com.vn/x/media/catalog/product/t/e/text_ng_n_3__8_97_1.png'],
-            tags: ['RTX 4060', 'AMD Ryzen 7', '16GB DDR5'],
-            badges: ['Gaming'],
-            category: 'laptops',
-            stockQuantity: 8,
-            brand: 'ASUS',
-            description: 'Laptop gaming mạnh mẽ với RTX 4060'
-        }
-    ], []);
-
-    // Use fallback products if API fails or favorites is null/undefined
-    const displayProducts = useMemo(() => {
-        return (favoritesError || !favorites || !Array.isArray(favorites)) ? fallbackProducts : favorites;
-    }, [favoritesError, favorites, fallbackProducts]);
-
-    // Calculate total pages
-    const totalPages = useMemo(() => {
-        if (!favoritesPagination || !favoritesPagination.total) return 1;
-        return Math.ceil(favoritesPagination.total / pageSize);
-    }, [favoritesPagination, pageSize]);
+    const isFavoriteListValid = favorites && Array.isArray(favorites);
+    const shouldUseFallback = favoritesError || !isFavoriteListValid;
+    const wishlistProducts = shouldUseFallback ? FALLBACK_PRODUCTS : favorites;
+    const totalPages = favoritesPagination?.total
+        ? Math.ceil(favoritesPagination.total / pageSize)
+        : 1;
 
     // Handler for page change
     const handlePageChange = (newPage) => {
@@ -212,79 +217,25 @@ const WishlistPage = () => {
 
     // Load favorites with filters when search/sort/page changes
     useEffect(() => {
-        const query = {
+        const query = createFavoriteQuery({
             page: currentPage,
-            limit: pageSize
-        };
-
-        // Add search keyword (sử dụng debouncedSearchTerm)
-        if (debouncedSearchTerm.trim()) {
-            query.keyword = debouncedSearchTerm.trim();
-        }
-
-        // Add sort parameters
-        switch (sortBy) {
-            case 'price-low':
-                query.sortBy = 'price';
-                query.sortOrder = 'asc';
-                break;
-            case 'price-high':
-                query.sortBy = 'price';
-                query.sortOrder = 'desc';
-                break;
-            case 'rating':
-                query.sortBy = 'rating';
-                query.sortOrder = 'desc';
-                break;
-            case 'newest':
-                query.sortBy = 'createdat';
-                query.sortOrder = 'desc';
-                break;
-            default:
-                break;
-        }
+            limit: pageSize,
+            keyword: debouncedSearchTerm,
+            sortOption: sortBy
+        });
 
         dispatch(favoriteListRequest(query));
     }, [dispatch, currentPage, pageSize, debouncedSearchTerm, sortBy]);
 
-    // Use displayProducts directly as favorites from API
-    const wishlistProducts = displayProducts;
-
     // Reload favorites after successful toggle
     useEffect(() => {
         if (shouldReloadFavorites && !toggleFavoriteLoading && !toggleFavoriteError) {
-            // Toggle was successful, reload favorites
-            const query = {
+            const query = createFavoriteQuery({
                 page: currentPage,
-                limit: pageSize
-            };
-
-            // Add search keyword (sử dụng debouncedSearchTerm)
-            if (debouncedSearchTerm.trim()) {
-                query.keyword = debouncedSearchTerm.trim();
-            }
-
-            // Add sort parameters
-            switch (sortBy) {
-                case 'price-low':
-                    query.sortBy = 'price';
-                    query.sortOrder = 'asc';
-                    break;
-                case 'price-high':
-                    query.sortBy = 'price';
-                    query.sortOrder = 'desc';
-                    break;
-                case 'rating':
-                    query.sortBy = 'rating';
-                    query.sortOrder = 'desc';
-                    break;
-                case 'newest':
-                    query.sortBy = 'createdat';
-                    query.sortOrder = 'desc';
-                    break;
-                default:
-                    break;
-            }
+                limit: pageSize,
+                keyword: debouncedSearchTerm,
+                sortOption: sortBy
+            });
 
             dispatch(favoriteListRequest(query));
             setShouldReloadFavorites(false);

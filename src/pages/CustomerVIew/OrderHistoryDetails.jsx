@@ -117,6 +117,46 @@ const OrderHistoryDetails = ({ isOpen, onClose, order, loading = false }) => {
   };
 
   const timeline = generateTimeline();
+  const orderDetails = order.orderDetails || order.orderdetails || [];
+
+  const pickCurrencyValue = (...candidates) => {
+    for (const candidate of candidates) {
+      if (candidate !== undefined && candidate !== null) {
+        return Number(candidate);
+      }
+    }
+    return 0;
+  };
+
+  const subtotal = pickCurrencyValue(order.subtotal, order.totalPrice);
+  const discountAmount = Number(order.discount || 0);
+  const shippingFee = Number(order.shippingFee || 0);
+  const grandTotal = pickCurrencyValue(order.totalPrice, subtotal + shippingFee - discountAmount);
+
+  const summaryBlocks = [
+    {
+      key: 'subtotal',
+      label: 'Tạm tính',
+      value: subtotal,
+      textClass: 'text-slate-800',
+      valueClass: 'text-slate-900',
+    },
+    {
+      key: 'discount',
+      label: 'Giảm giá',
+      value: discountAmount,
+      textClass: discountAmount > 0 ? 'text-rose-500' : 'text-slate-500',
+      valueClass: discountAmount > 0 ? 'text-rose-600' : 'text-slate-600',
+      prefix: discountAmount > 0 ? '- ' : '',
+    },
+    {
+      key: 'total',
+      label: 'Tổng cộng',
+      value: grandTotal,
+      textClass: 'text-blue-600',
+      valueClass: 'text-blue-600 text-2xl',
+    },
+  ];
 
   const handleOverlayClick = (e) => {
     if (e.target === e.currentTarget) {
@@ -209,10 +249,13 @@ const OrderHistoryDetails = ({ isOpen, onClose, order, loading = false }) => {
             <div className="bg-white border border-gray-200 rounded-lg p-6">
               <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
                 <Package className="w-5 h-5 text-blue-600" />
-                Sản phẩm đã đặt ({(order.orderDetails || order.orderdetails || []).length || 0} sản phẩm)
+                Sản phẩm đã đặt ({orderDetails.length || 0} sản phẩm)
               </h3>
               <div className="space-y-4">
-                {(order.orderDetails || order.orderdetails || []).map((item, index) => (
+                {orderDetails.map((item, index) => {
+                  const itemSubtotal = pickCurrencyValue(item.totalPrice, item.price * item.quantity, 0);
+                  const itemDiscount = Number(item.discount || 0);
+                  return (
                   <div key={index} className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
                     <img
                       src={getValidImageUrl(item)}
@@ -228,45 +271,32 @@ const OrderHistoryDetails = ({ isOpen, onClose, order, loading = false }) => {
                       <h4 className="font-medium text-gray-900 mb-1">{item.productName}</h4>
                       <p className="text-sm text-gray-500">Số lượng: {item.quantity}</p>
                       <p className="text-sm text-gray-500">Đơn giá: {formatPrice(item.price)}</p>
+                      <p className={`text-sm ${itemDiscount > 0 ? 'text-rose-500' : 'text-gray-500'}`}>
+                        Giảm giá: {itemDiscount > 0 ? `- ${formatPrice(itemDiscount)}` : '0₫'}
+                      </p>
                     </div>
                     <div className="text-right">
+                      <p className="font-semibold text-gray-700 text-sm">Thành tiền</p>
                       <p className="font-bold text-gray-900 text-lg">
-                        {formatPrice(item.price * item.quantity)}
+                        {formatPrice(itemSubtotal - itemDiscount)}
                       </p>
                     </div>
                   </div>
-                ))}
-                <div className="pt-4 border-t border-gray-200">
-                  <div className="space-y-2">
-                    {/* Subtotal */}
-                    <div className="flex justify-between text-gray-700">
-                      <p className="text-sm">Tạm tính:</p>
-                      <p className="font-medium">{formatPrice(order.subtotal || order.totalPrice)}</p>
-                    </div>
-                    
-                    {/* Shipping Fee */}
-                    {order.shippingFee > 0 && (
-                      <div className="flex justify-between text-gray-700">
-                        <p className="text-sm">Phí vận chuyển:</p>
-                        <p className="font-medium">{formatPrice(order.shippingFee)}</p>
+                  );
+                })}
+                <div className="pt-4 mt-4 border-t border-gray-200">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {summaryBlocks.map((block) => (
+                      <div key={block.key} className="text-right bg-gray-50 rounded-lg p-4 border border-gray-100">
+                        <p className={`text-xs uppercase tracking-wide font-semibold ${block.textClass}`}>
+                          {block.label}
+                        </p>
+                        <p className={`mt-2 font-bold ${block.valueClass}`}>
+                          {block.prefix || ''}
+                          {formatPrice(block.value)}
+                        </p>
                       </div>
-                    )}
-                    
-                    {/* Discount */}
-                    {order.discount > 0 && (
-                      <div className="flex justify-between text-green-600">
-                        <p className="text-sm">Giảm giá:</p>
-                        <p className="font-medium">-{formatPrice(order.discount)}</p>
-                      </div>
-                    )}
-                    
-                    {/* Total */}
-                    <div className="flex justify-between pt-2 border-t border-gray-200">
-                      <p className="text-base font-semibold text-gray-900">Tổng cộng:</p>
-                      <p className="text-2xl font-bold text-blue-600">
-                        {formatPrice(order.totalPrice)}
-                      </p>
-                    </div>
+                    ))}
                   </div>
                 </div>
               </div>

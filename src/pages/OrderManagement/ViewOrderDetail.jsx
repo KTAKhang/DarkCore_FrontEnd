@@ -1,160 +1,149 @@
 import PropTypes from "prop-types";
 import { Modal, Descriptions, Tag, Typography, Card, Row, Col, Divider, Table, Space, Spin } from "antd";
-import { 
-  CheckCircleOutlined, 
-  ClockCircleOutlined, 
-  CloseCircleOutlined, 
+import {
+  CheckCircleOutlined,
+  ClockCircleOutlined,
+  CloseCircleOutlined,
   ShoppingCartOutlined,
   UserOutlined,
   CreditCardOutlined,
-  FileTextOutlined
+  FileTextOutlined,
 } from "@ant-design/icons";
 
 const { Text } = Typography;
 
+const formatDateTime = (dateString) => {
+  if (!dateString) return "N/A";
+  const date = new Date(dateString);
+  return `${date.toLocaleDateString("vi-VN")} lúc ${date.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}`;
+};
+
+const getStatusConfig = (status) => {
+  const statusMap = {
+    pending: { color: "#faad14", icon: <ClockCircleOutlined />, text: "Chờ xác nhận" },
+    confirmed: { color: "#1890ff", icon: <CheckCircleOutlined />, text: "Đã xác nhận" },
+    shipping: { color: "#722ed1", icon: <ShoppingCartOutlined />, text: "Đang giao" },
+    completed: { color: "#52c41a", icon: <CheckCircleOutlined />, text: "Hoàn thành" },
+    cancelled: { color: "#ff4d4f", icon: <CloseCircleOutlined />, text: "Đã hủy" },
+  };
+  return statusMap[status] || statusMap.pending;
+};
+
+const getPaymentMethodText = (method) => {
+  const methodMap = {
+    cod: "Thanh toán COD",
+    vnpay: "VNPay",
+  };
+  return methodMap[method] || method || "N/A";
+};
+
+const getValidImageUrl = (record) => {
+  const placeholder = "https://via.placeholder.com/64x64?text=No+Image";
+  const fromProduct = record.product && typeof record.product === "object" ? record.product.images?.[0] : null;
+  const imageUrl = fromProduct || record.productImage;
+  if (imageUrl && !imageUrl.includes("example.com")) return imageUrl;
+  return placeholder;
+};
+
+const buildSummaryBlocks = (subtotal, discount, total, highlightColor) => [
+  { key: "subtotal", label: "Tạm tính", value: subtotal, color: "#0D364C" },
+  {
+    key: "discount",
+    label: "Giảm giá",
+    value: discount,
+    color: discount > 0 ? "#ff4d4f" : "#0D364C",
+    prefix: discount > 0 ? "- " : "",
+  },
+  { key: "total", label: "Tổng cộng", value: total, color: highlightColor, emphasize: true },
+];
+
 const ViewOrderDetail = ({ visible, onClose, orderData, loading = false }) => {
-  if (!orderData) return null;
-  
-  // Safety check to ensure orderData is valid
-  if (typeof orderData !== 'object' || orderData === null) {
-    console.error("Invalid orderData:", orderData);
-    return null;
-  }
+  if (!orderData || typeof orderData !== "object") return null;
 
-  // Debug log to see the order data structure
-  console.log("🔍 ViewOrderDetail - orderData:", orderData);
-  console.log("🔍 ViewOrderDetail - orderDetails:", orderData.items || orderData.orderDetails || orderData.orderdetails);
-  
-  // Debug the order details structure - try multiple possible field names
-  const orderDetails = orderData.items || orderData.orderDetails || orderData.orderdetails || [];
-  console.log("🔍 ViewOrderDetail - orderDetails array:", orderDetails);
-  if (orderDetails.length > 0) {
-    console.log("🔍 ViewOrderDetail - first order detail:", orderDetails[0]);
-    console.log("🔍 ViewOrderDetail - first order detail product:", orderDetails[0]?.product);
-    
-    // Check if any field contains objects that might cause rendering issues
-    const firstDetail = orderDetails[0];
-    Object.keys(firstDetail).forEach(key => {
-      const value = firstDetail[key];
-      if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-        console.log(`🔍 ViewOrderDetail - Found object in field '${key}':`, value);
-      }
-    });
-  }
+  const orderDetails = Array.isArray(orderData.items)
+    ? orderData.items
+    : Array.isArray(orderData.orderDetails)
+    ? orderData.orderDetails
+    : Array.isArray(orderData.orderdetails)
+    ? orderData.orderdetails
+    : [];
 
-  const formatDateTime = (dateString) => {
-    if (!dateString) return "N/A";
-    const date = new Date(dateString);
-    return `${date.toLocaleDateString("vi-VN")} lúc ${date.toLocaleTimeString("vi-VN", { hour: '2-digit', minute: '2-digit' })}`;
-  };
-
-  // Get status color and icon
-  const getStatusConfig = (status) => {
-    const statusMap = {
-      pending: { color: "#faad14", icon: <ClockCircleOutlined />, text: "Chờ xác nhận" },
-      confirmed: { color: "#1890ff", icon: <CheckCircleOutlined />, text: "Đã xác nhận" },
-      shipping: { color: "#722ed1", icon: <ShoppingCartOutlined />, text: "Đang giao" },
-      completed: { color: "#52c41a", icon: <CheckCircleOutlined />, text: "Hoàn thành" },
-      cancelled: { color: "#ff4d4f", icon: <CloseCircleOutlined />, text: "Đã hủy" }
-    };
-    return statusMap[status] || statusMap.pending;
-  };
-
-  // Get payment method text
-  const getPaymentMethodText = (method) => {
-    const methodMap = {
-      cod: "Thanh toán COD",
-      vnpay: "VNPay",
-    };
-    return methodMap[method] || method;
-  };
-
+  const subtotal = Number(orderData.subtotal || orderData.subTotal || 0);
+  const discountAmount = Number(orderData.discount || orderData.discountAmount || 0);
+  const finalTotal = Number(orderData.totalPrice || orderData.totalAmount || 0);
   const statusConfig = getStatusConfig(orderData.status);
 
-  // Helper để validate và lấy ảnh hợp lệ
-  const getValidImageUrl = (record) => {
-    let imageUrl = null;
-    
-    try {
-      // Try to get image from various possible fields
-      if (record.product && typeof record.product === 'object') {
-        imageUrl = record.product.images?.[0] || record.productImage;
-      } else {
-        imageUrl = record.productImage;
-      }
-      
-      // Check if URL is valid (not from example.com)
-      if (imageUrl && !imageUrl.includes('example.com')) {
-        return imageUrl;
-      }
-    } catch (error) {
-      console.error("Error extracting image:", error);
-    }
-    
-    // Fallback to placeholder
-    return 'https://via.placeholder.com/64x64?text=No+Image';
-  };
+  const createItem = (key, label, children) => ({ key, label, children, span: 2 });
 
-  // Order items table columns
+  const orderItems = [
+    createItem("orderNumber", "Mã đơn hàng", <Text code>{orderData.orderNumber || "N/A"}</Text>),
+    createItem("id", "ID", <Text code>{orderData._id || "N/A"}</Text>),
+    createItem(
+      "status",
+      "Trạng thái",
+      <Tag color={statusConfig.color} icon={statusConfig.icon} style={{ borderRadius: 16, fontWeight: 500, padding: "4px 12px" }}>
+        {statusConfig.text}
+      </Tag>
+    ),
+    createItem("totalAmount", "Tổng tiền", <Text style={{ color: "#13C2C2", fontSize: 18, fontWeight: "bold" }}>{finalTotal.toLocaleString("vi-VN")}đ</Text>),
+    createItem(
+      "paymentMethod",
+      "Phương thức thanh toán",
+      <Tag color="#0D364C" style={{ borderRadius: 16, fontWeight: 500, padding: "4px 12px" }} icon={<CreditCardOutlined />}>
+        {getPaymentMethodText(orderData.paymentMethod)}
+      </Tag>
+    ),
+    createItem("createdAt", "Ngày tạo", <Text style={{ color: "#0D364C" }}>{formatDateTime(orderData.createdAt)}</Text>),
+    createItem("updatedAt", "Cập nhật gần nhất", <Text style={{ color: "#13C2C2" }}>{formatDateTime(orderData.updatedAt)}</Text>),
+  ];
+
+  const customerItems = [
+    createItem(
+      "receiverName",
+      "Tên khách hàng",
+      <Text strong>
+        {orderData.receiverName ||
+          orderData.customer?.name ||
+          orderData.userId?.user_name ||
+          orderData.customerName ||
+          "N/A"}
+      </Text>
+    ),
+    createItem("customerEmail", "Email", <Text>{orderData.customer?.email || orderData.userId?.email || orderData.customerEmail || "N/A"}</Text>),
+    createItem(
+      "receiverPhone",
+      "Số điện thoại",
+      <Text>{orderData.receiverPhone || orderData.customer?.phone || orderData.userId?.phone || orderData.customerPhone || "N/A"}</Text>
+    ),
+    createItem("shippingAddress", "Địa chỉ giao hàng", <Text>{orderData.receiverAddress || orderData.shippingAddress || "Địa chỉ chưa được cung cấp"}</Text>),
+  ];
+
   const itemColumns = [
     {
       title: "Sản phẩm",
       key: "product",
       render: (_, record) => {
-        // Safely extract product information with additional checks
-        let productName = "N/A";
-        let productId = "N/A";
-        
-        try {
-          if (record.product && typeof record.product === 'object') {
-            productName = record.product.name || record.productName || "N/A";
-            productId = record.product._id || record.productId || "N/A";
-          } else {
-            productName = record.productName || "N/A";
-            productId = record.productId || "N/A";
-          }
-          
-          // Ensure we have strings, not objects
-          productName = String(productName);
-          
-          // Special handling for productId to convert objects to strings
-          if (productId && typeof productId === 'object') {
-            productId = productId.toString ? productId.toString() : JSON.stringify(productId);
-          } else {
-            productId = String(productId);
-          }
-        } catch (error) {
-          console.error("Error extracting product info:", error);
-          productName = "N/A";
-          productId = "N/A";
-        }
-        
+        const productName =
+          record.product?.name || record.productName || (typeof record.product === "string" ? record.product : "N/A");
+        const productId =
+          record.product?._id || record.productId || (typeof record.product === "object" ? record.product?._id : "N/A");
+
         return (
           <Space>
             <img
               src={getValidImageUrl(record)}
               alt={productName}
-              style={{
-                width: 64,
-                height: 64,
-                objectFit: 'cover',
-                borderRadius: 8,
-                border: '1px solid #d9d9d9'
-              }}
+              style={{ width: 64, height: 64, objectFit: "cover", borderRadius: 8, border: "1px solid #d9d9d9" }}
               onError={(e) => {
-                if (e.target.src !== 'https://via.placeholder.com/64x64?text=No+Image') {
-                  e.target.src = 'https://via.placeholder.com/64x64?text=No+Image';
+                if (e.target.src !== "https://via.placeholder.com/64x64?text=No+Image") {
+                  e.target.src = "https://via.placeholder.com/64x64?text=No+Image";
                 }
               }}
             />
             <div>
-              <Text strong style={{ color: "#0D364C", fontSize: 14 }}>
-                {productName}
-              </Text>
+              <Text strong style={{ color: "#0D364C", fontSize: 14 }}>{productName}</Text>
               <br />
-              <Text type="secondary" style={{ fontSize: 12 }}>
-                ID: {productId}
-              </Text>
+              <Text type="secondary" style={{ fontSize: 12 }}>ID: {productId}</Text>
             </div>
           </Space>
         );
@@ -164,23 +153,9 @@ const ViewOrderDetail = ({ visible, onClose, orderData, loading = false }) => {
       title: "Đơn giá",
       key: "unitPrice",
       render: (_, record) => {
-        let price = 0;
-        try {
-          if (record.product && typeof record.product === 'object') {
-            price = record.product.price || record.price || 0;
-          } else {
-            price = record.price || 0;
-          }
-          price = Number(price) || 0;
-        } catch (error) {
-          console.error("Error extracting price:", error);
-          price = 0;
-        }
-        
+        const price = Number(record.product?.price || record.price || 0);
         return (
-          <Text style={{ color: "#13C2C2", fontWeight: 500 }}>
-            {price.toLocaleString("vi-VN")}đ
-          </Text>
+          <Text style={{ color: "#13C2C2", fontWeight: 500 }}>{price.toLocaleString("vi-VN")}đ</Text>
         );
       },
     },
@@ -188,12 +163,21 @@ const ViewOrderDetail = ({ visible, onClose, orderData, loading = false }) => {
       title: "Số lượng",
       dataIndex: "quantity",
       key: "quantity",
-      render: (quantity) => {
-        const qty = Number(quantity) || 0;
+      render: (quantity) => (
+        <Tag color="#0D364C" style={{ borderRadius: 16, fontWeight: 500, padding: "4px 12px" }}>
+          {Number(quantity) || 0}
+        </Tag>
+      ),
+    },
+    {
+      title: "Giảm giá",
+      key: "discount",
+      render: (_, record) => {
+        const discount = Number(record.discount || 0);
         return (
-          <Tag color="#0D364C" style={{ borderRadius: 16, fontWeight: 500, padding: "4px 12px" }}>
-            {qty}
-          </Tag>
+          <Text style={{ color: discount > 0 ? "#ff4d4f" : "#0D364C", fontWeight: 500 }}>
+            {discount > 0 ? `-${discount.toLocaleString("vi-VN")}đ` : "0đ"}
+          </Text>
         );
       },
     },
@@ -203,70 +187,31 @@ const ViewOrderDetail = ({ visible, onClose, orderData, loading = false }) => {
       render: (_, record) => {
         const total = Number(record.totalPrice || record.total || 0);
         return (
-          <Text strong style={{ color: "#0D364C", fontSize: 14 }}>
-            {total.toLocaleString("vi-VN")}đ
-          </Text>
+          <Text strong style={{ color: "#0D364C", fontSize: 14 }}>{total.toLocaleString("vi-VN")}đ</Text>
         );
       },
     },
   ];
 
-  // Helper function to create description items
-  const createItem = (key, label, children) => ({ key, label, children, span: 2 });
+  const summaryBlocks = buildSummaryBlocks(subtotal, discountAmount, finalTotal, "#13C2C2");
 
-  const styles = {
-    createdAt: { color: "#0D364C" },
-    updatedAt: { color: "#13C2C2" },
-    totalAmount: { color: "#13C2C2", fontSize: 18, fontWeight: "bold" }
-  };
-
-  // Main order information
-  const orderItems = [
-    createItem("orderNumber", "Mã đơn hàng", <Text code>{orderData.orderNumber || "N/A"}</Text>),
-    createItem("id", "ID", <Text code>{orderData._id || "N/A"}</Text>),
-    createItem(
-      "status", 
-      "Trạng thái", 
-      <Tag color={statusConfig.color} icon={statusConfig.icon} style={{ borderRadius: 16, fontWeight: 500, padding: "4px 12px" }}>
-        {statusConfig.text}
-      </Tag>
-    ),
-    createItem("totalAmount", "Tổng tiền", <Text style={styles.totalAmount}>{(orderData.totalAmount || orderData.totalPrice || 0).toLocaleString("vi-VN")}đ</Text>),
-    createItem("paymentMethod", "Phương thức thanh toán", <Tag color="#0D364C" style={{ borderRadius: 16, fontWeight: 500, padding: "4px 12px" }} icon={<CreditCardOutlined />}>{getPaymentMethodText(orderData.paymentMethod)}</Tag>),
-    createItem("createdAt", "Ngày tạo", <Text style={styles.createdAt}>{formatDateTime(orderData.createdAt)}</Text>),
-    createItem("updatedAt", "Cập nhật gần nhất", <Text style={styles.updatedAt}>{formatDateTime(orderData.updatedAt)}</Text>),
-  ];
-
-  // Customer information (Receiver information - người nhận hàng)
-  // Try multiple sources for email: customer object, userId object, or direct field
-  const customerEmail = orderData.customer?.email || orderData.userId?.email || orderData.customerEmail || "N/A";
-  
-  const customerItems = [
-    createItem("receiverName", "Tên khách hàng", <Text strong>{orderData.receiverName || orderData.customer?.name || orderData.userId?.user_name || orderData.customerName || "N/A"}</Text>),
-    createItem("customerEmail", "Email", <Text>{customerEmail}</Text>),
-    createItem("receiverPhone", "Số điện thoại", <Text>{orderData.receiverPhone || orderData.customer?.phone || orderData.userId?.phone || orderData.customerPhone || "N/A"}</Text>),
-    createItem("shippingAddress", "Địa chỉ giao hàng", <Text>{orderData.receiverAddress || orderData.shippingAddress || "Địa chỉ chưa được cung cấp"}</Text>),
-  ];
-
-  try {
-    return (
-      <Modal 
-        open={visible} 
-        onCancel={onClose} 
-        footer={null} 
-        title={
-          <Space>
-            <FileTextOutlined style={{ color: "#13C2C2" }} />
-            <span>Chi tiết Đơn hàng</span>
-          </Space>
-        } 
-        width={900}
-        style={{ top: 20 }}
-      >
-        <Spin spinning={loading} tip="Đang tải chi tiết đơn hàng...">
-          <div style={{ maxHeight: "70vh", overflowY: "auto" }}>
-          {/* Order Information */}
-          <Card 
+  return (
+    <Modal
+      open={visible}
+      onCancel={onClose}
+      footer={null}
+      title={
+        <Space>
+          <FileTextOutlined style={{ color: "#13C2C2" }} />
+          <span>Chi tiết Đơn hàng</span>
+        </Space>
+      }
+      width={900}
+      style={{ top: 20 }}
+    >
+      <Spin spinning={loading} tip="Đang tải chi tiết đơn hàng...">
+        <div style={{ maxHeight: "70vh", overflowY: "auto" }}>
+          <Card
             title={
               <Space>
                 <FileTextOutlined style={{ color: "#13C2C2" }} />
@@ -279,8 +224,7 @@ const ViewOrderDetail = ({ visible, onClose, orderData, loading = false }) => {
             <Descriptions bordered column={2} items={orderItems} size="small" />
           </Card>
 
-          {/* Customer Information */}
-          <Card 
+          <Card
             title={
               <Space>
                 <UserOutlined style={{ color: "#13C2C2" }} />
@@ -293,8 +237,7 @@ const ViewOrderDetail = ({ visible, onClose, orderData, loading = false }) => {
             <Descriptions bordered column={2} items={customerItems} size="small" />
           </Card>
 
-          {/* Order Items */}
-          <Card 
+          <Card
             title={
               <Space>
                 <ShoppingCartOutlined style={{ color: "#13C2C2" }} />
@@ -308,28 +251,41 @@ const ViewOrderDetail = ({ visible, onClose, orderData, loading = false }) => {
               columns={itemColumns}
               dataSource={orderDetails}
               pagination={false}
-              rowKey={(record) => record._id || record.id || Math.random().toString(36)}
+              rowKey={(record, index) =>
+                record._id || record.id || record.productId || `order-item-${index}`
+              }
               size="small"
-              style={{ borderRadius: 8 }}
             />
-            
+
             <Divider />
-            
-            <Row justify="end">
-              <Col>
-                <Space size="large">
-                  <Text strong style={{ fontSize: 16 }}>Tổng cộng:</Text>
-                  <Text strong style={styles.totalAmount}>
-                    {(orderData.totalAmount || orderData.totalPrice || 0).toLocaleString("vi-VN")}đ
-                  </Text>
-                </Space>
-              </Col>
+
+            <Row gutter={[24, 16]} justify="end">
+              {summaryBlocks.map((block) => (
+                <Col key={block.key} xs={12} sm={6}>
+                  <div style={{ textAlign: "right" }}>
+                    <Text type="secondary" style={{ fontSize: 13 }}>
+                      {block.label}
+                    </Text>
+                    <Text
+                      strong
+                      style={{
+                        display: "block",
+                        marginTop: 4,
+                        color: block.color,
+                        fontSize: block.emphasize ? 18 : 15,
+                      }}
+                    >
+                      {block.prefix || ""}
+                      {block.value.toLocaleString("vi-VN")}đ
+                    </Text>
+                  </div>
+                </Col>
+              ))}
             </Row>
           </Card>
 
-          {/* Additional Information */}
           {(orderData.notes || orderData.shippingNotes) && (
-            <Card 
+            <Card
               title={
                 <Space>
                   <FileTextOutlined style={{ color: "#13C2C2" }} />
@@ -353,27 +309,10 @@ const ViewOrderDetail = ({ visible, onClose, orderData, loading = false }) => {
               )}
             </Card>
           )}
-          </div>
-        </Spin>
-      </Modal>
-    );
-  } catch (error) {
-    console.error("Error rendering ViewOrderDetail:", error);
-    return (
-      <Modal 
-        open={visible} 
-        onCancel={onClose} 
-        footer={null} 
-        title="Chi tiết Đơn hàng"
-        width={900}
-        style={{ top: 20 }}
-      >
-        <div style={{ padding: 20, textAlign: 'center' }}>
-          <Text type="danger">Có lỗi xảy ra khi hiển thị chi tiết đơn hàng. Vui lòng thử lại.</Text>
         </div>
-      </Modal>
-    );
-  }
+      </Spin>
+    </Modal>
+  );
 };
 
 ViewOrderDetail.propTypes = {

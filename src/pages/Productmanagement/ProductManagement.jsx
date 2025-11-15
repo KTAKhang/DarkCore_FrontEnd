@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   Card,
@@ -42,93 +42,107 @@ import { categoryListRequest } from "../../redux/actions/categoryActions";
 
 const { Title, Text } = Typography;
 
+const getSortQuery = (option) => {
+  const sortMap = {
+    default: null,
+    newest: { sortBy: "createdat", sortOrder: "desc" },
+    oldest: { sortBy: "createdat", sortOrder: "asc" },
+    "price-asc": { sortBy: "price", sortOrder: "asc" },
+    "price-desc": { sortBy: "price", sortOrder: "desc" },
+  };
+  return sortMap[option] || null;
+};
+
+const createProductQuery = ({ page, limit, keyword, status, categoryId, categories, sortOption }) => {
+  const query = {
+    page,
+    limit,
+  };
+
+  if (keyword?.trim()) {
+    query.keyword = keyword.trim();
+  }
+
+  if (status && status !== "all") {
+    query.status = status;
+  }
+
+  if (categoryId && categoryId !== "all" && Array.isArray(categories)) {
+    const foundCategory = categories.find((cat) => cat._id === categoryId);
+    if (foundCategory?.name) {
+      query.categoryName = foundCategory.name;
+    }
+  }
+
+  const sortConfig = getSortQuery(sortOption);
+  if (sortConfig?.sortBy) {
+    query.sortBy = sortConfig.sortBy;
+    query.sortOrder = sortConfig.sortOrder;
+  }
+
+  return query;
+};
+
 const ProductManagement = () => {
   const dispatch = useDispatch();
   const { items: productItems, stats, pagination: apiPagination, loadingList, loadingStats, creating, updating, deleting } = useSelector((state) => state.product);
   const { items: categoryItems } = useSelector((state) => state.category);
   
-  // Simplified state management
-  const [loading, setLoading] = useState(false);
-  const [filters, setFilters] = useState({
-    searchText: "",
-    status: "all",
-    category: "all"
-  });
-  const [pagination, setPagination] = useState({ current: 1, pageSize: 5 });
-  const [sort, setSort] = useState({ sortBy: "default", sortOrder: "" });
-
+  const [searchText, setSearchText] = useState("");
+  const [debouncedSearchText, setDebouncedSearchText] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [sortOption, setSortOption] = useState("default");
+  const [pageInfo, setPageInfo] = useState({ current: 1, size: 5 });
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
   const [isUpdateModalVisible, setIsUpdateModalVisible] = useState(false);
   const [isViewDetailModalVisible, setIsViewDetailModalVisible] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
 
-  // Use refs to store current values to avoid dependency loops
-  const filtersRef = useRef(filters);
-  const paginationRef = useRef(pagination);
-  const sortRef = useRef(sort);
-  const categoryItemsRef = useRef(categoryItems);
-  
-  // Update refs when values change
-  useEffect(() => { filtersRef.current = filters; }, [filters]);
-  useEffect(() => { paginationRef.current = pagination; }, [pagination]);
-  useEffect(() => { sortRef.current = sort; }, [sort]);
-  useEffect(() => { categoryItemsRef.current = categoryItems; }, [categoryItems]);
-
-  // Simplified API call function with stable reference
-  const fetchProducts = useCallback((params = {}) => {
-    const currentFilters = filtersRef.current;
-    const currentPagination = paginationRef.current;
-    const currentSort = sortRef.current;
-    const currentCategoryItems = categoryItemsRef.current;
-    
-    const query = {
-      page: currentPagination.current,
-      limit: currentPagination.pageSize,
-      sortBy: currentSort.sortBy,
-      sortOrder: currentSort.sortOrder,
-      ...params
-    };
-    
-    if (currentFilters.status !== "all") query.status = currentFilters.status;
-    if (currentFilters.searchText.trim()) query.keyword = currentFilters.searchText.trim();
-    if (currentFilters.category !== "all") {
-      const selectedCategory = currentCategoryItems.find(c => c._id === currentFilters.category);
-      if (selectedCategory) query.categoryName = selectedCategory.name;
-    }
-    
-    dispatch(productListRequest(query));
-  }, [dispatch]);
-
-  // Load initial data
-  useEffect(() => {
-    fetchProducts({ page: 1 });
+  const handleRefresh = () => {
+    setIsRefreshing(true);
     dispatch(productStatsRequest());
     dispatch(categoryListRequest({ page: 1, limit: 100, status: "active" }));
-  }, [dispatch, fetchProducts]);
+    const query = createProductQuery({
+      page: pageInfo.current,
+      limit: pageInfo.size,
+      keyword: debouncedSearchText,
+      status: statusFilter,
+      categoryId: categoryFilter,
+      categories: categoryItems || [],
+      sortOption,
+    });
+    dispatch(productListRequest(query));
+    setTimeout(() => setIsRefreshing(false), 450);
+  };
 
-
-  // Handle filter changes with debounce for search
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
-  
   useEffect(() => {
-    if (isInitialLoad) {
-      setIsInitialLoad(false);
-      return;
-    }
-    
     const timeoutId = setTimeout(() => {
-      setPagination(prev => ({ ...prev, current: 1 }));
-      fetchProducts({ page: 1 });
-    }, filters.searchText.trim() ? 500 : 0);
-
+      setDebouncedSearchText(searchText);
+      setPageInfo((prev) => ({ ...prev, current: 1 }));
+    }, searchText.trim() ? 500 : 0);
     return () => clearTimeout(timeoutId);
-  }, [filters, fetchProducts, isInitialLoad]);
+  }, [searchText]);
 
-  // Handle sort changes
   useEffect(() => {
-    if (isInitialLoad) return;
-    fetchProducts();
-  }, [sort, fetchProducts, isInitialLoad]);
+    dispatch(productStatsRequest());
+    dispatch(categoryListRequest({ page: 1, limit: 100, status: "active" }));
+  }, [dispatch]);
+
+  useEffect(() => {
+    const query = createProductQuery({
+      page: pageInfo.current,
+      limit: pageInfo.size,
+      keyword: debouncedSearchText,
+      status: statusFilter,
+      categoryId: categoryFilter,
+      categories: categoryItems || [],
+      sortOption,
+    });
+
+    dispatch(productListRequest(query));
+  }, [dispatch, pageInfo, debouncedSearchText, statusFilter, categoryFilter, sortOption, categoryItems]);
 
   // Simplified data mapping
   const products = (productItems || []).map((product) => {
@@ -153,20 +167,20 @@ const ProductManagement = () => {
     };
   });
 
-  // Simplified filter checks
-  const hasActiveFilters = filters.searchText.trim() || filters.status !== "all" || filters.category !== "all";
-  
+  const hasActiveFilters = searchText.trim() || statusFilter !== "all" || categoryFilter !== "all";
   const getFilterSummary = () => {
     const activeFilters = [];
-    if (filters.status !== "all") {
-      activeFilters.push(`Trạng thái: ${filters.status === "active" ? "Đang hiển thị" : "Đang ẩn"}`);
+    if (statusFilter !== "all") {
+      activeFilters.push(`Trạng thái: ${statusFilter === "active" ? "Đang hiển thị" : "Đang ẩn"}`);
     }
-    if (filters.category !== "all") {
-      const selectedCategory = categoryItems.find(c => c._id === filters.category);
-      if (selectedCategory) activeFilters.push(`Danh mục: ${selectedCategory.name}`);
+    if (categoryFilter !== "all") {
+      const selectedCategory = (categoryItems || []).find((c) => c._id === categoryFilter);
+      if (selectedCategory) {
+        activeFilters.push(`Danh mục: ${selectedCategory.name}`);
+      }
     }
-    if (filters.searchText.trim()) {
-      activeFilters.push(`Tìm kiếm: "${filters.searchText.trim()}"`);
+    if (searchText.trim()) {
+      activeFilters.push(`Tìm kiếm: "${searchText.trim()}"`);
     }
     return activeFilters.join(" • ");
   };
@@ -176,14 +190,6 @@ const ProductManagement = () => {
     active: stats.visible || 0,
     inactive: stats.hidden || 0,
   };
-
-  // Simplified refresh function
-  const handleRefresh = useCallback(() => {
-    setLoading(true);
-    fetchProducts();
-    dispatch(productStatsRequest());
-    setTimeout(() => setLoading(false), 450);
-  }, [dispatch, fetchProducts]);
 
   const handleOpenUpdateModal = (product) => {
     setSelectedProduct(product);
@@ -246,50 +252,45 @@ const ProductManagement = () => {
     return payload;
   };
 
-  const handleCreateSuccess = useCallback((created) => {
+  const handleCreateSuccess = (created) => {
     dispatch(productCreateRequest(mapProductData(created)));
     setIsCreateModalVisible(false);
-    setPagination(prev => ({ ...prev, current: 1 }));
+    setPageInfo((prev) => ({ ...prev, current: 1 }));
     setTimeout(handleRefresh, 1000);
-  }, [dispatch, handleRefresh]);
+  };
 
-  const handleUpdateSuccess = useCallback((updated) => {
+  const handleUpdateSuccess = (updated) => {
     if (!updated?._id) return;
     dispatch(productUpdateRequest(updated._id, mapProductData(updated)));
     setIsUpdateModalVisible(false);
     setSelectedProduct(null);
     setTimeout(handleRefresh, 1000);
-  }, [dispatch, handleRefresh]);
+  };
 
   // Simplified table change handler
   const handleTableChange = (paginationData, tableFilters, sorter) => {
-    // Handle sorting
-    if (sorter?.field && sorter?.order) {
-      const sortMap = {
-        price: { field: 'price', order: sorter.order === 'ascend' ? 'asc' : 'desc' },
-        createdAt: { field: 'createdat', order: sorter.order === 'ascend' ? 'asc' : 'desc' }
-      };
-      
-      const sortConfig = sortMap[sorter.field];
-      if (sortConfig) {
-        setSort({ sortBy: sortConfig.field, sortOrder: sortConfig.order });
+    if (paginationData) {
+      const nextCurrent = paginationData.current || 1;
+      const nextSize = paginationData.pageSize || pageInfo.size;
+      if (nextCurrent !== pageInfo.current || nextSize !== pageInfo.size) {
+        setPageInfo({ current: nextCurrent, size: nextSize });
       }
-    } else if (sorter?.field && !sorter?.order) {
-      setSort({ sortBy: "default", sortOrder: "" });
+    }
+
+    if (sorter?.order) {
+      if (sorter.field === "price") {
+        setSortOption(sorter.order === "ascend" ? "price-asc" : "price-desc");
+      } else if (sorter.field === "createdAt") {
+        setSortOption(sorter.order === "ascend" ? "oldest" : "newest");
+      }
+    } else if (!sorter?.order) {
+      setSortOption("default");
     }
   };
 
-  // Simplified sort dropdown handler
   const handleSortChange = (value) => {
-    const sortMap = {
-      default: { sortBy: "default", sortOrder: "" },
-      newest: { sortBy: "createdat", sortOrder: "desc" },
-      oldest: { sortBy: "createdat", sortOrder: "asc" },
-      "price-asc": { sortBy: "price", sortOrder: "asc" },
-      "price-desc": { sortBy: "price", sortOrder: "desc" }
-    };
-    
-    setSort(sortMap[value] || sortMap.default);
+    setSortOption(value);
+    setPageInfo((prev) => ({ ...prev, current: 1 }));
   };
 
 
@@ -342,7 +343,12 @@ const ProductManagement = () => {
       dataIndex: "price",
       key: "price",
       sorter: { multiple: false },
-      sortOrder: sort.sortBy === 'default' ? null : (sort.sortBy === 'price' ? (sort.sortOrder === 'asc' ? 'ascend' : 'descend') : null),
+      sortOrder:
+        sortOption === "price-asc"
+          ? "ascend"
+          : sortOption === "price-desc"
+          ? "descend"
+          : null,
       render: (price) => (
         <Tag color="#13C2C2" style={{ borderRadius: 16, padding: "4px 12px", fontSize: 14, fontWeight: 500 }}>
           {(price || 0).toLocaleString("vi-VN")}đ
@@ -354,7 +360,12 @@ const ProductManagement = () => {
       dataIndex: "createdAt",
       key: "createdAt",
       sorter: { multiple: false },
-      sortOrder: sort.sortBy === 'default' ? null : (sort.sortBy === 'createdat' ? (sort.sortOrder === 'asc' ? 'ascend' : 'descend') : null),
+      sortOrder:
+        sortOption === "newest"
+          ? "descend"
+          : sortOption === "oldest"
+          ? "ascend"
+          : null,
       render: (createdAt) => (
         <div>
           <Text style={{ color: "#0D364C", fontSize: 14, display: "block" }}>
@@ -392,10 +403,9 @@ const ProductManagement = () => {
     },
   ];
 
-  // Simplified pagination
   const tablePagination = {
-    current: apiPagination?.page || pagination.current,
-    pageSize: apiPagination?.limit || pagination.pageSize,
+    current: apiPagination?.page || pageInfo.current,
+    pageSize: apiPagination?.limit || pageInfo.size,
     total: apiPagination?.total || 0,
     showSizeChanger: true,
     showQuickJumper: true,
@@ -406,18 +416,7 @@ const ProductManagement = () => {
         {hasActiveFilters && <span style={{ color: "#13C2C2" }}> (đã lọc)</span>}
       </Text>
     ),
-    onChange: (page, pageSize) => {
-      setPagination({ current: page, pageSize });
-      fetchProducts({ page, limit: pageSize });
-    },
-    onShowSizeChange: (current, size) => {
-      setPagination({ current, pageSize: size });
-      fetchProducts({ page: current, limit: size });
-    },
   };
-
-  // Backend handles pagination, so we use products directly
-  const dataForPage = products;
 
   return (
     <div style={{ padding: 24, background: "linear-gradient(135deg, #13C2C205 0%, #0D364C05 100%)", minHeight: "100vh" }}>
@@ -450,17 +449,20 @@ const ProductManagement = () => {
           <Space size="middle" style={{ flex: 1, flexWrap: "wrap" }}>
             <Input.Search 
               placeholder="Tìm kiếm theo tên sản phẩm hoặc ID..." 
-              value={filters.searchText} 
-              onChange={(e) => setFilters(prev => ({ ...prev, searchText: e.target.value }))} 
+              value={searchText} 
+              onChange={(e) => setSearchText(e.target.value)} 
               style={{ width: 320, maxWidth: "100%" }} 
               size="large" 
               prefix={<SearchOutlined style={{ color: "#13C2C2" }} />} 
               allowClear 
-              onSearch={(value) => setFilters(prev => ({ ...prev, searchText: value }))} 
+              onSearch={(value) => setSearchText(value)} 
             />
             <Select
-              value={filters.status}
-              onChange={(value) => setFilters(prev => ({ ...prev, status: value }))}
+              value={statusFilter}
+              onChange={(value) => {
+                setStatusFilter(value);
+                setPageInfo((prev) => ({ ...prev, current: 1 }));
+              }}
               style={{ width: 150 }}
               size="large"
               placeholder="Lọc theo trạng thái"
@@ -471,8 +473,11 @@ const ProductManagement = () => {
               <Select.Option value="inactive">Đang ẩn</Select.Option>
             </Select>
             <Select
-              value={filters.category}
-              onChange={(value) => setFilters(prev => ({ ...prev, category: value }))}
+              value={categoryFilter}
+              onChange={(value) => {
+                setCategoryFilter(value);
+                setPageInfo((prev) => ({ ...prev, current: 1 }));
+              }}
               style={{ width: 180 }}
               size="large"
               placeholder="Lọc theo danh mục"
@@ -484,14 +489,7 @@ const ProductManagement = () => {
               ))}
             </Select>
             <Select
-              value={(() => {
-                if (sort.sortBy === "default") return "default";
-                if (sort.sortBy === "createdat" && sort.sortOrder === "desc") return "newest";
-                if (sort.sortBy === "createdat" && sort.sortOrder === "asc") return "oldest";
-                if (sort.sortBy === "price" && sort.sortOrder === "asc") return "price-asc";
-                if (sort.sortBy === "price" && sort.sortOrder === "desc") return "price-desc";
-                return "default";
-              })()}
+              value={sortOption}
               onChange={handleSortChange}
               style={{ width: 200 }}
               size="large"
@@ -506,7 +504,7 @@ const ProductManagement = () => {
             </Select>
           </Space>
           <Space>
-            <Button onClick={handleRefresh} icon={<ReloadOutlined />} loading={loading} style={{ borderColor: "#13C2C2", color: "#13C2C2" }}>Làm mới</Button>
+            <Button onClick={handleRefresh} icon={<ReloadOutlined />} loading={isRefreshing} style={{ borderColor: "#13C2C2", color: "#13C2C2" }}>Làm mới</Button>
             <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsCreateModalVisible(true)} style={{ backgroundColor: "#0D364C", borderColor: "#0D364C" }}>Thêm Sản phẩm</Button>
           </Space>
         </div>
@@ -531,7 +529,13 @@ const ProductManagement = () => {
               <Button 
                 size="small" 
                 type="link" 
-                onClick={() => setFilters({ searchText: "", status: "all", category: "all" })}
+                onClick={() => {
+                  setSearchText("");
+                  setStatusFilter("all");
+                  setCategoryFilter("all");
+                  setSortOption("default");
+                  setPageInfo((prev) => ({ ...prev, current: 1 }));
+                }}
                 style={{ color: "#13C2C2" }}
               >
                 Xóa bộ lọc
@@ -540,11 +544,11 @@ const ProductManagement = () => {
           />
         )}
 
-        <Spin spinning={loading || loadingList || creating || updating || deleting} tip={loadingList ? "Đang tải sản phẩm..." : undefined}>
+        <Spin spinning={isRefreshing || loadingList || creating || updating || deleting} tip={loadingList ? "Đang tải sản phẩm..." : undefined}>
           <Table 
             rowKey={(record) => record._id} 
             columns={columns} 
-            dataSource={dataForPage} 
+            dataSource={products} 
             pagination={tablePagination} 
             onChange={handleTableChange}
             style={{ borderRadius: 12, overflow: "hidden" }} 

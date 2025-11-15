@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   Card,
@@ -45,64 +45,17 @@ const { Title, Text } = Typography;
 
 const OrderManagement = () => {
   const dispatch = useDispatch();
-  const { items: orderItems, currentOrder, stats, statuses, pagination: apiPagination, loadingList, loadingDetail, loadingStats, loadingStatuses, updating, error, success } = useSelector((state) => state.order);
+  const { items: orderItems, currentOrder, stats, statuses, pagination: apiPagination, loadingList, loadingDetail, loadingStats, updating, error, success } = useSelector((state) => state.order);
   
-  // Debug Redux state
-  useEffect(() => {
-    console.log("🔍 OrderManagement Redux state:", {
-      orderItems: orderItems?.length || 0,
-      currentOrder: currentOrder?._id || null,
-      stats,
-      statuses: statuses?.length || 0,
-      loadingList,
-      loadingDetail,
-      loadingStats,
-      loadingStatuses,
-      error,
-      success
-    });
-    
-    // Debug first order structure if available
-    if (orderItems && orderItems.length > 0) {
-      console.log("🔍 First order structure:", orderItems[0]);
-      console.log("🔍 Order status info:", {
-        orderStatusId: orderItems[0].orderStatusId,
-        statusName: orderItems[0].orderStatusId?.name,
-        statusColor: orderItems[0].orderStatusId?.color,
-        statusDescription: orderItems[0].orderStatusId?.description
-      });
-    }
-    
-    // Debug currentOrder when it changes
-    if (currentOrder) {
-      console.log("✅ CurrentOrder loaded:", currentOrder);
-      console.log("✅ CurrentOrder orderDetails:", currentOrder.orderDetails);
-    }
-  }, [orderItems, currentOrder, stats, statuses, loadingList, loadingDetail, loadingStats, loadingStatuses, error, success]);
-  
-  // Simplified state management
-  const [loading, setLoading] = useState(false);
-  const [filters, setFilters] = useState({
-    searchText: "",
-    status: "all",
-    paymentMethod: "all"
-  });
-  const [pagination, setPagination] = useState({ current: 1, pageSize: 5 });
-  const [sort, setSort] = useState({ sortBy: "default", sortOrder: "" });
-
+  const [searchText, setSearchText] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [paymentFilter, setPaymentFilter] = useState("all");
+  const [sortOption, setSortOption] = useState("default");
+  const [pageInfo, setPageInfo] = useState({ current: 1, size: 5 });
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [isUpdateModalVisible, setIsUpdateModalVisible] = useState(false);
   const [isViewDetailModalVisible, setIsViewDetailModalVisible] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
-
-  // Use refs to store current values to avoid dependency loops
-  const filtersRef = useRef(filters);
-  const paginationRef = useRef(pagination);
-  const sortRef = useRef(sort);
-  
-  // Update refs when values change
-  useEffect(() => { filtersRef.current = filters; }, [filters]);
-  useEffect(() => { paginationRef.current = pagination; }, [pagination]);
-  useEffect(() => { sortRef.current = sort; }, [sort]);
 
   // Toast notifications for API feedback
   useEffect(() => {
@@ -117,59 +70,44 @@ const OrderManagement = () => {
     dispatch(orderClearMessages());
   }, [success, dispatch]);
 
-  // Simplified API call function with stable reference
-  const fetchOrders = useCallback((params = {}) => {
-    const currentFilters = filtersRef.current;
-    const currentPagination = paginationRef.current;
-    const currentSort = sortRef.current;
-    
-    const query = {
-      page: currentPagination.current,
-      limit: currentPagination.pageSize,
-      sortBy: currentSort.sortBy,
-      sortOrder: currentSort.sortOrder,
-      ...params
+  const getSortQuery = (value) => {
+    const sortMap = {
+      default: { sortBy: "default", sortOrder: "" },
+      newest: { sortBy: "createdat", sortOrder: "desc" },
+      oldest: { sortBy: "createdat", sortOrder: "asc" },
+      "amount-asc": { sortBy: "totalprice", sortOrder: "asc" },
+      "amount-desc": { sortBy: "totalprice", sortOrder: "desc" },
     };
-    
-    if (currentFilters.status !== "all") query.status = currentFilters.status;
-    if (currentFilters.searchText.trim()) query.keyword = currentFilters.searchText.trim();
-    if (currentFilters.paymentMethod !== "all") query.paymentMethod = currentFilters.paymentMethod;
-    
-    dispatch(orderListRequest(query));
-  }, [dispatch]);
+    return sortMap[value] || sortMap.default;
+  };
 
-  // Load initial data
+  // Load stats + statuses once
   useEffect(() => {
-    fetchOrders({ page: 1 });
     dispatch(orderStatsRequest());
     dispatch(orderStatusesRequest());
-  }, [dispatch, fetchOrders]);
+  }, [dispatch]);
 
-  // Handle filter changes with debounce for search
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
-  
+  // Fetch orders whenever filters, sort, or pagination change
   useEffect(() => {
-    if (isInitialLoad) {
-      setIsInitialLoad(false);
-      return;
-    }
-    
-    const timeoutId = setTimeout(() => {
-      setPagination(prev => ({ ...prev, current: 1 }));
-      fetchOrders({ page: 1 });
-    }, filters.searchText.trim() ? 500 : 0);
+    const selectedSort = getSortQuery(sortOption);
 
-    return () => clearTimeout(timeoutId);
-  }, [filters, fetchOrders, isInitialLoad]);
+    const query = {
+      page: pageInfo.current,
+      limit: pageInfo.size,
+      sortBy: selectedSort.sortBy,
+      sortOrder: selectedSort.sortOrder,
+      includeDetails: false,
+    };
 
-  // Handle sort changes
-  useEffect(() => {
-    if (isInitialLoad) return;
-    fetchOrders();
-  }, [sort, fetchOrders, isInitialLoad]);
+    if (statusFilter !== "all") query.status = statusFilter;
+    if (paymentFilter !== "all") query.paymentMethod = paymentFilter;
+    if (searchText.trim()) query.search = searchText.trim();
+
+    dispatch(orderListRequest(query));
+  }, [dispatch, searchText, statusFilter, paymentFilter, sortOption, pageInfo]);
 
   // Function to get status info from statuses array
-  const getStatusInfo = useCallback((orderStatusId) => {
+  const getStatusInfo = (orderStatusId) => {
     if (!orderStatusId || !statuses || statuses.length === 0) {
       return { name: "pending", color: "#faad14", description: "Chờ xác nhận" };
     }
@@ -197,46 +135,47 @@ const OrderManagement = () => {
     
     // Default fallback
     return { name: "pending", color: "#faad14", description: "Chờ xác nhận" };
-  }, [statuses]);
+  };
 
-  // Simplified data mapping
-  const orders = useMemo(() => {
-    return (orderItems || []).map((order) => {
-      const statusInfo = getStatusInfo(order.orderStatusId);
-      
-      return {
-        ...order,
-        customerName: order.userId?.user_name || "N/A",
-        customerEmail: order.userId?.email || "N/A",
-        customerPhone: order.userId?.phone || "N/A",
-        customer: {
-          _id: order.userId?._id,
-          name: order.userId?.user_name,
-          email: order.userId?.email,
-          phone: order.userId?.phone
-        },
-        // Add receiver information (người nhận hàng) - với fallback logic như ViewOrderDetail
-        receiverName: order.receiverName || order.userId?.user_name || "N/A",
-        receiverPhone: order.receiverPhone || order.customer?.phone || order.userId?.phone || order.customerPhone || "N/A",
-        receiverAddress: order.receiverAddress || "Địa chỉ chưa được cung cấp",
-        status: statusInfo.name,
-        statusColor: statusInfo.color,
-        statusId: statusInfo.id,
-        statusDescription: statusInfo.description,
-        totalAmount: order.totalPrice,
-        itemsCount: order.orderDetails?.length || 0,
-        items: order.orderDetails || [],
-        shippingAddress: order.receiverAddress,
-      };
-    });
-  }, [orderItems, getStatusInfo]);
+  const orders = (orderItems || []).map((order) => {
+    const statusInfo = getStatusInfo(order.orderStatusId);
 
-  // Simplified filter checks
-  const hasActiveFilters = filters.searchText.trim() || filters.status !== "all" || filters.paymentMethod !== "all";
+    return {
+      ...order,
+      customerName: order.userId?.user_name || "N/A",
+      customerEmail: order.userId?.email || "N/A",
+      customerPhone: order.userId?.phone || "N/A",
+      customer: {
+        _id: order.userId?._id,
+        name: order.userId?.user_name,
+        email: order.userId?.email,
+        phone: order.userId?.phone,
+      },
+      receiverName: order.receiverName || order.userId?.user_name || "N/A",
+      receiverPhone:
+        order.receiverPhone ||
+        order.customer?.phone ||
+        order.userId?.phone ||
+        order.customerPhone ||
+        "N/A",
+      receiverAddress: order.receiverAddress || "Địa chỉ chưa được cung cấp",
+      status: statusInfo.name,
+      statusColor: statusInfo.color,
+      statusId: statusInfo.id,
+      statusDescription: statusInfo.description,
+      totalAmount: order.totalPrice,
+      itemsCount: order.orderDetails?.length || 0,
+      items: order.orderDetails || [],
+      shippingAddress: order.receiverAddress,
+    };
+  });
+
+  const hasActiveFilters =
+    searchText.trim() || statusFilter !== "all" || paymentFilter !== "all";
   
   const getFilterSummary = () => {
     const activeFilters = [];
-    if (filters.status !== "all") {
+    if (statusFilter !== "all") {
       const statusMap = {
         pending: "Chờ xác nhận",
         confirmed: "Đã xác nhận",
@@ -246,17 +185,17 @@ const OrderManagement = () => {
         cancelled: "Đã hủy",
         returned: "Trả hàng"
       };
-      activeFilters.push(`Trạng thái: ${statusMap[filters.status] || filters.status}`);
+      activeFilters.push(`Trạng thái: ${statusMap[statusFilter] || statusFilter}`);
     }
-    if (filters.paymentMethod !== "all") {
+    if (paymentFilter !== "all") {
       const paymentMap = {
         cod: "Thanh toán COD",
         vnpay: "VNPay",
       };
-      activeFilters.push(`Thanh toán: ${paymentMap[filters.paymentMethod] || filters.paymentMethod}`);
+      activeFilters.push(`Thanh toán: ${paymentMap[paymentFilter] || paymentFilter}`);
     }
-    if (filters.searchText.trim()) {
-      activeFilters.push(`Tìm kiếm: "${filters.searchText.trim()}"`);
+    if (searchText.trim()) {
+      activeFilters.push(`Tìm kiếm: "${searchText.trim()}"`);
     }
     return activeFilters.join(" • ");
   };
@@ -272,13 +211,26 @@ const OrderManagement = () => {
     returned: stats.returned || 0,
   };
 
-  // Simplified refresh function
-  const handleRefresh = useCallback(() => {
-    setLoading(true);
-    fetchOrders();
+  const handleRefresh = () => {
+    setIsRefreshing(true);
     dispatch(orderStatsRequest());
-    setTimeout(() => setLoading(false), 450);
-  }, [dispatch, fetchOrders]);
+    dispatch(orderStatusesRequest());
+    const sortQuery = getSortQuery(sortOption);
+    const filterQuery = {};
+    if (statusFilter !== "all") filterQuery.status = statusFilter;
+    if (paymentFilter !== "all") filterQuery.paymentMethod = paymentFilter;
+    if (searchText.trim()) filterQuery.search = searchText.trim();
+
+    dispatch(orderListRequest({
+      page: pageInfo.current,
+      limit: pageInfo.size,
+      sortBy: sortQuery.sortBy,
+      sortOrder: sortQuery.sortOrder,
+      includeDetails: false,
+      ...filterQuery,
+    }));
+    setTimeout(() => setIsRefreshing(false), 400);
+  };
 
   const handleOpenUpdateModal = (order) => {
     setSelectedOrder(order);
@@ -301,7 +253,7 @@ const OrderManagement = () => {
   };
 
   // Simplified update handler
-  const handleUpdateSuccess = useCallback((updated) => {
+  const handleUpdateSuccess = (updated) => {
     if (!updated?._id) return;
     
     console.log("🔍 handleUpdateSuccess - updated data:", updated);
@@ -313,37 +265,25 @@ const OrderManagement = () => {
     }));
     setIsUpdateModalVisible(false);
     setSelectedOrder(null);
-  }, [dispatch]);
+  };
 
-  // Simplified table change handler
-  const handleTableChange = (paginationData, tableFilters, sorter) => {
-    // Handle sorting
-    if (sorter?.field && sorter?.order) {
-      const sortMap = {
-        totalAmount: { field: 'totalAmount', order: sorter.order === 'ascend' ? 'asc' : 'desc' },
-        createdAt: { field: 'createdat', order: sorter.order === 'ascend' ? 'asc' : 'desc' }
-      };
-      
-      const sortConfig = sortMap[sorter.field];
-      if (sortConfig) {
-        setSort({ sortBy: sortConfig.field, sortOrder: sortConfig.order });
-      }
-    } else if (sorter?.field && !sorter?.order) {
-      setSort({ sortBy: "default", sortOrder: "" });
+  const handleTableChange = (newPagination, tableFilters, sorter) => {
+    if (newPagination.current !== pageInfo.current || newPagination.pageSize !== pageInfo.size) {
+      setPageInfo({ current: newPagination.current, size: newPagination.pageSize });
+    }
+
+    if (sorter?.order) {
+      if (sorter.field === "totalAmount" && sorter.order === "ascend") setSortOption("amount-asc");
+      if (sorter.field === "totalAmount" && sorter.order === "descend") setSortOption("amount-desc");
+      if (sorter.field === "createdAt" && sorter.order === "ascend") setSortOption("oldest");
+      if (sorter.field === "createdAt" && sorter.order === "descend") setSortOption("newest");
+    } else if (!sorter?.order) {
+      setSortOption("default");
     }
   };
 
-  // Simplified sort dropdown handler
   const handleSortChange = (value) => {
-    const sortMap = {
-      default: { sortBy: "default", sortOrder: "" },
-      newest: { sortBy: "createdat", sortOrder: "desc" },
-      oldest: { sortBy: "createdat", sortOrder: "asc" },
-      "amount-asc": { sortBy: "totalAmount", sortOrder: "asc" },
-      "amount-desc": { sortBy: "totalAmount", sortOrder: "desc" }
-    };
-    
-    setSort(sortMap[value] || sortMap.default);
+    setSortOption(value);
   };
 
   // Get status color and icon
@@ -407,7 +347,12 @@ const OrderManagement = () => {
       dataIndex: "totalAmount",
       key: "totalAmount",
       sorter: { multiple: false },
-      sortOrder: sort.sortBy === 'default' ? null : (sort.sortBy === 'totalAmount' ? (sort.sortOrder === 'asc' ? 'ascend' : 'descend') : null),
+      sortOrder:
+        sortOption === "amount-asc"
+          ? "ascend"
+          : sortOption === "amount-desc"
+          ? "descend"
+          : null,
       render: (amount) => (
         <Tag color="#13C2C2" style={{ borderRadius: 16, padding: "4px 12px", fontSize: 14, fontWeight: 500 }}>
           {(amount || 0).toLocaleString("vi-VN")}đ
@@ -429,7 +374,12 @@ const OrderManagement = () => {
       dataIndex: "createdAt",
       key: "createdAt",
       sorter: { multiple: false },
-      sortOrder: sort.sortBy === 'default' ? null : (sort.sortBy === 'createdat' ? (sort.sortOrder === 'asc' ? 'ascend' : 'descend') : null),
+      sortOrder:
+        sortOption === "newest"
+          ? "descend"
+          : sortOption === "oldest"
+          ? "ascend"
+          : null,
       render: (createdAt) => (
         <div>
           <Text style={{ color: "#0D364C", fontSize: 14, display: "block" }}>
@@ -471,9 +421,9 @@ const OrderManagement = () => {
   ];
 
   // Simplified pagination
-  const tablePagination = useMemo(() => ({
-    current: apiPagination?.page || pagination.current,
-    pageSize: apiPagination?.limit || pagination.pageSize,
+  const tablePagination = {
+    current: apiPagination?.page || pageInfo.current,
+    pageSize: apiPagination?.limit || pageInfo.size,
     total: apiPagination?.total || 0,
     showSizeChanger: true,
     showQuickJumper: true,
@@ -484,18 +434,7 @@ const OrderManagement = () => {
         {hasActiveFilters && <span style={{ color: "#13C2C2" }}> (đã lọc)</span>}
       </Text>
     ),
-    onChange: (page, pageSize) => {
-      setPagination({ current: page, pageSize });
-      fetchOrders({ page, limit: pageSize });
-    },
-    onShowSizeChange: (current, size) => {
-      setPagination({ current, pageSize: size });
-      fetchOrders({ page: current, limit: size });
-    },
-  }), [apiPagination, pagination, hasActiveFilters, fetchOrders]);
-
-  // Backend handles pagination, so we use orders directly
-  const dataForPage = orders;
+  };
 
   return (
     <div style={{ padding: 24, background: "linear-gradient(135deg, #13C2C205 0%, #0D364C05 100%)", minHeight: "100vh" }}>
@@ -563,17 +502,26 @@ const OrderManagement = () => {
           <Space size="middle" style={{ flex: 1, flexWrap: "wrap" }}>
             <Input.Search 
               placeholder="Tìm kiếm theo mã đơn hàng, tên khách hàng..." 
-              value={filters.searchText} 
-              onChange={(e) => setFilters(prev => ({ ...prev, searchText: e.target.value }))} 
+              value={searchText} 
+              onChange={(e) => {
+                setSearchText(e.target.value);
+                setPageInfo({ current: 1, size: pageInfo.size });
+              }} 
               style={{ width: 320, maxWidth: "100%" }} 
               size="large" 
               prefix={<SearchOutlined style={{ color: "#13C2C2" }} />} 
               allowClear 
-              onSearch={(value) => setFilters(prev => ({ ...prev, searchText: value }))} 
+              onSearch={(value) => {
+                setSearchText(value);
+                setPageInfo({ current: 1, size: pageInfo.size });
+              }} 
             />
             <Select
-              value={filters.status}
-              onChange={(value) => setFilters(prev => ({ ...prev, status: value }))}
+              value={statusFilter}
+              onChange={(value) => {
+                setStatusFilter(value);
+                setPageInfo({ current: 1, size: pageInfo.size });
+              }}
               style={{ width: 150 }}
               size="large"
               placeholder="Lọc theo trạng thái"
@@ -589,8 +537,11 @@ const OrderManagement = () => {
               <Select.Option value="returned">Trả hàng</Select.Option>
             </Select>
             <Select
-              value={filters.paymentMethod}
-              onChange={(value) => setFilters(prev => ({ ...prev, paymentMethod: value }))}
+              value={paymentFilter}
+              onChange={(value) => {
+                setPaymentFilter(value);
+                setPageInfo({ current: 1, size: pageInfo.size });
+              }}
               style={{ width: 180 }}
               size="large"
               placeholder="Lọc theo thanh toán"
@@ -601,14 +552,7 @@ const OrderManagement = () => {
               <Select.Option value="vnpay">VNPay</Select.Option>
             </Select>
             <Select
-              value={(() => {
-                if (sort.sortBy === "default") return "default";
-                if (sort.sortBy === "createdat" && sort.sortOrder === "desc") return "newest";
-                if (sort.sortBy === "createdat" && sort.sortOrder === "asc") return "oldest";
-                if (sort.sortBy === "totalAmount" && sort.sortOrder === "asc") return "amount-asc";
-                if (sort.sortBy === "totalAmount" && sort.sortOrder === "desc") return "amount-desc";
-                return "default";
-              })()}
+              value={sortOption}
               onChange={handleSortChange}
               style={{ width: 200 }}
               size="large"
@@ -623,7 +567,7 @@ const OrderManagement = () => {
             </Select>
           </Space>
           <Space>
-            <Button onClick={handleRefresh} icon={<ReloadOutlined />} loading={loading} style={{ borderColor: "#13C2C2", color: "#13C2C2" }}>Làm mới</Button>
+            <Button onClick={handleRefresh} icon={<ReloadOutlined />} loading={isRefreshing} style={{ borderColor: "#13C2C2", color: "#13C2C2" }}>Làm mới</Button>
           </Space>
         </div>
 
@@ -645,7 +589,12 @@ const OrderManagement = () => {
               <Button 
                 size="small" 
                 type="link" 
-                onClick={() => setFilters({ searchText: "", status: "all", paymentMethod: "all" })}
+                onClick={() => {
+                  setSearchText("");
+                  setStatusFilter("all");
+                  setPaymentFilter("all");
+                  setPageInfo({ current: 1, size: pageInfo.size });
+                }}
                 style={{ color: "#13C2C2" }}
               >
                 Xóa bộ lọc
@@ -654,11 +603,11 @@ const OrderManagement = () => {
           />
         )}
 
-        <Spin spinning={loading || loadingList || updating} tip={loadingList ? "Đang tải đơn hàng..." : updating ? "Đang cập nhật..." : undefined}>
+        <Spin spinning={isRefreshing || loadingList || updating} tip={loadingList ? "Đang tải đơn hàng..." : updating ? "Đang cập nhật..." : undefined}>
           <Table 
             rowKey={(record) => record._id} 
             columns={columns} 
-            dataSource={dataForPage} 
+            dataSource={orders} 
             pagination={tablePagination} 
             onChange={handleTableChange}
             style={{ borderRadius: 12, overflow: "hidden" }} 

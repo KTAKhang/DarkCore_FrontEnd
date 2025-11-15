@@ -5,14 +5,41 @@ import { PlusOutlined, CameraOutlined, AppstoreOutlined, ShoppingOutlined, Dolla
 
 const { Title, Text } = Typography;
 
-function getBase64(file) {
+const styles = {
+  card: { borderRadius: 8, border: "none", boxShadow: "none" },
+  primaryButton: { backgroundColor: "#13C2C2", borderColor: "#13C2C2", height: 44, borderRadius: 8, fontWeight: 600, fontSize: 16 },
+  title: { color: "#0D364C", marginBottom: 24, fontWeight: 700 },
+  label: { color: "#0D364C", fontWeight: 600, fontSize: 14 },
+  input: { borderRadius: 8, height: 40, borderColor: "#d9d9d9" },
+  divider: { borderColor: "#13C2C2", opacity: 0.3 },
+};
+
+const getBase64 = (file) => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.readAsDataURL(file);
     reader.onload = () => resolve(reader.result);
     reader.onerror = (error) => reject(error);
   });
-}
+};
+
+const normalizeNewProductValues = (values) => {
+  return {
+    name: values.name ? values.name.trim() : "",
+    short_desc: values.short_desc ? values.short_desc.trim() : "",
+    detail_desc: values.detail_desc ? values.detail_desc.trim() : "",
+    brand: values.brand ? values.brand.trim() : "",
+    price: Number(values.price),
+    quantity: Number(values.quantity),
+    status: typeof values.status === "boolean" ? values.status : true,
+  };
+};
+
+const extractImages = (fileList) => {
+  return (fileList || [])
+    .map((file) => file?.originFileObj || file)
+    .filter((file) => file instanceof File);
+};
 
 const CreateProduct = ({ visible, onClose, onSuccess, categories = [], existingProducts = [] }) => {
   const [form] = Form.useForm();
@@ -31,10 +58,8 @@ const CreateProduct = ({ visible, onClose, onSuccess, categories = [], existingP
     }
   }, [visible, form]);
 
-  // Filter active categories
   const activeCategories = categories.filter((c) => c.status !== false);
 
-  // Helper function to reset form
   const resetForm = () => {
     form.resetFields();
     setFileList([]);
@@ -44,41 +69,30 @@ const CreateProduct = ({ visible, onClose, onSuccess, categories = [], existingP
 
   const handleFinish = async (values) => {
     if (isSubmitting) return;
-    
     setIsSubmitting(true);
-    
-    // Check if image is selected
+
     if (!fileList.length) {
       message.error("Vui lòng chọn hình ảnh cho sản phẩm!");
       setIsSubmitting(false);
       return;
     }
 
-    // Get images from file list
-    const images = fileList
-      .map((f) => f?.originFileObj || f)
-      .filter((f) => f instanceof File);
+    const images = extractImages(fileList);
+    const normalized = normalizeNewProductValues(values);
 
-    const trimmedName = values.name ? values.name.trim() : "";
-    const trimmedShortDesc = values.short_desc ? values.short_desc.trim() : "";
-    const trimmedDetailDesc = values.detail_desc ? values.detail_desc.trim() : "";
-    const trimmedBrand = values.brand ? values.brand.trim() : "";
-    const normalizedPrice = Number(values.price);
-    const normalizedQuantity = Number(values.quantity);
-
-    if (!trimmedName) {
+    if (!normalized.name) {
       message.error("Tên sản phẩm không hợp lệ");
       setIsSubmitting(false);
       return;
     }
 
-    if (!Number.isFinite(normalizedPrice) || normalizedPrice < 0) {
+    if (!Number.isFinite(normalized.price) || normalized.price < 0) {
       message.error("Giá sản phẩm phải là số không âm");
       setIsSubmitting(false);
       return;
     }
 
-    if (!Number.isInteger(normalizedQuantity) || normalizedQuantity < 0) {
+    if (!Number.isInteger(normalized.quantity) || normalized.quantity < 0) {
       message.error("Tồn kho phải là số nguyên không âm");
       setIsSubmitting(false);
       return;
@@ -86,7 +100,7 @@ const CreateProduct = ({ visible, onClose, onSuccess, categories = [], existingP
 
     const duplicateName = existingProducts.some((product) => {
       if (!product?.name) return false;
-      return product.name.trim().toLowerCase() === trimmedName.toLowerCase();
+      return product.name.trim().toLowerCase() === normalized.name.toLowerCase();
     });
     if (duplicateName) {
       message.error("Tên sản phẩm đã tồn tại. Vui lòng nhập tên khác.");
@@ -94,46 +108,30 @@ const CreateProduct = ({ visible, onClose, onSuccess, categories = [], existingP
       return;
     }
 
-    // Create payload with trimmed values
     const payload = {
-      name: trimmedName,
+      name: normalized.name,
       category: values.category_id,
-      price: normalizedPrice,
-      short_desc: trimmedShortDesc,
-      detail_desc: trimmedDetailDesc,
-      brand: trimmedBrand,
-      stockQuantity: normalizedQuantity,
-      status: typeof values.status === "boolean" ? values.status : true,
+      price: normalized.price,
+      short_desc: normalized.short_desc,
+      detail_desc: normalized.detail_desc,
+      brand: normalized.brand,
+      stockQuantity: normalized.quantity,
+      status: normalized.status,
       images,
     };
 
-    // Call success callback
     onSuccess?.(payload);
-    
-    // Reset form and states
     setIsSubmitting(false);
     resetForm();
   };
 
   const handlePreview = async (file) => {
     let imageUrl = file.url || file.preview;
-    
     if (!imageUrl && file.originFileObj) {
       imageUrl = await getBase64(file.originFileObj);
     }
-    
     setPreviewImage(imageUrl);
     setModalVisible(true);
-  };
-
-  // Simple inline styles - no need for useMemo
-  const styles = {
-    card: { borderRadius: 8, border: "none", boxShadow: "none" },
-    primaryButton: { backgroundColor: "#13C2C2", borderColor: "#13C2C2", height: 44, borderRadius: 8, fontWeight: 600, fontSize: 16 },
-    title: { color: "#0D364C", marginBottom: 24, fontWeight: 700 },
-    label: { color: "#0D364C", fontWeight: 600, fontSize: 14 },
-    input: { borderRadius: 8, height: 40, borderColor: "#d9d9d9" },
-    divider: { borderColor: "#13C2C2", opacity: 0.3 },
   };
 
   return (
