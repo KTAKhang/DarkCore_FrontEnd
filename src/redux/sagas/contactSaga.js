@@ -7,7 +7,7 @@ import * as actions from "../actions/contactActions";
 // 1️⃣ Base URL Backend
 // ================================
 // Định nghĩa URL gốc của API backend để sử dụng trong các request
-const API_BASE_URL = "http://localhost:3020"; // Gateway hoặc contact-service URL
+const API_BASE_URL = "http://localhost:3000"; // Gateway hoặc contact-service URL
 
 // ================================
 // 2️⃣ API Helper chung
