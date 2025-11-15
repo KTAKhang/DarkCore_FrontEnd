@@ -76,9 +76,16 @@ function* listNewsSaga(action) {
     console.error("🔄 News API err:", err.response || err); // Ghi log lỗi chi tiết
     const errorMsg = err.response?.data?.message || err.message || "Lỗi không xác định"; // Lấy thông báo lỗi
 
+    // Nếu lỗi 401 (unauthorized - thiếu token), không hiển thị toast vì đã redirect đến trang đăng ký
+    if (err.response?.status === 401) {
+      console.log("🔄 News API 401 - User not authenticated, redirecting to register");
+      yield put(actions.newsListFailure(errorMsg));
+      return; // Không hiển thị toast error
+    }
+
     // Dispatch action failure để lưu lỗi vào redux
     yield put(actions.newsListFailure(errorMsg));
-    // Hiển thị thông báo lỗi cho người dùng
+    // Hiển thị thông báo lỗi cho người dùng (chỉ cho các lỗi khác 401)
     toast.error(errorMsg);
   }
 }
@@ -100,9 +107,16 @@ function* getNewsSaga(action) {
     console.error("🔄 News GET API err:", err.response || err); // Ghi log lỗi
     const errorMsg = err.response?.data?.message || err.message || "Lỗi không xác định"; // Lấy thông báo lỗi
 
+    // Nếu lỗi 401 (unauthorized - thiếu token), không hiển thị toast vì đã redirect đến trang đăng ký
+    if (err.response?.status === 401) {
+      console.log("🔄 News GET API 401 - User not authenticated, redirecting to register");
+      yield put(actions.newsGetFailure(errorMsg));
+      return; // Không hiển thị toast error
+    }
+
     // Dispatch action failure để lưu lỗi vào redux
     yield put(actions.newsGetFailure(errorMsg));
-    // Hiển thị thông báo lỗi
+    // Hiển thị thông báo lỗi (chỉ cho các lỗi khác 401)
     toast.error(errorMsg);
   }
 }

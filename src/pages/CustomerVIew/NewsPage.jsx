@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import {
     Card,
     Row,
@@ -11,7 +12,6 @@ import {
     Button,
 } from "antd";
 import {
-    EyeOutlined,
     CalendarOutlined,
     AppstoreOutlined,
 } from "@ant-design/icons";
@@ -26,15 +26,30 @@ const { Title, Text, Paragraph } = Typography;
 
 const NewsPage = () => {
     const dispatch = useDispatch();
+    const navigate = useNavigate();
     const { list, current: selectedNews, loadingList, loadingGet, error } =
         useSelector((state) => state.news);
 
     const [isDetailModalVisible, setIsDetailModalVisible] = useState(false);
     const [pagination, setPagination] = useState({ current: 1, pageSize: 9 });
 
-    // Fetch published news
+    // Check if user is guest (not authenticated) and redirect to register - same logic as contact
+    useEffect(() => {
+        const storedUser = localStorage.getItem("user");
+        if (!storedUser) {
+            navigate("/register");
+            return; // Don't proceed if redirecting
+        }
+    }, [navigate]);
+
+    // Fetch published news - only if user is authenticated
     const fetchNews = useCallback(
         (params = {}) => {
+            const storedUser = localStorage.getItem("user");
+            // Don't fetch if user is guest
+            if (!storedUser) {
+                return;
+            }
             const query = {
                 status: "published",
                 sortBy: "createdAt",
@@ -49,7 +64,11 @@ const NewsPage = () => {
     );
 
     useEffect(() => {
-        fetchNews({ page: 1 });
+        const storedUser = localStorage.getItem("user");
+        // Only fetch if user is authenticated
+        if (storedUser) {
+            fetchNews({ page: 1 });
+        }
     }, [fetchNews]);
 
     const handlePaginationChange = (page, pageSize) => {
@@ -144,7 +163,7 @@ const NewsPage = () => {
                                                         </Paragraph>
                                                     )}
 
-                                                    <div className="flex items-center justify-between text-gray-500 text-xs mt-3">
+                                                    <div className="flex items-center text-gray-500 text-xs mt-3">
                                                         <span>
                                                             <CalendarOutlined className="mr-1" />
                                                             {news.createdAt
@@ -152,10 +171,6 @@ const NewsPage = () => {
                                                                     "vi-VN"
                                                                 )
                                                                 : "N/A"}
-                                                        </span>
-                                                        <span>
-                                                            <EyeOutlined className="mr-1" />
-                                                            {news.views || 0} lượt xem
                                                         </span>
                                                     </div>
                                                 </div>
@@ -255,9 +270,7 @@ const NewsPage = () => {
                                 <CalendarOutlined className="mr-1" />
                                 {selectedNews.createdAt
                                     ? new Date(selectedNews.createdAt).toLocaleDateString("vi-VN")
-                                    : "N/A"}{" "}
-                                | <EyeOutlined className="ml-1 mr-1" />
-                                {selectedNews.views || 0} lượt xem
+                                    : "N/A"}
                             </Text>
 
                             <Paragraph className="text-gray-700 text-base leading-relaxed whitespace-pre-line">
