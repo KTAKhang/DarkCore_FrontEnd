@@ -75,15 +75,33 @@ const Header = ({ searchTerm, setSearchTerm }) => {
                         <Link to="/products" className="text-gray-700 hover:text-blue-600">
                             Sản phẩm
                         </Link>
-                        <Link to="/repair" className="text-gray-700 hover:text-blue-600">
+                        <button
+                            onClick={() => {
+                                if (storedUser) {
+                                    navigate("/repair");
+                                } else {
+                                    navigate("/login");
+                                }
+                            }}
+                            className="text-gray-700 hover:text-blue-600 bg-transparent border-none cursor-pointer p-0"
+                        >
                             Sửa chữa
-                        </Link>
+                        </button>
                         <Link to="/news" className="text-gray-700 hover:text-blue-600">
                             Tin Tức
                         </Link>
-                        <Link to="/discounts" className="text-gray-700 hover:text-blue-600">
+                        <button
+                            onClick={() => {
+                                if (storedUser) {
+                                    navigate("/discounts");
+                                } else {
+                                    navigate("/login");
+                                }
+                            }}
+                            className="text-gray-700 hover:text-blue-600 bg-transparent border-none cursor-pointer p-0"
+                        >
                             Mã giảm giá
-                        </Link>
+                        </button>
                         <Link to="/about" className="text-gray-700 hover:text-blue-600">
                             Về chúng tôi
                         </Link>
