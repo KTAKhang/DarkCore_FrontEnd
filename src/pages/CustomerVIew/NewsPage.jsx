@@ -12,7 +12,6 @@ import {
     Button,
 } from "antd";
 import {
-    EyeOutlined,
     CalendarOutlined,
     AppstoreOutlined,
 } from "@ant-design/icons";
@@ -164,7 +163,7 @@ const NewsPage = () => {
                                                         </Paragraph>
                                                     )}
 
-                                                    <div className="flex items-center justify-between text-gray-500 text-xs mt-3">
+                                                    <div className="flex items-center text-gray-500 text-xs mt-3">
                                                         <span>
                                                             <CalendarOutlined className="mr-1" />
                                                             {news.createdAt
@@ -172,10 +171,6 @@ const NewsPage = () => {
                                                                     "vi-VN"
                                                                 )
                                                                 : "N/A"}
-                                                        </span>
-                                                        <span>
-                                                            <EyeOutlined className="mr-1" />
-                                                            {news.views || 0} lượt xem
                                                         </span>
                                                     </div>
                                                 </div>
@@ -275,9 +270,7 @@ const NewsPage = () => {
                                 <CalendarOutlined className="mr-1" />
                                 {selectedNews.createdAt
                                     ? new Date(selectedNews.createdAt).toLocaleDateString("vi-VN")
-                                    : "N/A"}{" "}
-                                | <EyeOutlined className="ml-1 mr-1" />
-                                {selectedNews.views || 0} lượt xem
+                                    : "N/A"}
                             </Text>
 
                             <Paragraph className="text-gray-700 text-base leading-relaxed whitespace-pre-line">
