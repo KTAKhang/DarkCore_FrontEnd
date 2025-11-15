@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import {
     Card,
     Row,
@@ -26,15 +27,30 @@ const { Title, Text, Paragraph } = Typography;
 
 const NewsPage = () => {
     const dispatch = useDispatch();
+    const navigate = useNavigate();
     const { list, current: selectedNews, loadingList, loadingGet, error } =
         useSelector((state) => state.news);
 
     const [isDetailModalVisible, setIsDetailModalVisible] = useState(false);
     const [pagination, setPagination] = useState({ current: 1, pageSize: 9 });
 
-    // Fetch published news
+    // Check if user is guest (not authenticated) and redirect to register - same logic as contact
+    useEffect(() => {
+        const storedUser = localStorage.getItem("user");
+        if (!storedUser) {
+            navigate("/register");
+            return; // Don't proceed if redirecting
+        }
+    }, [navigate]);
+
+    // Fetch published news - only if user is authenticated
     const fetchNews = useCallback(
         (params = {}) => {
+            const storedUser = localStorage.getItem("user");
+            // Don't fetch if user is guest
+            if (!storedUser) {
+                return;
+            }
             const query = {
                 status: "published",
                 sortBy: "createdAt",
@@ -49,7 +65,11 @@ const NewsPage = () => {
     );
 
     useEffect(() => {
-        fetchNews({ page: 1 });
+        const storedUser = localStorage.getItem("user");
+        // Only fetch if user is authenticated
+        if (storedUser) {
+            fetchNews({ page: 1 });
+        }
     }, [fetchNews]);
 
     const handlePaginationChange = (page, pageSize) => {
