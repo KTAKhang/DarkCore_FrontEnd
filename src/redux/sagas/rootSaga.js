@@ -59,8 +59,6 @@ export default function* rootSaga() {
       orderStaffSaga(),
       staffProductSaga(),
 
-      staffProductSaga(),
-
     ]);
   } catch (error) {
     console.error("🔴 rootSaga ERROR:", error);

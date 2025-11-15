@@ -187,10 +187,18 @@ function* updateWorker(action) {
     try {
         const { id, payload } = action.payload;
         const data = yield call(apiUpdate, id, payload);
-        if (data.status === "OK") yield put(staffProductUpdateSuccess(data.data, data.message));
-        else throw new Error(data.message);
+        console.log("🔵 updateWorker response:", data); // Debug log
+        if (data.status === "OK") {
+            yield put(staffProductUpdateSuccess(data.data, data.message));
+            message.success(data.message || "Cập nhật sản phẩm thành công!");
+        } else {
+            throw new Error(data.message || "Cập nhật sản phẩm thất bại");
+        }
     } catch (error) {
-        yield put(staffProductUpdateFailure(error.response?.data?.message || error.message));
+        console.error("🔴 updateWorker error:", error); // Debug log
+        const msg = error.response?.data?.message || error.message || "Lỗi không xác định";
+        yield put(staffProductUpdateFailure(msg));
+        message.error(msg);
     }
 }
 
