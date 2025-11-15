@@ -8,6 +8,7 @@ import {
   ORDER_STATUSES_REQUEST,
   ORDER_HISTORY_REQUEST,
   ORDER_CREATE_REQUEST,
+  ORDER_CANCEL_REQUEST,
   orderListSuccess,
   orderListFailed,
   orderDetailSuccess,
@@ -22,6 +23,8 @@ import {
   orderHistoryFailure,
   orderCreateSuccess,
   orderCreateFailure,
+  orderCancelSuccess,
+  orderCancelFailure,
 } from "../actions/orderActions";
 
 // API call functions
@@ -196,6 +199,31 @@ function* createOrderSaga(action) {
   }
 }
 
+// 🆕 Hủy đơn hàng (Customer)
+function* cancelOrderSaga(action) {
+  try {
+    console.log("🚀 cancelOrderSaga called with action:", action);
+    const { orderId, cancelledReason } = action.payload;
+    
+    const payload = cancelledReason ? { cancelledReason } : {};
+    
+    const response = yield call(apiClient.put, `/order/orders/${orderId}/cancel`, payload);
+    console.log("✅ API cancel order response:", response);
+    
+    if (response.data.status === "OK") {
+      yield put(orderCancelSuccess(response.data.data));
+    } else {
+      console.log("❌ API cancel order error:", response.data.message);
+      yield put(orderCancelFailure(response.data.message || "Lỗi khi hủy đơn hàng"));
+    }
+    
+  } catch (error) {
+    console.log("❌ API Cancel Order Error:", error);
+    const errorMessage = error.response?.data?.message || error.message || "Lỗi kết nối server";
+    yield put(orderCancelFailure(errorMessage));
+  }
+}
+
 // Watcher sagas
 export function* watchFetchOrders() {
   yield takeEvery(ORDER_LIST_REQUEST, fetchOrdersSaga);
@@ -225,6 +253,10 @@ export function* watchCreateOrder() {
   yield takeEvery(ORDER_CREATE_REQUEST, createOrderSaga);
 }
 
+export function* watchCancelOrder() {
+  yield takeEvery(ORDER_CANCEL_REQUEST, cancelOrderSaga);
+}
+
 // Root order saga
 // update order status
 export default function* orderSaga() {
@@ -236,4 +268,5 @@ export default function* orderSaga() {
   yield takeEvery(ORDER_STATUSES_REQUEST, fetchOrderStatusesSaga);
   yield takeEvery(ORDER_HISTORY_REQUEST, fetchOrderHistorySaga);
   yield takeEvery(ORDER_CREATE_REQUEST, createOrderSaga);
+  yield takeEvery(ORDER_CANCEL_REQUEST, cancelOrderSaga);
 }

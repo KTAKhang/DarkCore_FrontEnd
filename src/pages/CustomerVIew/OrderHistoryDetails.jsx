@@ -1,8 +1,22 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
+import { useDispatch, useSelector } from 'react-redux';
 import { X, Package, Truck, CheckCircle, Clock, User, CreditCard, MapPin, Phone, XCircle } from 'lucide-react';
+import { orderCancelRequest, orderClearMessages } from '../../redux/actions/orderActions';
+import { toast } from 'react-toastify';
 
-const OrderHistoryDetails = ({ isOpen, onClose, order, loading = false }) => {
+const OrderHistoryDetails = ({ isOpen, onClose, order, loading = false, onOrderCancelled }) => {
+  const dispatch = useDispatch();
+  const { loading: cancelLoading, success, error } = useSelector((state) => state.order);
+  const onCloseRef = useRef(onClose);
+  const onOrderCancelledRef = useRef(onOrderCancelled);
+
+  // Keep refs updated
+  useEffect(() => {
+    onCloseRef.current = onClose;
+    onOrderCancelledRef.current = onOrderCancelled;
+  }, [onClose, onOrderCancelled]);
+
   // Close modal on ESC key press
   useEffect(() => {
     const handleEsc = (e) => {
@@ -13,6 +27,29 @@ const OrderHistoryDetails = ({ isOpen, onClose, order, loading = false }) => {
     window.addEventListener('keydown', handleEsc);
     return () => window.removeEventListener('keydown', handleEsc);
   }, [isOpen, onClose]);
+
+  // Handle success/error messages
+  useEffect(() => {
+    if (success) {
+      toast.success(success);
+      dispatch(orderClearMessages());
+      // Call onOrderCancelled callback if provided
+      if (onOrderCancelledRef.current) {
+        onOrderCancelledRef.current();
+      }
+      // Close modal after showing toast
+      setTimeout(() => {
+        onCloseRef.current();
+      }, 1000); // Give time for toast to show before closing
+    }
+  }, [success, dispatch]);
+
+  useEffect(() => {
+    if (error) {
+      toast.error(error);
+      dispatch(orderClearMessages());
+    }
+  }, [error, dispatch]);
 
   if (!isOpen || !order) return null;
 
@@ -45,11 +82,22 @@ const OrderHistoryDetails = ({ isOpen, onClose, order, loading = false }) => {
   const statusName = getStatusName(order.orderStatusId);
 
   const getValidImageUrl = (item) => {
-    const imageUrl = item.productImage || item.productId?.images?.[0];
-    if (imageUrl && !imageUrl.includes('example.com')) {
-      return imageUrl;
-    }
-    return 'https://via.placeholder.com/80x80?text=No+Image';
+    const placeholder = 'https://via.placeholder.com/80x80?text=No+Image';
+    const fromProduct = item.product && typeof item.product === 'object' ? item.product.images?.[0] : null;
+    const imageUrl = fromProduct || item.productImage;
+    if (imageUrl && !imageUrl.includes('example.com')) return imageUrl;
+    return placeholder;
+  };
+
+  const getPaymentMethodText = (method) => {
+    if (!method) return 'N/A';
+    const methodLower = method.toLowerCase();
+    const methodMap = {
+      cod: 'Thanh toán khi nhận hàng',
+      vnpay: 'VNPay',
+      banking: 'Chuyển khoản ngân hàng',
+    };
+    return methodMap[methodLower] || method;
   };
 
   // Tạo timeline từ order data
@@ -117,7 +165,15 @@ const OrderHistoryDetails = ({ isOpen, onClose, order, loading = false }) => {
   };
 
   const timeline = generateTimeline();
-  const orderDetails = order.orderDetails || order.orderdetails || [];
+  
+  // Extract order details with same logic as ViewOrderDetail
+  const orderDetails = Array.isArray(order.items)
+    ? order.items
+    : Array.isArray(order.orderDetails)
+    ? order.orderDetails
+    : Array.isArray(order.orderdetails)
+    ? order.orderdetails
+    : [];
 
   const pickCurrencyValue = (...candidates) => {
     for (const candidate of candidates) {
@@ -164,6 +220,13 @@ const OrderHistoryDetails = ({ isOpen, onClose, order, loading = false }) => {
     }
   };
 
+  const handleCancelOrder = () => {
+    if (window.confirm('Bạn có chắc chắn muốn hủy đơn hàng này?')) {
+      const cancelledReason = 'Khách hàng yêu cầu hủy';
+      dispatch(orderCancelRequest(order._id, cancelledReason));
+    }
+  };
+
   return (
     <div 
       className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4"
@@ -174,11 +237,11 @@ const OrderHistoryDetails = ({ isOpen, onClose, order, loading = false }) => {
         onClick={(e) => e.stopPropagation()}
       >
         {/* Loading Overlay */}
-        {loading && (
+        {(loading || cancelLoading) && (
           <div className="absolute inset-0 bg-white bg-opacity-75 z-10 flex items-center justify-center rounded-xl">
             <div className="text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">Đang tải chi tiết đơn hàng...</p>
+              <p className="text-gray-600">{cancelLoading ? 'Đang hủy đơn hàng...' : 'Đang tải chi tiết đơn hàng...'}</p>
             </div>
           </div>
         )}
@@ -253,13 +316,22 @@ const OrderHistoryDetails = ({ isOpen, onClose, order, loading = false }) => {
               </h3>
               <div className="space-y-4">
                 {orderDetails.map((item, index) => {
-                  const itemSubtotal = pickCurrencyValue(item.totalPrice, item.price * item.quantity, 0);
+                  // Extract product info with same logic as ViewOrderDetail
+                  const quantity = Number(item.quantity) || 0;
+                  const unitPrice = pickCurrencyValue(
+                    item.price,
+                    item.product?.price,
+                    0
+                  );
+                  const itemSubtotal = pickCurrencyValue(item.totalPrice, unitPrice * quantity, 0);
                   const itemDiscount = Number(item.discount || 0);
+                  const productName = item.product?.name || item.productName || 'N/A';
+
                   return (
                   <div key={index} className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
                     <img
                       src={getValidImageUrl(item)}
-                      alt={item.productName}
+                      alt={productName}
                       className="w-20 h-20 object-cover rounded-lg border border-gray-200"
                       onError={(e) => {
                         if (e.target.src !== 'https://via.placeholder.com/80x80?text=No+Image') {
@@ -268,9 +340,9 @@ const OrderHistoryDetails = ({ isOpen, onClose, order, loading = false }) => {
                       }}
                     />
                     <div className="flex-1">
-                      <h4 className="font-medium text-gray-900 mb-1">{item.productName}</h4>
-                      <p className="text-sm text-gray-500">Số lượng: {item.quantity}</p>
-                      <p className="text-sm text-gray-500">Đơn giá: {formatPrice(item.price)}</p>
+                      <h4 className="font-medium text-gray-900 mb-1">{productName}</h4>
+                      <p className="text-sm text-gray-500">Số lượng: {quantity}</p>
+                      <p className="text-sm text-gray-500">Đơn giá: {formatPrice(unitPrice)}</p>
                       <p className={`text-sm ${itemDiscount > 0 ? 'text-rose-500' : 'text-gray-500'}`}>
                         Giảm giá: {itemDiscount > 0 ? `- ${formatPrice(itemDiscount)}` : '0₫'}
                       </p>
@@ -343,7 +415,7 @@ const OrderHistoryDetails = ({ isOpen, onClose, order, loading = false }) => {
                   <div>
                     <p className="text-sm text-gray-600 mb-1">Phương thức:</p>
                     <p className="text-gray-900 font-medium">
-                      {order.paymentMethod === 'COD' ? 'Thanh toán khi nhận hàng' : 'Chuyển khoản ngân hàng'}
+                      {getPaymentMethodText(order.paymentMethod)}
                     </p>
                   </div>
                   <div>
@@ -369,34 +441,21 @@ const OrderHistoryDetails = ({ isOpen, onClose, order, loading = false }) => {
         {/* Footer Actions */}
         <div className="border-t border-gray-200 p-6 bg-gray-50">
           <div className="flex gap-3">
-            {statusName === 'pending' && (
+            {/* Only allow cancel for pending orders with COD payment method */}
+            {statusName === 'pending' && order.paymentMethod?.toLowerCase() === 'cod' && (
               <button
-                onClick={() => {
-                  if (window.confirm('Bạn có chắc chắn muốn hủy đơn hàng này?')) {
-                    // TODO: Implement cancel order
-                    console.log('Cancel order:', order._id);
-                  }
-                }}
-                className="flex-1 bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors font-medium"
+                onClick={handleCancelOrder}
+                disabled={cancelLoading}
+                className="flex-1 bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Hủy đơn hàng
-              </button>
-            )}
-            {statusName === 'delivered' && (
-              <button
-                onClick={() => {
-                  // TODO: Implement reorder
-                  console.log('Reorder:', order._id);
-                }}
-                className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium"
-              >
-                Mua lại
+                {cancelLoading ? 'Đang hủy...' : 'Hủy đơn hàng'}
               </button>
             )}
       
             <button
               onClick={onClose}
-              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors font-medium"
+              disabled={cancelLoading}
+              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Đóng
             </button>
@@ -412,6 +471,7 @@ OrderHistoryDetails.propTypes = {
   onClose: PropTypes.func.isRequired,
   order: PropTypes.object,
   loading: PropTypes.bool,
+  onOrderCancelled: PropTypes.func,
 };
 
 export default OrderHistoryDetails;

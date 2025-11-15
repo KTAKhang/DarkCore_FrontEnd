@@ -71,17 +71,14 @@ const OrderHistory = () => {
     return () => clearTimeout(timeoutId);
   }, [dispatch, userId, selectedStatus, currentPage, searchTerm, sortBy]);
 
-  // Show toast messages
+  
   useEffect(() => {
-    if (error) {
+    if (error && loadingHistory === false && !success) {
+      // Only show error if it's from loading history (not from cancel/update operations)
       toast.error(error);
       dispatch(orderClearMessages());
     }
-    if (success) {
-      toast.success(success);
-      dispatch(orderClearMessages());
-    }
-  }, [error, success, dispatch]);
+  }, [error, loadingHistory, success, dispatch]);
 
   // Redirect nếu chưa login
   useEffect(() => {
@@ -173,6 +170,31 @@ const OrderHistory = () => {
   const closeOrderDetails = () => {
     setIsDetailsOpen(false);
     setSelectedOrder(null);
+  };
+
+  const handleOrderCancelled = () => {
+    // Reload order history after cancellation
+    if (userId) {
+      const query = {
+        page: currentPage,
+        limit: 10,
+      };
+      if (selectedStatus !== 'all') {
+        const statusForBackend = selectedStatus === 'shipping' ? 'shipped' : selectedStatus;
+        query.status = statusForBackend;
+      }
+      if (searchTerm.trim()) {
+        query.search = searchTerm.trim();
+      }
+      if (sortBy === 'newest') {
+        query.sortBy = 'createdat';
+        query.sortOrder = 'desc';
+      } else if (sortBy === 'oldest') {
+        query.sortBy = 'createdat';
+        query.sortOrder = 'asc';
+      }
+      dispatch(orderHistoryRequest(userId, query));
+    }
   };
 
   // Helper để validate và lấy ảnh hợp lệ
@@ -378,6 +400,7 @@ const OrderHistory = () => {
           onClose={closeOrderDetails}
           order={currentOrder || selectedOrder}
           loading={loadingDetail}
+          onOrderCancelled={handleOrderCancelled}
         />
       </main>
       <Footer />

@@ -24,6 +24,9 @@ import {
   ORDER_CREATE_SUCCESS,
   ORDER_CREATE_FAILURE,
   ORDER_CREATE_FAILED,
+  ORDER_CANCEL_REQUEST,
+  ORDER_CANCEL_SUCCESS,
+  ORDER_CANCEL_FAILURE,
   ORDER_CLEAR_MESSAGES,
 } from "../actions/orderActions";
 
@@ -266,6 +269,34 @@ const orderReducer = (state = initialState, action) => {
       return {
         ...state,
         creating: false,
+        error: action.payload,
+      };
+
+    // Cancel Order
+    case ORDER_CANCEL_REQUEST:
+      return {
+        ...state,
+        loading: true,
+        error: null,
+      };
+
+    case ORDER_CANCEL_SUCCESS:
+      return {
+        ...state,
+        loading: false,
+        currentOrder: action.payload,
+        // Update order in history if exists
+        history: state.history.map(order =>
+          order._id === action.payload._id ? action.payload : order
+        ),
+        success: "Đơn hàng đã được hủy thành công",
+        error: null,
+      };
+
+    case ORDER_CANCEL_FAILURE:
+      return {
+        ...state,
+        loading: false,
         error: action.payload,
       };
 
