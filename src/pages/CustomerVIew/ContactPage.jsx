@@ -1,8 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import Header from "../../components/Header/Header";
-import Footer from "../../components/Footer/Footer";
 import { contactCreateRequest } from "../../redux/actions/contactActions";
 
 const ContactPage = () => {
@@ -48,7 +46,6 @@ const ContactPage = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      <Header />
       
       <main className="container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold mb-6">Liên hệ với chúng tôi</h1>
@@ -127,7 +124,7 @@ const ContactPage = () => {
         </form>
       </main>
       
-      <Footer />
+      
     </div>
   );
 };
